@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function SignUpScreen() {
   const { signUp } = useSession();
@@ -40,7 +41,7 @@ export default function SignUpScreen() {
         setInfo('Check your email to confirm your account, then log in.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create your account.');
+      setError(getErrorMessage(err, 'Could not create your account.'));
     } finally {
       setLoading(false);
     }

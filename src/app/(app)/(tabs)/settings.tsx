@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { getErrorMessage } from '@/lib/errors';
 import { updateDisplayName } from '@/lib/mutations/profile';
 import { getMyProfile } from '@/lib/queries/profile';
 
@@ -45,7 +46,7 @@ export default function SettingsScreen() {
       await updateDisplayName(displayName);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save your changes.');
+      setError(getErrorMessage(err, 'Could not save your changes.'));
     } finally {
       setSaving(false);
     }

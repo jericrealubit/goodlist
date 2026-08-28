@@ -21,6 +21,8 @@ export type Task = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  creator?: Pick<Profile, 'display_name'> | null;
+  assignee?: Pick<Profile, 'display_name'> | null;
 };
 
 export type NewTaskInput = {
@@ -33,4 +35,39 @@ export type UpdateTaskInput = {
   title?: string;
   notes?: string | null;
   due_at?: string | null;
+};
+
+export type NewRequestInput = {
+  title: string;
+  notes?: string | null;
+  due_at?: string | null;
+  assigneeId: string;
+  familyId: string;
+};
+
+export type HouseholdRole = 'owner' | 'member';
+export type ProfileType = 'adult' | 'child';
+
+export type Family = {
+  id: string;
+  name: string;
+  invite_code: string;
+  created_by: string;
+  mode: string;
+  created_at: string;
+};
+
+export type FamilyMember = {
+  family_id: string;
+  user_id: string;
+  profile_type: ProfileType;
+  role: HouseholdRole;
+  joined_at: string;
+  profiles: Pick<Profile, 'display_name'> | null;
+};
+
+export type HouseholdSummary = {
+  family: Family;
+  role: HouseholdRole;
+  members: FamilyMember[];
 };

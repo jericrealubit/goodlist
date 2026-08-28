@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function SignInScreen() {
   const { signIn } = useSession();
@@ -24,7 +25,7 @@ export default function SignInScreen() {
     try {
       await signIn(email.trim(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not sign in.');
+      setError(getErrorMessage(err, 'Could not sign in.'));
     } finally {
       setLoading(false);
     }

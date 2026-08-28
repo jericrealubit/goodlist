@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { NewTaskInput, Task, UpdateTaskInput } from '@/lib/types';
+import type { NewRequestInput, NewTaskInput, Task, UpdateTaskInput } from '@/lib/types';
 
 export async function createTask(input: NewTaskInput): Promise<Task> {
   const {
@@ -17,6 +17,42 @@ export async function createTask(input: NewTaskInput): Promise<Task> {
       assignee_id: user.id,
       origin: 'personal',
     })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createRequest(input: NewRequestInput): Promise<Task> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert({
+      title: input.title.trim(),
+      notes: input.notes?.trim() || null,
+      due_at: input.due_at ?? null,
+      creator_id: user.id,
+      assignee_id: input.assigneeId,
+      family_id: input.familyId,
+      origin: 'requested',
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function cancelTask(id: string): Promise<Task> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({ status: 'cancelled' })
+    .eq('id', id)
     .select('*')
     .single();
 

@@ -14,27 +14,31 @@ type TaskRowProps = {
   task: Task;
   onToggleComplete: () => void;
   onPress: () => void;
+  subtitle?: string;
+  showCheckbox?: boolean;
 };
 
-export function TaskRow({ task, onToggleComplete, onPress }: TaskRowProps) {
+export function TaskRow({ task, onToggleComplete, onPress, subtitle, showCheckbox = true }: TaskRowProps) {
   const theme = useTheme();
   const isCompleted = task.status === 'completed';
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.row}>
-        <Pressable
-          onPress={onToggleComplete}
-          hitSlop={8}
-          style={[
-            styles.checkbox,
-            {
-              borderColor: isCompleted ? theme.accent : theme.border,
-              backgroundColor: isCompleted ? theme.accent : 'transparent',
-            },
-          ]}>
-          {isCompleted && <ThemedText style={styles.checkmark}>✓</ThemedText>}
-        </Pressable>
+        {showCheckbox ? (
+          <Pressable
+            onPress={onToggleComplete}
+            hitSlop={8}
+            style={[
+              styles.checkbox,
+              {
+                borderColor: isCompleted ? theme.accent : theme.border,
+                backgroundColor: isCompleted ? theme.accent : 'transparent',
+              },
+            ]}>
+            {isCompleted && <ThemedText style={styles.checkmark}>✓</ThemedText>}
+          </Pressable>
+        ) : null}
 
         <ThemedView style={styles.textColumn}>
           <ThemedText
@@ -51,6 +55,11 @@ export function TaskRow({ task, onToggleComplete, onPress }: TaskRowProps) {
           {task.due_at ? (
             <ThemedText type="small" themeColor="textSecondary">
               Due {formatDueDate(task.due_at)}
+            </ThemedText>
+          ) : null}
+          {subtitle ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {subtitle}
             </ThemedText>
           ) : null}
         </ThemedView>

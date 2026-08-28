@@ -9,12 +9,15 @@ import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
+import { useSession } from '@/contexts/session-context';
+import { getErrorMessage } from '@/lib/errors';
 import { listHistory } from '@/lib/queries/tasks';
 import type { Task } from '@/lib/types';
 
 export default function HistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useSession();
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +26,7 @@ export default function HistoryScreen() {
     try {
       setTasks(await listHistory());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your history.');
+      setError(getErrorMessage(err, 'Could not load your history.'));
     }
   }, []);
 
@@ -54,13 +57,23 @@ export default function HistoryScreen() {
             styles.listContent,
             { paddingBottom: insets.bottom + BottomTabInset + Spacing.four },
           ]}
-          renderItem={({ item }) => (
-            <TaskRow
-              task={item}
-              onToggleComplete={() => {}}
-              onPress={() => router.push({ pathname: '/task/[id]', params: { id: item.id } })}
-            />
-          )}
+          renderItem={({ item }) => {
+            const subtitle =
+              item.origin === 'requested'
+                ? item.assignee_id === user?.id
+                  ? `From ${item.creator?.display_name || 'Unnamed'}`
+                  : `To ${item.assignee?.display_name || 'Unnamed'}`
+                : undefined;
+            return (
+              <TaskRow
+                task={item}
+                subtitle={subtitle}
+                showCheckbox={item.origin !== 'requested'}
+                onToggleComplete={() => {}}
+                onPress={() => router.push({ pathname: '/task/[id]', params: { id: item.id } })}
+              />
+            );
+          }}
         />
       )}
     </ThemedView>
