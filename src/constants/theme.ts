@@ -14,6 +14,10 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    primary: '#072655',
+    accent: '#2E9E4F',
+    danger: '#C0392B',
+    border: '#DEE1E6',
   },
   dark: {
     text: '#ffffff',
@@ -21,6 +25,10 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    primary: '#5C8AE6',
+    accent: '#4CB86B',
+    danger: '#E4685D',
+    border: '#33363B',
   },
 } as const;
 
@@ -62,4 +70,8 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// AppTabs renders as a floating pill nav bar pinned to the top on web (native
+// platforms use a real bottom tab bar instead), so web screens need extra top
+// clearance that native screens don't.
+export const WebTopNavInset = Platform.select({ web: 72 }) ?? 0;
 export const MaxContentWidth = 800;
