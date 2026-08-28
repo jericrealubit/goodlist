@@ -33,6 +33,12 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Google Play service-account key (used by `eas submit`) — a real secret,
+# never commit it. Keep it anywhere in the repo matching this pattern, or
+# outside the repo entirely and reference it by absolute path in eas.json.
+*service-account*.json
+credentials/
+
 # typescript
 *.tsbuildinfo
 
