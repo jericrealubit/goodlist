@@ -20,6 +20,9 @@ export function MemberPicker({ members, selectedId, onSelect }: MemberPickerProp
           <Pressable
             key={member.user_id}
             onPress={() => onSelect(member.user_id)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: isSelected }}
+            accessibilityLabel={member.profiles?.display_name || 'Unnamed'}
             style={({ pressed }) => pressed && styles.pressed}>
             <ThemedView type={isSelected ? 'backgroundSelected' : 'backgroundElement'} style={styles.row}>
               <ThemedText type={isSelected ? 'smallBold' : 'default'}>

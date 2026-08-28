@@ -2,10 +2,12 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
+import { useNotifications } from '@/contexts/notifications-context';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const { unreadCount } = useNotifications();
 
   return (
     <NativeTabs
@@ -15,6 +17,7 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Tasks</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'checklist', selected: 'checklist' }} md="checklist" />
+        {unreadCount > 0 && <NativeTabs.Trigger.Badge>{String(unreadCount)}</NativeTabs.Trigger.Badge>}
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="household">

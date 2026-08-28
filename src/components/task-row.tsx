@@ -23,12 +23,19 @@ export function TaskRow({ task, onToggleComplete, onPress, subtitle, showCheckbo
   const isCompleted = task.status === 'completed';
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={task.title}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.row}>
         {showCheckbox ? (
           <Pressable
             onPress={onToggleComplete}
             hitSlop={8}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isCompleted }}
+            accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
             style={[
               styles.checkbox,
               {

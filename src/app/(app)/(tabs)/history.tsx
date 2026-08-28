@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { getErrorMessage } from '@/lib/errors';
 import { listHistory } from '@/lib/queries/tasks';
 import type { Task } from '@/lib/types';
@@ -36,6 +37,8 @@ export default function HistoryScreen() {
     }, [load]),
   );
 
+  useRealtimeTasks(load);
+
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={[styles.header, { paddingTop: insets.top + WebTopNavInset + Spacing.three }]}>
@@ -46,7 +49,7 @@ export default function HistoryScreen() {
       {tasks === null ? (
         <LoadingState />
       ) : error ? (
-        <EmptyState title="Something went wrong" message={error} />
+        <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={load} />
       ) : tasks.length === 0 ? (
         <EmptyState title="No history yet" message="Tasks you complete will show up here." />
       ) : (

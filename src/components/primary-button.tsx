@@ -32,6 +32,9 @@ export function PrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor, opacity: isDisabled ? 0.6 : pressed ? 0.85 : 1 },

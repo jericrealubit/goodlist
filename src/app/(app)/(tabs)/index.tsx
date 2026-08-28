@@ -10,7 +10,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
 import { useHousehold } from '@/contexts/household-context';
+import { useNotifications } from '@/contexts/notifications-context';
 import { useSession } from '@/contexts/session-context';
+import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { useTheme } from '@/hooks/use-theme';
 import { getErrorMessage } from '@/lib/errors';
 import { listOpenTasks } from '@/lib/queries/tasks';
@@ -23,6 +25,7 @@ export default function TasksScreen() {
   const insets = useSafeAreaInsets();
   const { household } = useHousehold();
   const { user } = useSession();
+  const { markAllRead } = useNotifications();
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +42,11 @@ export default function TasksScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load]),
+      markAllRead();
+    }, [load, markAllRead]),
   );
+
+  useRealtimeTasks(load);
 
   async function handleToggle(task: Task) {
     setTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
@@ -70,7 +76,7 @@ export default function TasksScreen() {
       {tasks === null ? (
         <LoadingState />
       ) : error ? (
-        <EmptyState title="Something went wrong" message={error} />
+        <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={load} />
       ) : tasks.length === 0 ? (
         <EmptyState
           title="Nothing on your list yet"

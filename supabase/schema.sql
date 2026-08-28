@@ -354,3 +354,76 @@ create policy "Household members can request tasks from each other"
 -- Delete policy (creator-only hard delete) is unchanged and intentionally
 -- stays that way for Personal tasks; Requested tasks are cancelled (status
 -- update, covered by the broadened update policy above) rather than deleted.
+
+-- ---------------------------------------------------------------------------
+-- collaboration quality (Phase 5 — see "Goodlist — Project Plan.md" section
+-- 18, section 13's notifications row, FR-11, FR-12)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  task_id uuid not null references public.tasks (id) on delete cascade,
+  type text not null default 'task_requested' check (type in ('task_requested')),
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_user_unread_idx
+  on public.notifications (user_id) where read_at is null;
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can view their own notifications" on public.notifications;
+create policy "Users can view their own notifications"
+  on public.notifications for select
+  using (user_id = auth.uid());
+
+drop policy if exists "Users can update their own notifications" on public.notifications;
+create policy "Users can update their own notifications"
+  on public.notifications for update
+  using (user_id = auth.uid());
+
+-- No insert policy: rows are only created by the trigger below, which (like
+-- handle_new_user for profiles) runs as the table owner and bypasses RLS.
+
+-- Notifies the assignee whenever a new Requested task is created (FR-11).
+-- Not extended to completion/cancellation — not asked for by FR-11's text.
+create or replace function public.notify_task_requested()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.origin = 'requested' then
+    insert into public.notifications (user_id, task_id, type)
+    values (new.assignee_id, new.id, 'task_requested');
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists tasks_notify_requested on public.tasks;
+create trigger tasks_notify_requested
+  after insert on public.tasks
+  for each row execute function public.notify_task_requested();
+
+-- Enable Realtime on tasks + notifications so clients can subscribe to
+-- postgres_changes (delivery is still scoped by each table's RLS policies
+-- above, evaluated per the subscribing user's JWT).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'tasks'
+  ) then
+    alter publication supabase_realtime add table public.tasks;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end $$;

@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { Share, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
@@ -15,7 +16,7 @@ export default function HouseholdScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useSession();
-  const { household, isLoading, refresh } = useHousehold();
+  const { household, isLoading, error, refresh } = useHousehold();
 
   useFocusEffect(
     useCallback(() => {
@@ -25,6 +26,12 @@ export default function HouseholdScreen() {
 
   if (isLoading) {
     return <LoadingState />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={refresh} />
+    );
   }
 
   if (!household) {

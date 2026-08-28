@@ -5,15 +5,19 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useNotifications } from '@/contexts/notifications-context';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function AppTabs() {
+  const { unreadCount } = useNotifications();
+
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="index" href="/" asChild>
-            <TabButton>Tasks</TabButton>
+            <TabButton hasBadge={unreadCount > 0}>Tasks</TabButton>
           </TabTrigger>
           <TabTrigger name="household" href="/household" asChild>
             <TabButton>Household</TabButton>
@@ -30,15 +34,24 @@ export default function AppTabs() {
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+type TabButtonProps = TabTriggerSlotProps & { hasBadge?: boolean };
+
+export function TabButton({ children, isFocused, hasBadge, ...props }: TabButtonProps) {
+  const theme = useTheme();
+
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      {...props}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.tabButtonView}>
         <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
           {children}
         </ThemedText>
+        {hasBadge ? <View style={[styles.badge, { backgroundColor: theme.danger }]} /> : null}
       </ThemedView>
     </Pressable>
   );
@@ -84,8 +97,17 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   tabButtonView: {
+    position: 'relative',
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+  },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });
