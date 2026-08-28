@@ -1,7 +1,8 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
@@ -11,8 +12,13 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
+import { deleteMyAccount } from '@/lib/mutations/account';
 import { updateDisplayName } from '@/lib/mutations/profile';
 import { getMyProfile } from '@/lib/queries/profile';
+import { supabase } from '@/lib/supabase';
+
+const PRIVACY_POLICY_URL = 'https://claude.ai/code/artifact/06189f52-4aae-4d70-a026-3379bcd04f65';
+const TERMS_OF_SERVICE_URL = `${PRIVACY_POLICY_URL}#terms`;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -22,6 +28,9 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -50,6 +59,23 @@ export default function SettingsScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteMyAccount();
+    } catch (err) {
+      setDeleteError(getErrorMessage(err, 'Could not delete your account.'));
+      setDeleting(false);
+      return;
+    }
+    // The account row is already gone server-side at this point, so a normal
+    // signOut() may fail validating a session whose user no longer exists.
+    // scope: 'local' just clears on-device storage without that round trip,
+    // which is all that's needed to land back on the sign-in screen.
+    await supabase.auth.signOut({ scope: 'local' });
   }
 
   if (!loaded) {
@@ -85,6 +111,52 @@ export default function SettingsScreen() {
         </ThemedView>
 
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
+
+        <ThemedView style={styles.dangerZone}>
+          {deleteError ? (
+            <ThemedText type="small" themeColor="danger">
+              {deleteError}
+            </ThemedText>
+          ) : null}
+          {confirmingDelete ? (
+            <>
+              <ThemedText type="small" themeColor="danger">
+                This permanently deletes your account and all of your tasks. If you own a
+                household, it's deleted for every member too. This can't be undone.
+              </ThemedText>
+              <PrimaryButton
+                title="Yes, delete my account"
+                onPress={handleDeleteAccount}
+                loading={deleting}
+                variant="danger"
+              />
+              <PrimaryButton
+                title="Cancel"
+                onPress={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                variant="secondary"
+              />
+            </>
+          ) : (
+            <PrimaryButton title="Delete account" onPress={() => setConfirmingDelete(true)} variant="secondary" />
+          )}
+        </ThemedView>
+
+        <ThemedView style={styles.legal}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Legal
+          </ThemedText>
+          <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}>
+            <ThemedText type="link" themeColor="textSecondary">
+              Privacy Policy
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={() => WebBrowser.openBrowserAsync(TERMS_OF_SERVICE_URL)}>
+            <ThemedText type="link" themeColor="textSecondary">
+              Terms of Service
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
       </ThemedView>
     </ThemedView>
   );
@@ -104,5 +176,11 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: Spacing.three,
+  },
+  dangerZone: {
+    gap: Spacing.two,
+  },
+  legal: {
+    gap: Spacing.two,
   },
 });

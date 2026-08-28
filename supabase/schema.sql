@@ -327,11 +327,13 @@ end $$;
 -- Requested task's recipient can see and complete it (plan section 14).
 -- Personal tasks are unaffected: creator = assignee = self already.
 drop policy if exists "Owners can view their own tasks" on public.tasks;
+drop policy if exists "Members can view their own or assigned tasks" on public.tasks;
 create policy "Members can view their own or assigned tasks"
   on public.tasks for select
   using (creator_id = auth.uid() or assignee_id = auth.uid());
 
 drop policy if exists "Owners can update their own tasks" on public.tasks;
+drop policy if exists "Creators or assignees can update their tasks" on public.tasks;
 create policy "Creators or assignees can update their tasks"
   on public.tasks for update
   using (creator_id = auth.uid() or assignee_id = auth.uid());
@@ -427,3 +429,27 @@ begin
     alter publication supabase_realtime add table public.notifications;
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- account deletion (App Store Review Guideline 5.1.1(v): apps that support
+-- account creation must let the user initiate deletion in-app)
+--
+-- Every table referencing a user (profiles, tasks.creator_id/assignee_id,
+-- family_members.user_id, families.created_by) already has
+-- `on delete cascade`, so deleting the auth.users row alone cleans up
+-- everything else. Known, accepted side effect: because families.created_by
+-- also cascades, a household owner deleting their account deletes the whole
+-- household out from under any partner still in it. Ownership transfer
+-- before deletion is out of scope for now.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.delete_my_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;

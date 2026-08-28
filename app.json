@@ -7,7 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "goodlist",
     "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.jericrealubit.goodlist"
+    },
     "android": {
+      "package": "com.jericrealubit.goodlist",
       "adaptiveIcon": {
         "backgroundColor": "#072655",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
