@@ -8,15 +8,16 @@ import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { modeLabel, roleLabel } from '@/constants/group';
 import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
-import { useHousehold } from '@/contexts/household-context';
+import { useGroup } from '@/contexts/group-context';
 import { useSession } from '@/contexts/session-context';
 
-export default function HouseholdScreen() {
+export default function GroupScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useSession();
-  const { household, isLoading, error, refresh } = useHousehold();
+  const { group, isLoading, error, refresh } = useGroup();
 
   useFocusEffect(
     useCallback(() => {
@@ -34,7 +35,7 @@ export default function HouseholdScreen() {
     );
   }
 
-  if (!household) {
+  if (!group) {
     return (
       <ThemedView style={styles.container}>
         <ThemedView
@@ -54,11 +55,11 @@ export default function HouseholdScreen() {
             exactly as they are when you do.
           </ThemedText>
           <ThemedView style={styles.buttonGroup}>
-            <PrimaryButton title="Create a household" onPress={() => router.push('/household/create')} />
+            <PrimaryButton title="Create a group" onPress={() => router.push('/group/create')} />
             <PrimaryButton
-              title="Join a household"
+              title="Join a group"
               variant="secondary"
-              onPress={() => router.push('/household/join')}
+              onPress={() => router.push('/group/join')}
             />
           </ThemedView>
         </ThemedView>
@@ -69,9 +70,16 @@ export default function HouseholdScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={[styles.header, { paddingTop: insets.top + WebTopNavInset + Spacing.three }]}>
-        <ThemedText type="title">{household.family.name}</ThemedText>
+        <ThemedView style={styles.titleRow}>
+          <ThemedText type="title">{group.name}</ThemedText>
+          <ThemedView type="backgroundElement" style={styles.modePill}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {modeLabel(group.mode)}
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
         <ThemedText themeColor="textSecondary">
-          {household.members.length} {household.members.length === 1 ? 'member' : 'members'}
+          {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
         </ThemedText>
       </ThemedView>
 
@@ -81,14 +89,14 @@ export default function HouseholdScreen() {
             Invite code
           </ThemedText>
           <ThemedText type="title" style={styles.inviteCode}>
-            {household.family.invite_code}
+            {group.invite_code}
           </ThemedText>
           <PrimaryButton
             title="Share invite code"
             variant="secondary"
             onPress={() =>
               Share.share({
-                message: `Join my household on Goodlist: ${household.family.invite_code}`,
+                message: `Join my group on Goodlist: ${group.invite_code}`,
               })
             }
           />
@@ -98,19 +106,24 @@ export default function HouseholdScreen() {
           <ThemedText type="smallBold" themeColor="textSecondary">
             Members
           </ThemedText>
-          {household.members.map((member) => (
-            <ThemedView key={member.user_id} type="backgroundElement" style={styles.memberRow}>
-              <ThemedText>
-                {member.profiles?.display_name || 'Unnamed'}
-                {member.user_id === user?.id ? ' (You)' : ''}
-              </ThemedText>
-              {member.role === 'owner' ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  Owner
+          {group.members.map((member) => {
+            const tags = [roleLabel(group.mode, member.member_role), member.role === 'owner' ? 'Owner' : null]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <ThemedView key={member.user_id} type="backgroundElement" style={styles.memberRow}>
+                <ThemedText>
+                  {member.profiles?.display_name || 'Unnamed'}
+                  {member.user_id === user?.id ? ' (You)' : ''}
                 </ThemedText>
-              ) : null}
-            </ThemedView>
-          ))}
+                {tags ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {tags}
+                  </ThemedText>
+                ) : null}
+              </ThemedView>
+            );
+          })}
         </ThemedView>
       </ThemedView>
     </ThemedView>
@@ -149,6 +162,16 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  modePill: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.four,
   },
   body: {
     paddingHorizontal: Spacing.four,

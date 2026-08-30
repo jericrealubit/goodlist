@@ -128,7 +128,7 @@ export default function EditTaskScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {isAssignee ? (
             <>
-              <ReadOnlyField label="Requested by" value={task.creator?.display_name || 'A household member'} />
+              <ReadOnlyField label="Requested by" value={task.creator?.display_name || 'A group member'} />
               <ReadOnlyField label="Title" value={task.title} />
               {task.notes ? <ReadOnlyField label="Note" value={task.notes} /> : null}
               <ReadOnlyField label="Due date" value={task.due_at ? new Date(task.due_at).toLocaleDateString() : 'No due date'} />

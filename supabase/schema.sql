@@ -143,6 +143,20 @@ create table if not exists public.family_members (
   constraint family_members_user_profile_fk foreign key (user_id) references public.profiles (id) on delete cascade
 );
 
+-- Backfill legacy 'household' mode values, then constrain to the Family/Team
+-- toggle exposed by the create-group screen.
+update public.families set mode = 'family' where mode not in ('family', 'team');
+alter table public.families alter column mode set default 'family';
+alter table public.families drop constraint if exists families_mode_check;
+alter table public.families add constraint families_mode_check check (mode in ('family', 'team'));
+
+-- Descriptive role label (e.g. Father, Leader), separate from the owner/member
+-- permission role above. Nullable so existing members are unaffected.
+alter table public.family_members add column if not exists member_role text;
+alter table public.family_members drop constraint if exists family_members_member_role_check;
+alter table public.family_members add constraint family_members_member_role_check
+  check (member_role is null or member_role in ('father', 'mother', 'guardian', 'child', 'other', 'leader', 'member'));
+
 -- Generate a short, unambiguous invite code (no 0/O/1/I) if one wasn't
 -- supplied, retrying on the rare unique-constraint collision.
 create or replace function public.generate_invite_code()
@@ -233,7 +247,23 @@ create policy "Members can view their household's members"
 -- changes through the SECURITY DEFINER RPCs below, so a user can never
 -- insert themselves into an arbitrary family_id even by guessing one.
 
-create or replace function public.create_household(p_name text)
+-- Validates a descriptive member_role against the vocabulary for a given
+-- family/team mode; a null role is always valid (role is optional).
+create or replace function public.family_role_is_valid(p_mode text, p_role text)
+returns boolean
+language sql
+immutable
+as $$
+  select p_role is null or (
+    case p_mode
+      when 'family' then p_role in ('father', 'mother', 'guardian', 'child', 'other')
+      when 'team' then p_role in ('leader', 'member')
+      else false
+    end
+  );
+$$;
+
+create or replace function public.create_household(p_name text, p_mode text default 'family', p_member_role text default null)
 returns uuid
 language plpgsql
 security definer
@@ -246,18 +276,26 @@ begin
     raise exception 'You already belong to a household.';
   end if;
 
-  insert into public.families (name, created_by)
-  values (p_name, auth.uid())
+  if p_mode not in ('family', 'team') then
+    raise exception 'Invalid group type.';
+  end if;
+
+  if not public.family_role_is_valid(p_mode, p_member_role) then
+    raise exception 'Invalid role for this group type.';
+  end if;
+
+  insert into public.families (name, created_by, mode)
+  values (p_name, auth.uid(), p_mode)
   returning id into v_family_id;
 
-  insert into public.family_members (family_id, user_id, role)
-  values (v_family_id, auth.uid(), 'owner');
+  insert into public.family_members (family_id, user_id, role, member_role)
+  values (v_family_id, auth.uid(), 'owner', p_member_role);
 
   return v_family_id;
 end;
 $$;
 
-create or replace function public.join_household(p_invite_code text)
+create or replace function public.join_household(p_invite_code text, p_member_role text default null)
 returns uuid
 language plpgsql
 security definer
@@ -265,21 +303,38 @@ set search_path = public
 as $$
 declare
   v_family_id uuid;
+  v_mode text;
 begin
   if exists (select 1 from public.family_members where user_id = auth.uid()) then
     raise exception 'You already belong to a household.';
   end if;
 
-  select id into v_family_id from public.families where invite_code = upper(p_invite_code);
+  select id, mode into v_family_id, v_mode from public.families where invite_code = upper(p_invite_code);
   if v_family_id is null then
     raise exception 'Invalid invite code.';
   end if;
 
-  insert into public.family_members (family_id, user_id, role)
-  values (v_family_id, auth.uid(), 'member');
+  if not public.family_role_is_valid(v_mode, p_member_role) then
+    raise exception 'Invalid role for this group type.';
+  end if;
+
+  insert into public.family_members (family_id, user_id, role, member_role)
+  values (v_family_id, auth.uid(), 'member', p_member_role);
 
   return v_family_id;
 end;
+$$;
+
+-- Lets the join screen show a group's name/mode (to pick the right role list)
+-- before committing to join, without exposing membership data.
+create or replace function public.preview_household(p_invite_code text)
+returns table(name text, mode text)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select f.name, f.mode from public.families f where f.invite_code = upper(p_invite_code);
 $$;
 
 -- ---------------------------------------------------------------------------

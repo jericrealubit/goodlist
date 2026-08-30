@@ -45,29 +45,34 @@ export type NewRequestInput = {
   familyId: string;
 };
 
-export type HouseholdRole = 'owner' | 'member';
+export type GroupPermission = 'owner' | 'member';
 export type ProfileType = 'adult' | 'child';
 
-export type Family = {
+export type GroupMode = 'family' | 'team';
+export type FamilyRole = 'father' | 'mother' | 'guardian' | 'child' | 'other';
+export type TeamRole = 'leader' | 'member';
+export type MemberRole = FamilyRole | TeamRole;
+
+export type Group = {
   id: string;
   name: string;
   invite_code: string;
   created_by: string;
-  mode: string;
+  mode: GroupMode;
   created_at: string;
 };
 
-export type FamilyMember = {
+export type GroupMember = {
   family_id: string;
   user_id: string;
   profile_type: ProfileType;
-  role: HouseholdRole;
+  role: GroupPermission;
+  member_role: MemberRole | null;
   joined_at: string;
   profiles: Pick<Profile, 'display_name'> | null;
 };
 
-export type HouseholdSummary = {
-  family: Family;
-  role: HouseholdRole;
-  members: FamilyMember[];
+export type GroupSummary = Group & {
+  role: GroupPermission;
+  members: GroupMember[];
 };

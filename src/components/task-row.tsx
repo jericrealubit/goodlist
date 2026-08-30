@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -16,19 +17,27 @@ type TaskRowProps = {
   onPress: () => void;
   subtitle?: string;
   showCheckbox?: boolean;
+  trailingActions?: ReactNode;
 };
 
-export function TaskRow({ task, onToggleComplete, onPress, subtitle, showCheckbox = true }: TaskRowProps) {
+export function TaskRow({
+  task,
+  onToggleComplete,
+  onPress,
+  subtitle,
+  showCheckbox = true,
+  trailingActions,
+}: TaskRowProps) {
   const theme = useTheme();
   const isCompleted = task.status === 'completed';
 
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={task.title}
-      style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={styles.row}>
+    <ThemedView type="backgroundElement" style={styles.row}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={task.title}
+        style={({ pressed }) => [styles.pressableContent, pressed && styles.pressed]}>
         {showCheckbox ? (
           <Pressable
             onPress={onToggleComplete}
@@ -70,8 +79,10 @@ export function TaskRow({ task, onToggleComplete, onPress, subtitle, showCheckbo
             </ThemedText>
           ) : null}
         </ThemedView>
-      </ThemedView>
-    </Pressable>
+      </Pressable>
+
+      {trailingActions}
+    </ThemedView>
   );
 }
 
@@ -85,6 +96,12 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.three,
     borderRadius: Spacing.three,
+  },
+  pressableContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
   },
   checkbox: {
     width: 26,

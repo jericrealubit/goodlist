@@ -59,7 +59,7 @@ export default function SignUpScreen() {
                 Create your account
               </ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.centerText}>
-                Start with your own Personal tasks. No household required.
+                Start with your own Personal tasks. No group required.
               </ThemedText>
             </ThemedView>
 

@@ -104,3 +104,11 @@ export async function deleteTask(id: string): Promise<void> {
   const { error } = await supabase.from('tasks').delete().eq('id', id);
   if (error) throw error;
 }
+
+// RLS's creator-only delete policy scopes this automatically — rows the
+// current user didn't create are simply left untouched, no client-side
+// filtering needed.
+export async function deleteAllHistory(): Promise<void> {
+  const { error } = await supabase.from('tasks').delete().in('status', ['completed', 'cancelled']);
+  if (error) throw error;
+}

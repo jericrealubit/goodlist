@@ -122,7 +122,7 @@ export default function SettingsScreen() {
             <>
               <ThemedText type="small" themeColor="danger">
                 This permanently deletes your account and all of your tasks. If you own a
-                household, it's deleted for every member too. This can't be undone.
+                group, it's deleted for every member too. This can't be undone.
               </ThemedText>
               <PrimaryButton
                 title="Yes, delete my account"

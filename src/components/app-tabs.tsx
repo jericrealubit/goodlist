@@ -20,8 +20,8 @@ export default function AppTabs() {
         {unreadCount > 0 && <NativeTabs.Trigger.Badge>{String(unreadCount)}</NativeTabs.Trigger.Badge>}
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="household">
-        <NativeTabs.Trigger.Label>Household</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="group">
+        <NativeTabs.Trigger.Label>Group</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
       </NativeTabs.Trigger>
 
