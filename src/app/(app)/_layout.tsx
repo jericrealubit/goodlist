@@ -19,9 +19,10 @@ export default function AppLayout() {
             headerShadowVisible: false,
           }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="task/[id]" options={{ title: 'Edit task' }} />
-          <Stack.Screen name="group/create" options={{ title: 'Create group' }} />
-          <Stack.Screen name="group/join" options={{ title: 'Join group' }} />
+          <Stack.Screen name="task/[id]" options={{ title: 'Edit task', presentation: 'modal' }} />
+          <Stack.Screen name="group/create" options={{ title: 'Create group', presentation: 'modal' }} />
+          <Stack.Screen name="group/join" options={{ title: 'Join group', presentation: 'modal' }} />
+          <Stack.Screen name="about" options={{ title: 'About' }} />
         </Stack>
       </NotificationsProvider>
     </GroupProvider>

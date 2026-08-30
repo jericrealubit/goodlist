@@ -100,6 +100,11 @@ export async function reopenTask(id: string): Promise<Task> {
   return data;
 }
 
+export async function reorderTask(id: string, sortOrder: number): Promise<void> {
+  const { error } = await supabase.from('tasks').update({ sort_order: sortOrder }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function deleteTask(id: string): Promise<void> {
   const { error } = await supabase.from('tasks').delete().eq('id', id);
   if (error) throw error;

@@ -1,7 +1,6 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
 import { LoadingState } from '@/components/loading-state';
@@ -9,8 +8,9 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { getErrorMessage } from '@/lib/errors';
 import { deleteMyAccount } from '@/lib/mutations/account';
 import { updateDisplayName } from '@/lib/mutations/profile';
@@ -21,7 +21,8 @@ const PRIVACY_POLICY_URL = 'https://claude.ai/code/artifact/06189f52-4aae-4d70-a
 const TERMS_OF_SERVICE_URL = `${PRIVACY_POLICY_URL}#terms`;
 
 export default function SettingsScreen() {
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { topInset, bottomInset } = useTabScreenInsets();
   const { user, signOut } = useSession();
   const [displayName, setDisplayName] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -84,16 +85,19 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
+        <ThemedText type="header">Settings</ThemedText>
+        <ThemedText themeColor="textSecondary">{user?.email ?? ''}</ThemedText>
+      </ThemedView>
+
       <ThemedView
         style={[
           styles.content,
           {
-            paddingTop: insets.top + WebTopNavInset + Spacing.five,
-            paddingBottom: insets.bottom + BottomTabInset,
+            paddingTop: Spacing.four,
+            paddingBottom: bottomInset,
           },
         ]}>
-        <ThemedText type="title">Settings</ThemedText>
-
         <ThemedView style={styles.form}>
           <TextField label="Display name" value={displayName} onChangeText={setDisplayName} placeholder="Your name" />
           <TextField label="Email" value={user?.email ?? ''} editable={false} />
@@ -146,6 +150,11 @@ export default function SettingsScreen() {
           <ThemedText type="smallBold" themeColor="textSecondary">
             Legal
           </ThemedText>
+          <Pressable onPress={() => router.push('/about')}>
+            <ThemedText type="link" themeColor="textSecondary">
+              About
+            </ThemedText>
+          </Pressable>
           <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}>
             <ThemedText type="link" themeColor="textSecondary">
               Privacy Policy
@@ -165,6 +174,14 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.three,
+    gap: Spacing.half,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MaxContentWidth,
   },
   content: {
     flex: 1,

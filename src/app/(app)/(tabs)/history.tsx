@@ -1,7 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -9,9 +8,10 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
+import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { useTheme } from '@/hooks/use-theme';
 import { getErrorMessage } from '@/lib/errors';
 import { deleteAllHistory, deleteTask, reopenTask } from '@/lib/mutations/tasks';
@@ -47,7 +47,7 @@ function RowIconButton({
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { topInset, bottomInset } = useTabScreenInsets();
   const theme = useTheme();
   const { user } = useSession();
   const [tasks, setTasks] = useState<Task[] | null>(null);
@@ -109,8 +109,8 @@ export default function HistoryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: insets.top + WebTopNavInset + Spacing.three }]}>
-        <ThemedText type="title">History</ThemedText>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
+        <ThemedText type="header">History</ThemedText>
         <ThemedText themeColor="textSecondary">Completed and cancelled tasks</ThemedText>
       </ThemedView>
 
@@ -162,7 +162,7 @@ export default function HistoryScreen() {
           keyExtractor={(task) => task.id}
           contentContainerStyle={[
             styles.listContent,
-            { paddingBottom: insets.bottom + BottomTabInset + Spacing.four },
+            { paddingBottom: bottomInset + Spacing.four },
           ]}
           renderItem={({ item }) => {
             const subtitle =

@@ -71,6 +71,16 @@ create table if not exists public.tasks (
 
 create index if not exists tasks_creator_id_idx on public.tasks (creator_id);
 
+-- Manual ordering for the task list (drag to rearrange). Ascending = earlier
+-- in the list. Backfilled from created_at so existing newest-first order is
+-- preserved, and defaulted so every future insert sorts above everything
+-- older without any client-side change.
+alter table public.tasks add column if not exists sort_order double precision;
+update public.tasks set sort_order = -extract(epoch from created_at) where sort_order is null;
+alter table public.tasks alter column sort_order set default (-extract(epoch from clock_timestamp()));
+alter table public.tasks alter column sort_order set not null;
+create index if not exists tasks_sort_order_idx on public.tasks (sort_order);
+
 alter table public.tasks enable row level security;
 
 drop policy if exists "Owners can view their own tasks" on public.tasks;

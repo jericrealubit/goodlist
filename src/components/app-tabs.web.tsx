@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
 import { Pressable, View, StyleSheet } from 'react-native';
 
@@ -61,10 +62,12 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Goodlist
-        </ThemedText>
-
+        <Image
+          source={require('@/assets/images/goodlist-logo-horizontal.png')}
+          style={styles.brandLogo}
+          contentFit="contain"
+          alt="Goodlist"
+        />
         {props.children}
       </ThemedView>
     </View>
@@ -82,16 +85,16 @@ const styles = StyleSheet.create({
   },
   innerContainer: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
+    paddingHorizontal: Spacing.two,
     borderRadius: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
-    flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },
-  brandText: {
-    marginRight: 'auto',
+  brandLogo: {
+    height: 16,
+    aspectRatio: 1648 / 401,
   },
   pressed: {
     opacity: 0.7,
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
   tabButtonView: {
     position: 'relative',
     paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.two,
     borderRadius: Spacing.three,
   },
   badge: {

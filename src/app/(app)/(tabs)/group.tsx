@@ -1,7 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Share, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -9,12 +8,13 @@ import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleLabel } from '@/constants/group';
-import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useGroup } from '@/contexts/group-context';
 import { useSession } from '@/contexts/session-context';
+import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 
 export default function GroupScreen() {
-  const insets = useSafeAreaInsets();
+  const { topInset, bottomInset } = useTabScreenInsets();
   const router = useRouter();
   const { user } = useSession();
   const { group, isLoading, error, refresh } = useGroup();
@@ -42,8 +42,8 @@ export default function GroupScreen() {
           style={[
             styles.content,
             {
-              paddingTop: insets.top + WebTopNavInset + Spacing.six,
-              paddingBottom: insets.bottom + BottomTabInset,
+              paddingTop: topInset + Spacing.six,
+              paddingBottom: bottomInset,
             },
           ]}>
           <ThemedText style={styles.icon}>🌱</ThemedText>
@@ -69,9 +69,11 @@ export default function GroupScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: insets.top + WebTopNavInset + Spacing.three }]}>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
         <ThemedView style={styles.titleRow}>
-          <ThemedText type="title">{group.name}</ThemedText>
+          <ThemedText type="header" numberOfLines={1} style={styles.groupName}>
+            {group.name}
+          </ThemedText>
           <ThemedView type="backgroundElement" style={styles.modePill}>
             <ThemedText type="small" themeColor="textSecondary">
               {modeLabel(group.mode)}
@@ -167,6 +169,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  groupName: {
+    flexShrink: 1,
   },
   modePill: {
     paddingHorizontal: Spacing.two,

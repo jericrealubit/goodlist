@@ -9,7 +9,7 @@ export async function listOpenTasks(): Promise<Task[]> {
     .from('tasks')
     .select(TASK_SELECT)
     .eq('status', 'open')
-    .order('created_at', { ascending: false });
+    .order('sort_order', { ascending: true });
 
   if (error) throw error;
   return data ?? [];

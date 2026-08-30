@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Platform, StyleSheet, TextInput } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import Sortable, { type SortableGridDragEndParams } from 'react-native-sortables';
 
 import { ComposeBar } from '@/components/compose-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -10,14 +11,15 @@ import { OptionPicker } from '@/components/option-picker';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing, WebTopNavInset } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useGroup } from '@/contexts/group-context';
 import { useNotifications } from '@/contexts/notifications-context';
 import { useSession } from '@/contexts/session-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
+import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { getErrorMessage } from '@/lib/errors';
 import { listOpenTasks } from '@/lib/queries/tasks';
-import { completeTask, createRequest, createTask, reopenTask } from '@/lib/mutations/tasks';
+import { completeTask, createRequest, createTask, reopenTask, reorderTask } from '@/lib/mutations/tasks';
 import { validateTaskTitle } from '@/lib/validation/task';
 import type { Task, TaskOrigin } from '@/lib/types';
 
@@ -28,10 +30,11 @@ const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
 
 export default function TasksScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { topInset, bottomInset } = useTabScreenInsets();
   const { group } = useGroup();
   const { user } = useSession();
   const { markAllRead } = useNotifications();
+  const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const [openTasks, setOpenTasks] = useState<Task[] | null>(null);
   const [justCompleted, setJustCompleted] = useState<Task[]>([]);
@@ -126,13 +129,61 @@ export default function TasksScreen() {
     }
   }
 
-  const visibleTasks = [...(openTasks ?? []), ...justCompleted].filter((t) => t.origin === tab);
+  function handleDragEnd({ data, toIndex }: SortableGridDragEndParams<Task>) {
+    const movedItem = data[toIndex];
+    const prev = data[toIndex - 1];
+    const next = data[toIndex + 1];
+    let newSortOrder: number;
+    if (prev && next) {
+      newSortOrder = (prev.sort_order + next.sort_order) / 2;
+    } else if (prev) {
+      newSortOrder = prev.sort_order + 1;
+    } else if (next) {
+      newSortOrder = next.sort_order - 1;
+    } else {
+      newSortOrder = movedItem.sort_order;
+    }
+
+    setOpenTasks((current) => {
+      const otherTabs = (current ?? []).filter((t) => t.origin !== tab);
+      const reorderedTab = data.map((t) => (t.id === movedItem.id ? { ...t, sort_order: newSortOrder } : t));
+      return [...reorderedTab, ...otherTabs];
+    });
+
+    reorderTask(movedItem.id, newSortOrder).catch(() => {
+      load();
+    });
+  }
+
+  function renderTaskRow(item: Task, draggable: boolean) {
+    const isRequested = item.origin === 'requested';
+    const isAssignee = item.assignee_id === user?.id;
+    const subtitle = isRequested
+      ? isAssignee
+        ? `From ${item.creator?.display_name || 'Unnamed'}`
+        : `To ${item.assignee?.display_name || 'Unnamed'}`
+      : undefined;
+    return (
+      <TaskRow
+        task={item}
+        subtitle={subtitle}
+        showCheckbox={!isRequested || isAssignee}
+        onToggleComplete={() => handleToggle(item)}
+        onPress={() => router.push({ pathname: '/task/[id]', params: { id: item.id } })}
+        draggable={draggable}
+      />
+    );
+  }
+
+  const openVisibleTasks = (openTasks ?? []).filter((t) => t.origin === tab);
+  const completedVisibleTasks = justCompleted.filter((t) => t.origin === tab);
+  const isEmpty = openVisibleTasks.length === 0 && completedVisibleTasks.length === 0;
   const showAssigneePicker = tab === 'requested' && otherMembers.length >= 2;
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: insets.top + WebTopNavInset + Spacing.three }]}>
-        <ThemedText type="title">Goodlist</ThemedText>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
+        <ThemedText type="header">Tasks</ThemedText>
         <ThemedText themeColor="textSecondary">{group ? group.name : 'Solo mode'}</ThemedText>
       </ThemedView>
 
@@ -152,7 +203,7 @@ export default function TasksScreen() {
           <LoadingState />
         ) : error ? (
           <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={load} />
-        ) : visibleTasks.length === 0 ? (
+        ) : isEmpty ? (
           <EmptyState
             title={tab === 'personal' ? 'Nothing on your list yet' : 'No requests yet'}
             message={
@@ -162,35 +213,34 @@ export default function TasksScreen() {
             }
           />
         ) : (
-          <ScrollView
+          <Animated.ScrollView
+            ref={scrollableRef}
+            style={styles.flex}
             contentContainerStyle={[
               styles.listContent,
-              { paddingBottom: insets.bottom + BottomTabInset + Spacing.six + (showAssigneePicker ? Spacing.six : 0) },
+              { paddingBottom: bottomInset + Spacing.six + (showAssigneePicker ? Spacing.six : 0) },
             ]}>
-            {visibleTasks.map((item) => {
-              const isRequested = item.origin === 'requested';
-              const isAssignee = item.assignee_id === user?.id;
-              const subtitle = isRequested
-                ? isAssignee
-                  ? `From ${item.creator?.display_name || 'Unnamed'}`
-                  : `To ${item.assignee?.display_name || 'Unnamed'}`
-                : undefined;
-              return (
-                <TaskRow
-                  key={item.id}
-                  task={item}
-                  subtitle={subtitle}
-                  showCheckbox={!isRequested || isAssignee}
-                  onToggleComplete={() => handleToggle(item)}
-                  onPress={() => router.push({ pathname: '/task/[id]', params: { id: item.id } })}
-                />
-              );
-            })}
-          </ScrollView>
+            <Sortable.Grid
+              columns={1}
+              rowGap={Spacing.two}
+              data={openVisibleTasks}
+              keyExtractor={(item) => item.id}
+              scrollableRef={scrollableRef}
+              onDragEnd={handleDragEnd}
+              renderItem={({ item }) => renderTaskRow(item, true)}
+            />
+            {completedVisibleTasks.length > 0 ? (
+              <ThemedView style={styles.completedSection}>
+                {completedVisibleTasks.map((item) => (
+                  <ThemedView key={item.id}>{renderTaskRow(item, false)}</ThemedView>
+                ))}
+              </ThemedView>
+            ) : null}
+          </Animated.ScrollView>
         )}
 
         <ThemedView
-          style={[styles.footer, { paddingBottom: insets.bottom + BottomTabInset + Spacing.two }]}>
+          style={[styles.footer, { paddingBottom: bottomInset + Spacing.two }]}>
           {showAssigneePicker ? (
             <OptionPicker
               layout="row"
@@ -242,10 +292,13 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: Spacing.four,
-    gap: Spacing.two,
     alignSelf: 'center',
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  completedSection: {
+    gap: Spacing.two,
+    marginTop: Spacing.four,
   },
   footer: {
     position: 'absolute',
