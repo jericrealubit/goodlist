@@ -12,7 +12,7 @@ export type ThemeId =
   | 'jellyShoes'
   | 'freshlySqueezed';
 
-export type ThemeTokens = typeof Colors.light;
+export type ThemeTokens = Record<keyof typeof Colors.light, string>;
 
 export type ThemeDefinition = {
   id: ThemeId;
@@ -48,7 +48,7 @@ function buildFixedTheme(seed: FixedThemeSeed): ThemeTokens {
     accent: seed.accent,
     danger: FIXED_DANGER,
     border: mixWithWhite(seed.seedLight, 0.85),
-  } as ThemeTokens;
+  };
 }
 
 function fixedTheme(
@@ -66,7 +66,7 @@ export const themes: Record<ThemeId, ThemeDefinition> = {
     id: 'classic',
     label: 'Classic',
     swatches: [Colors.light.primary, Colors.light.accent, Colors.light.danger, Colors.dark.background],
-    tokens: { light: Colors.light as ThemeTokens, dark: Colors.dark as unknown as ThemeTokens },
+    tokens: { light: Colors.light, dark: Colors.dark },
   },
   neutralElegance: fixedTheme(
     'neutralElegance',
