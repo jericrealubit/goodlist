@@ -20,16 +20,18 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   const [themeId, setThemeIdState] = useState<ThemeId>('classic');
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (isThemeId(stored)) {
-        setThemeIdState(stored);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((stored) => {
+        if (isThemeId(stored)) {
+          setThemeIdState(stored);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   function setThemeId(id: ThemeId) {
     setThemeIdState(id);
-    AsyncStorage.setItem(STORAGE_KEY, id);
+    AsyncStorage.setItem(STORAGE_KEY, id).catch(() => {});
   }
 
   return <ThemeContext.Provider value={{ themeId, setThemeId }}>{children}</ThemeContext.Provider>;

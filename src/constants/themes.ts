@@ -1,4 +1,4 @@
-import { mixWithWhite } from '@/lib/color';
+import { darkenToContrast, mixWithWhite } from '@/lib/color';
 import { Colors } from './theme';
 
 export type ThemeId =
@@ -38,14 +38,18 @@ const FIXED_DANGER = '#C0392B';
 
 function buildFixedTheme(seed: FixedThemeSeed): ThemeTokens {
   const text = seed.seedDark ?? '#1A1A1A';
+  const background = mixWithWhite(seed.seedLight, 0.95);
   return {
     text,
-    background: mixWithWhite(seed.seedLight, 0.95),
+    background,
     backgroundElement: mixWithWhite(seed.seedLight, 0.88),
     backgroundSelected: mixWithWhite(seed.seedLight, 0.8),
-    textSecondary: mixWithWhite(text, 0.4),
-    primary: seed.primary,
-    accent: seed.accent,
+    textSecondary: mixWithWhite(text, 0.35),
+    // Clamped so hardcoded white button text (primary-button, compose-bar send button) stays legible.
+    primary: darkenToContrast(seed.primary, '#FFFFFF', 4.5),
+    // Clamped so accent-as-text ("Saved.") on `background` stays legible; this also keeps
+    // white-checkmark-on-accent (task-row) comfortably legible since `background` is near-white.
+    accent: darkenToContrast(seed.accent, background, 4.5),
     danger: FIXED_DANGER,
     border: mixWithWhite(seed.seedLight, 0.85),
   };
