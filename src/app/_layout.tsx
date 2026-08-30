@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ThemeProvider as AppThemeProvider } from '@/contexts/theme-context';
 import { SessionProvider, useSession } from '@/contexts/session-context';
 
 SplashScreen.preventAutoHideAsync();
@@ -36,11 +37,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <SessionProvider>
-            <RootNavigator />
-          </SessionProvider>
-        </ThemeProvider>
+        <AppThemeProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <SessionProvider>
+              <RootNavigator />
+            </SessionProvider>
+          </ThemeProvider>
+        </AppThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
