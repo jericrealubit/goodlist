@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
@@ -114,6 +115,13 @@ export default function SettingsScreen() {
           <PrimaryButton title="Save" onPress={handleSave} loading={saving} />
         </ThemedView>
 
+        <ThemedView style={styles.appearance}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Appearance
+          </ThemedText>
+          <ThemeSwitcher />
+        </ThemedView>
+
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
 
         <ThemedView style={styles.dangerZone}>
@@ -193,6 +201,9 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: Spacing.three,
+  },
+  appearance: {
+    gap: Spacing.two,
   },
   dangerZone: {
     gap: Spacing.two,
