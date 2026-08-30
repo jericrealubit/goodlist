@@ -51,7 +51,6 @@ hand-picking ~80 hex values by eye:
 
 ```ts
 export function mixWithWhite(hex: string, amount: number): string // amount 0-1, 1 = pure white
-export function mixWithBlack(hex: string, amount: number): string
 ```
 
 ### Theme registry — `src/constants/themes.ts` (new)
@@ -130,11 +129,18 @@ dark enough to double as body text at acceptable contrast, so `text` falls
 back to the synthesized near-black rather than forcing a too-light color
 into that slot.
 
+Note on `danger`: the fixed `#C0392B` applies only to the 8 new palette
+themes (all sharing that one exact hex, since each is a single fixed
+look). Classic's own `light`/`dark` danger values (`#C0392B` /`#E4685D`
+respectively) are unchanged — both already read as red, just tuned for
+their own background contrast, so "verbatim" in the Architecture section
+above takes precedence over "fixed" here for Classic specifically.
+
 ### Persistence & context — `src/contexts/theme-context.tsx` (new)
 
 `ThemeProvider` / `useSelectedTheme()`: loads the saved `ThemeId` from
-`AsyncStorage` on mount (key e.g. `goodlist.themeId`, default `'classic'`
-if unset or invalid), exposes `{ themeId, setThemeId }` (persists to
+`AsyncStorage` on mount (key `goodlist.themeId`, default `'classic'` if
+unset or invalid), exposes `{ themeId, setThemeId }` (persists to
 `AsyncStorage` on every change). Wraps the app at root
 (`src/app/_layout.tsx`), alongside the existing `SessionProvider`.
 
