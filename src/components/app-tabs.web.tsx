@@ -63,7 +63,7 @@ export function CustomTabList(props: TabListProps) {
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <Image
-          source={require('@/assets/images/goodlist-logo-horizontal.png')}
+          source={require('@/assets/images/icon.png')}
           style={styles.brandLogo}
           contentFit="contain"
           alt="Goodlist"
@@ -93,8 +93,9 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
   },
   brandLogo: {
-    height: 16,
-    aspectRatio: 1648 / 401,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
   },
   pressed: {
     opacity: 0.7,

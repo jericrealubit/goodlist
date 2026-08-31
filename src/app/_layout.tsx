@@ -5,22 +5,27 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { ThemeProvider as AppThemeProvider } from '@/contexts/theme-context';
 import { SessionProvider, useSession } from '@/contexts/session-context';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { session, isLoading } = useSession();
+  const { session, isLoading, isRecovering } = useSession();
+  // A password-recovery deep link hands us a valid session before the user
+  // has set a new password — keep them on (auth)/reset-password until
+  // endPasswordRecovery() fires instead of guard-redirecting into (app).
+  const isSignedIn = !!session && !isRecovering;
 
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={!!session}>
+        <Stack.Protected guard={isSignedIn}>
           <Stack.Screen name="(app)" />
         </Stack.Protected>
 
-        <Stack.Protected guard={!session}>
+        <Stack.Protected guard={!isSignedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
@@ -35,17 +40,19 @@ function RootNavigator() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
-    <GestureHandlerRootView style={styles.flex}>
-      <SafeAreaProvider>
-        <AppThemeProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <SessionProvider>
-              <RootNavigator />
-            </SessionProvider>
-          </ThemeProvider>
-        </AppThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.flex}>
+        <SafeAreaProvider>
+          <AppThemeProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <SessionProvider>
+                <RootNavigator />
+              </SessionProvider>
+            </ThemeProvider>
+          </AppThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

@@ -48,7 +48,7 @@ export function TaskRow({
         style={[
           styles.checkbox,
           {
-            borderColor: isCompleted ? theme.accent : theme.border,
+            borderColor: isCompleted ? theme.accent : theme.textSecondary,
             backgroundColor: isCompleted ? theme.accent : 'transparent',
           },
         ]}>
@@ -64,7 +64,7 @@ export function TaskRow({
         style={[
           styles.checkbox,
           {
-            borderColor: isCompleted ? theme.accent : theme.border,
+            borderColor: isCompleted ? theme.accent : theme.textSecondary,
             backgroundColor: isCompleted ? theme.accent : 'transparent',
           },
         ]}>

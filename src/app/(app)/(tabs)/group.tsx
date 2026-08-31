@@ -1,10 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback } from 'react';
-import { Share, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ScrollView, Share, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
+import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleLabel } from '@/constants/group';
@@ -12,6 +13,13 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useGroup } from '@/contexts/group-context';
 import { useSession } from '@/contexts/session-context';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
+import { getErrorMessage } from '@/lib/errors';
+import { leaveGroup, removeGroupMember, renameGroup, transferGroupOwnership } from '@/lib/mutations/group';
+
+type PendingAction =
+  | { type: 'leave' }
+  | { type: 'remove'; userId: string; name: string }
+  | { type: 'transfer'; userId: string; name: string };
 
 export default function GroupScreen() {
   const { topInset, bottomInset } = useTabScreenInsets();
@@ -19,11 +27,58 @@ export default function GroupScreen() {
   const { user } = useSession();
   const { group, isLoading, error, refresh } = useGroup();
 
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       refresh();
     }, [refresh]),
   );
+
+  function startRenaming() {
+    setActionError(null);
+    setRenameValue(group?.name ?? '');
+    setRenaming(true);
+  }
+
+  async function handleRename() {
+    setActionError(null);
+    setActionLoading(true);
+    try {
+      await renameGroup(renameValue);
+      await refresh();
+      setRenaming(false);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not rename your household.'));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleConfirmPending() {
+    if (!pending) return;
+    setActionError(null);
+    setActionLoading(true);
+    try {
+      if (pending.type === 'leave') {
+        await leaveGroup();
+      } else if (pending.type === 'remove') {
+        await removeGroupMember(pending.userId);
+      } else {
+        await transferGroupOwnership(pending.userId);
+      }
+      await refresh();
+      setPending(null);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not complete that action.'));
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   if (isLoading) {
     return <LoadingState />;
@@ -48,7 +103,7 @@ export default function GroupScreen() {
           ]}>
           <ThemedText style={styles.icon}>🌱</ThemedText>
           <ThemedText type="subtitle" style={styles.centerText}>
-            You're using Goodlist solo
+            You&apos;re using Goodlist solo
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.centerText}>
             Add a partner or child later to start sharing Requested tasks. Your Personal tasks stay
@@ -66,6 +121,8 @@ export default function GroupScreen() {
       </ThemedView>
     );
   }
+
+  const isOwner = group.role === 'owner';
 
   return (
     <ThemedView style={styles.container}>
@@ -85,7 +142,10 @@ export default function GroupScreen() {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.body}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.body, { paddingBottom: bottomInset + Spacing.four }]}
+        keyboardShouldPersistTaps="handled">
         <ThemedView type="backgroundElement" style={styles.inviteCard}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Invite code
@@ -104,30 +164,146 @@ export default function GroupScreen() {
           />
         </ThemedView>
 
-        <ThemedView style={styles.members}>
+        {isOwner ? (
+          <ThemedView style={styles.section}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              Household name
+            </ThemedText>
+            {renaming ? (
+              <ThemedView style={styles.renameRow}>
+                <TextField
+                  label="Household name"
+                  value={renameValue}
+                  onChangeText={setRenameValue}
+                  placeholder="Household name"
+                />
+                <ThemedView style={styles.inlineButtons}>
+                  <PrimaryButton
+                    title="Save"
+                    onPress={handleRename}
+                    loading={actionLoading}
+                    disabled={!renameValue.trim()}
+                    style={styles.inlineButton}
+                  />
+                  <PrimaryButton
+                    title="Cancel"
+                    variant="secondary"
+                    onPress={() => setRenaming(false)}
+                    disabled={actionLoading}
+                    style={styles.inlineButton}
+                  />
+                </ThemedView>
+              </ThemedView>
+            ) : (
+              <PrimaryButton title="Rename household" variant="secondary" onPress={startRenaming} />
+            )}
+          </ThemedView>
+        ) : null}
+
+        <ThemedView style={styles.section}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Members
           </ThemedText>
           {group.members.map((member) => {
+            const isSelf = member.user_id === user?.id;
             const tags = [roleLabel(group.mode, member.member_role), member.role === 'owner' ? 'Owner' : null]
               .filter(Boolean)
               .join(' · ');
+            const name = member.profiles?.display_name || 'Unnamed';
+
             return (
-              <ThemedView key={member.user_id} type="backgroundElement" style={styles.memberRow}>
-                <ThemedText>
-                  {member.profiles?.display_name || 'Unnamed'}
-                  {member.user_id === user?.id ? ' (You)' : ''}
-                </ThemedText>
-                {tags ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {tags}
+              <ThemedView key={member.user_id} type="backgroundElement" style={styles.memberCard}>
+                <ThemedView style={styles.memberRow}>
+                  <ThemedText>
+                    {name}
+                    {isSelf ? ' (You)' : ''}
                   </ThemedText>
+                  {tags ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {tags}
+                    </ThemedText>
+                  ) : null}
+                </ThemedView>
+
+                {isOwner && !isSelf ? (
+                  <ThemedView style={styles.memberActions}>
+                    <PrimaryButton
+                      title="Make owner"
+                      variant="secondary"
+                      onPress={() => {
+                        setActionError(null);
+                        setPending({ type: 'transfer', userId: member.user_id, name });
+                      }}
+                      style={styles.inlineButton}
+                    />
+                    <PrimaryButton
+                      title="Remove"
+                      variant="secondary"
+                      onPress={() => {
+                        setActionError(null);
+                        setPending({ type: 'remove', userId: member.user_id, name });
+                      }}
+                      style={styles.inlineButton}
+                    />
+                  </ThemedView>
                 ) : null}
               </ThemedView>
             );
           })}
         </ThemedView>
-      </ThemedView>
+
+        {pending ? (
+          <ThemedView type="backgroundElement" style={styles.confirmCard}>
+            <ThemedText type="small">
+              {pending.type === 'leave'
+                ? 'Leave this household?'
+                : pending.type === 'remove'
+                  ? `Remove ${pending.name} from this household?`
+                  : `Make ${pending.name} the household owner? You'll become a regular member.`}
+            </ThemedText>
+            {actionError ? (
+              <ThemedText type="small" themeColor="danger">
+                {actionError}
+              </ThemedText>
+            ) : null}
+            <ThemedView style={styles.inlineButtons}>
+              <PrimaryButton
+                title="Confirm"
+                variant={pending.type === 'transfer' ? 'primary' : 'danger'}
+                onPress={handleConfirmPending}
+                loading={actionLoading}
+                style={styles.inlineButton}
+              />
+              <PrimaryButton
+                title="Cancel"
+                variant="secondary"
+                onPress={() => {
+                  setPending(null);
+                  setActionError(null);
+                }}
+                disabled={actionLoading}
+                style={styles.inlineButton}
+              />
+            </ThemedView>
+          </ThemedView>
+        ) : (
+          <ThemedView style={styles.section}>
+            {actionError ? (
+              <ThemedText type="small" themeColor="danger">
+                {actionError}
+              </ThemedText>
+            ) : null}
+            <PrimaryButton
+              title="Leave household"
+              variant="danger"
+              onPress={() => {
+                setActionError(null);
+                setPending({ type: 'leave' });
+              }}
+            />
+          </ThemedView>
+        )}
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -178,6 +354,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.half,
     borderRadius: Spacing.four,
   },
+  scroll: {
+    flex: 1,
+  },
   body: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.four,
@@ -194,14 +373,36 @@ const styles = StyleSheet.create({
   inviteCode: {
     letterSpacing: 4,
   },
-  members: {
+  section: {
+    gap: Spacing.two,
+  },
+  renameRow: {
+    gap: Spacing.two,
+  },
+  inlineButtons: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  inlineButton: {
+    flex: 1,
+  },
+  memberCard: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
     gap: Spacing.two,
   },
   memberRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.three,
+  },
+  memberActions: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  confirmCard: {
     borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.two,
   },
 });

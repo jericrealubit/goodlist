@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 
 import { LoadingState } from '@/components/loading-state';
@@ -18,7 +18,7 @@ import { updateDisplayName } from '@/lib/mutations/profile';
 import { getMyProfile } from '@/lib/queries/profile';
 import { supabase } from '@/lib/supabase';
 
-const PRIVACY_POLICY_URL = 'https://claude.ai/code/artifact/06189f52-4aae-4d70-a026-3379bcd04f65';
+const PRIVACY_POLICY_URL = 'https://claude.ai/code/artifact/310b2cfa-6efb-4da6-8659-d2e250c753d8';
 const TERMS_OF_SERVICE_URL = `${PRIVACY_POLICY_URL}#terms`;
 
 export default function SettingsScreen() {
@@ -91,14 +91,16 @@ export default function SettingsScreen() {
         <ThemedText themeColor="textSecondary">{user?.email ?? ''}</ThemedText>
       </ThemedView>
 
-      <ThemedView
-        style={[
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
           styles.content,
           {
             paddingTop: Spacing.four,
-            paddingBottom: bottomInset,
+            paddingBottom: bottomInset + Spacing.four,
           },
-        ]}>
+        ]}
+        keyboardShouldPersistTaps="handled">
         <ThemedView style={styles.form}>
           <TextField label="Display name" value={displayName} onChangeText={setDisplayName} placeholder="Your name" />
           <TextField label="Email" value={user?.email ?? ''} editable={false} />
@@ -133,8 +135,9 @@ export default function SettingsScreen() {
           {confirmingDelete ? (
             <>
               <ThemedText type="small" themeColor="danger">
-                This permanently deletes your account and all of your tasks. If you own a
-                group, it's deleted for every member too. This can't be undone.
+                This permanently deletes your account and all of your tasks. This can&apos;t be
+                undone. If you own a household with other members, transfer ownership or remove
+                them first — you won&apos;t be able to delete your account until you do.
               </ThemedText>
               <PrimaryButton
                 title="Yes, delete my account"
@@ -174,7 +177,7 @@ export default function SettingsScreen() {
             </ThemedText>
           </Pressable>
         </ThemedView>
-      </ThemedView>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -191,8 +194,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
   },
-  content: {
+  scroll: {
     flex: 1,
+  },
+  content: {
     alignSelf: 'center',
     width: '100%',
     maxWidth: MaxContentWidth,

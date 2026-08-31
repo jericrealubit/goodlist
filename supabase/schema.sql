@@ -348,6 +348,146 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
+-- household management (Tier 1 hardening — rename, leave, remove a member,
+-- transfer ownership). None of these take a family_id parameter: a user
+-- belongs to at most one household (enforced by create_household/
+-- join_household above), so each function derives it from the caller's own
+-- membership row instead of trusting a client-supplied id.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.rename_household(p_name text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_role text;
+begin
+  select family_id, role into v_family_id, v_role
+  from public.family_members
+  where user_id = auth.uid();
+
+  if v_family_id is null then
+    raise exception 'You are not in a household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can rename it.';
+  end if;
+  if trim(p_name) = '' then
+    raise exception 'Household name cannot be empty.';
+  end if;
+
+  update public.families set name = trim(p_name) where id = v_family_id;
+end;
+$$;
+
+create or replace function public.leave_household()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_role text;
+  v_other_members int;
+begin
+  select family_id, role into v_family_id, v_role
+  from public.family_members
+  where user_id = auth.uid();
+
+  if v_family_id is null then
+    raise exception 'You are not in a household.';
+  end if;
+
+  if v_role = 'owner' then
+    select count(*) into v_other_members
+    from public.family_members
+    where family_id = v_family_id and user_id <> auth.uid();
+
+    if v_other_members > 0 then
+      raise exception 'Transfer ownership or remove all other members before leaving.';
+    end if;
+
+    -- Sole remaining member and owner: the household would be empty, so
+    -- remove it entirely rather than leaving an orphaned row behind.
+    delete from public.families where id = v_family_id;
+  else
+    delete from public.family_members where family_id = v_family_id and user_id = auth.uid();
+  end if;
+end;
+$$;
+
+create or replace function public.remove_household_member(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_role text;
+begin
+  select family_id, role into v_family_id, v_role
+  from public.family_members
+  where user_id = auth.uid();
+
+  if v_family_id is null then
+    raise exception 'You are not in a household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can remove a member.';
+  end if;
+  if p_user_id = auth.uid() then
+    raise exception 'Use "Leave household" to remove yourself.';
+  end if;
+  if not exists (
+    select 1 from public.family_members where family_id = v_family_id and user_id = p_user_id
+  ) then
+    raise exception 'That person is not in your household.';
+  end if;
+
+  delete from public.family_members where family_id = v_family_id and user_id = p_user_id;
+end;
+$$;
+
+create or replace function public.transfer_household_ownership(p_new_owner_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_role text;
+begin
+  select family_id, role into v_family_id, v_role
+  from public.family_members
+  where user_id = auth.uid();
+
+  if v_family_id is null then
+    raise exception 'You are not in a household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can transfer ownership.';
+  end if;
+  if p_new_owner_id = auth.uid() then
+    raise exception 'You already own this household.';
+  end if;
+  if not exists (
+    select 1 from public.family_members where family_id = v_family_id and user_id = p_new_owner_id
+  ) then
+    raise exception 'That person is not in your household.';
+  end if;
+
+  update public.family_members set role = 'member' where family_id = v_family_id and user_id = auth.uid();
+  update public.family_members set role = 'owner' where family_id = v_family_id and user_id = p_new_owner_id;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- requested tasks (Phase 4 — see "Goodlist — Project Plan.md" sections 6.6-6.8,
 -- 12, 14)
 --
@@ -502,10 +642,11 @@ end $$;
 -- Every table referencing a user (profiles, tasks.creator_id/assignee_id,
 -- family_members.user_id, families.created_by) already has
 -- `on delete cascade`, so deleting the auth.users row alone cleans up
--- everything else. Known, accepted side effect: because families.created_by
--- also cascades, a household owner deleting their account deletes the whole
--- household out from under any partner still in it. Ownership transfer
--- before deletion is out of scope for now.
+-- everything else. Because families.created_by also cascades, an owner
+-- deleting their account would otherwise destroy the whole household out
+-- from under any members still in it — blocked below instead; the owner
+-- must transfer ownership (transfer_household_ownership) or remove the
+-- other members (remove_household_member) first.
 -- ---------------------------------------------------------------------------
 
 create or replace function public.delete_my_account()
@@ -514,7 +655,25 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_family_id uuid;
+  v_role text;
+  v_other_members int;
 begin
+  select family_id, role into v_family_id, v_role
+  from public.family_members
+  where user_id = auth.uid();
+
+  if v_role = 'owner' then
+    select count(*) into v_other_members
+    from public.family_members
+    where family_id = v_family_id and user_id <> auth.uid();
+
+    if v_other_members > 0 then
+      raise exception 'Transfer ownership or remove all other members before deleting your account.';
+    end if;
+  end if;
+
   delete from auth.users where id = auth.uid();
 end;
 $$;

@@ -7,9 +7,19 @@ type SessionContextValue = {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
+  // True from the moment a password-reset deep link hands us a recovery
+  // session until the user finishes setting a new password. The root
+  // layout's auth guard checks this so a valid recovery session doesn't
+  // immediately redirect the user into the app before they've set a new
+  // password (see src/app/(auth)/reset-password.tsx).
+  isRecovering: boolean;
+  beginPasswordRecovery: () => void;
+  endPasswordRecovery: () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
+  resetPasswordForEmail: (email: string, redirectTo: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -17,6 +27,7 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   useEffect(() => {
     const {
@@ -39,6 +50,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
     session,
     user: session?.user ?? null,
     isLoading,
+    isRecovering,
+    beginPasswordRecovery: () => setIsRecovering(true),
+    endPasswordRecovery: () => setIsRecovering(false),
     signIn: async (email, password) => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -54,6 +68,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     },
     signOut: async () => {
       const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    },
+    resetPasswordForEmail: async (email, redirectTo) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+    },
+    updatePassword: async (password) => {
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
     },
   };

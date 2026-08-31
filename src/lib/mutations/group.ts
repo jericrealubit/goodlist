@@ -23,3 +23,23 @@ export async function joinGroup(inviteCode: string, memberRole: MemberRole | nul
   if (error) throw error;
   return data as string;
 }
+
+export async function renameGroup(name: string): Promise<void> {
+  const { error } = await supabase.rpc('rename_household', { p_name: name.trim() });
+  if (error) throw error;
+}
+
+export async function leaveGroup(): Promise<void> {
+  const { error } = await supabase.rpc('leave_household');
+  if (error) throw error;
+}
+
+export async function removeGroupMember(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_household_member', { p_user_id: userId });
+  if (error) throw error;
+}
+
+export async function transferGroupOwnership(newOwnerId: string): Promise<void> {
+  const { error } = await supabase.rpc('transfer_household_ownership', { p_new_owner_id: newOwnerId });
+  if (error) throw error;
+}

@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
@@ -12,20 +12,22 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
 
-export default function SignInScreen() {
-  const { signIn } = useSession();
+export default function ForgotPasswordScreen() {
+  const { resetPasswordForEmail } = useSession();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function handleSignIn() {
+  async function handleSend() {
     setError(null);
     setLoading(true);
     try {
-      await signIn(email.trim(), password);
+      const redirectTo = Linking.createURL('reset-password');
+      await resetPasswordForEmail(email.trim(), redirectTo);
+      setSent(true);
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not sign in.'));
+      setError(getErrorMessage(err, 'Could not send the reset email.'));
     } finally {
       setLoading(false);
     }
@@ -39,48 +41,40 @@ export default function SignInScreen() {
           style={styles.flex}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <ThemedView style={styles.header}>
-              <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
               <ThemedText type="title" style={styles.centerText}>
-                Goodlist
+                Reset your password
               </ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.centerText}>
-                A better place for your everyday tasks.
+                Enter your email and we&apos;ll send you a link to set a new password.
               </ThemedText>
             </ThemedView>
 
-            <ThemedView style={styles.form}>
-              <TextField
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                placeholder="you@example.com"
-              />
-              <TextField
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoComplete="password"
-                placeholder="••••••••"
-              />
-              {error ? (
-                <ThemedText type="small" themeColor="danger">
-                  {error}
-                </ThemedText>
-              ) : null}
-              <PrimaryButton title="Log in" onPress={handleSignIn} loading={loading} />
-              <Link href="/forgot-password" style={styles.link}>
-                <ThemedText type="link" themeColor="textSecondary">
-                  Forgot password?
-                </ThemedText>
-              </Link>
-            </ThemedView>
+            {sent ? (
+              <ThemedText type="small" themeColor="accent" style={styles.centerText}>
+                Check your email for a link to reset your password.
+              </ThemedText>
+            ) : (
+              <ThemedView style={styles.form}>
+                <TextField
+                  label="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  placeholder="you@example.com"
+                />
+                {error ? (
+                  <ThemedText type="small" themeColor="danger">
+                    {error}
+                  </ThemedText>
+                ) : null}
+                <PrimaryButton title="Send reset link" onPress={handleSend} loading={loading} disabled={!email.trim()} />
+              </ThemedView>
+            )}
 
-            <Link href="/sign-up" style={styles.link}>
-              <ThemedText type="linkPrimary">Create an account</ThemedText>
+            <Link href="/sign-in" replace style={styles.link}>
+              <ThemedText type="linkPrimary">Back to log in</ThemedText>
             </Link>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -106,16 +100,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.five,
     gap: Spacing.five,
   },
   header: {
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    marginBottom: Spacing.two,
   },
   centerText: {
     textAlign: 'center',
