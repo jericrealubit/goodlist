@@ -54,10 +54,9 @@ jericrealubit@gmail.com
 
 **Privacy Policy URL**
 ```
-https://claude.ai/code/artifact/06189f52-4aae-4d70-a026-3379bcd04f65
+https://claude.ai/code/artifact/310b2cfa-6efb-4da6-8659-d2e250c753d8
 ```
-(Must be shared/public before submitting — see the note in Settings work; this
-is still pending as of writing this doc.)
+(Same URL `settings.tsx` links to. Confirmed shared/public.)
 
 ## Content rating questionnaire (IARC)
 

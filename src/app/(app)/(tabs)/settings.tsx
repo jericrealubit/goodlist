@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
+import { StyleSwitcher } from '@/components/style-switcher';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -119,9 +120,16 @@ export default function SettingsScreen() {
 
         <ThemedView style={styles.appearance}>
           <ThemedText type="smallBold" themeColor="textSecondary">
-            Appearance
+            Color
           </ThemedText>
           <ThemeSwitcher />
+        </ThemedView>
+
+        <ThemedView style={styles.appearance}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Style
+          </ThemedText>
+          <StyleSwitcher />
         </ThemedView>
 
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />

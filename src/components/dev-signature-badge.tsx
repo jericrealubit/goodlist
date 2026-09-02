@@ -16,12 +16,14 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/jericrealubit';
 const SMOKE_DELAYS = [310, 2110, 3910];
 
 export function DevSignatureBadge({ style }: { style?: StyleProp<ViewStyle> } = {}) {
   const theme = useTheme();
+  const tokens = useTokens();
 
   const flame = useSharedValue(1);
   const smoke1 = useSharedValue(0);
@@ -85,7 +87,13 @@ export function DevSignatureBadge({ style }: { style?: StyleProp<ViewStyle> } = 
   const smokeStyles = [smoke1Style, smoke2Style, smoke3Style];
 
   return (
-    <ThemedView type="backgroundElement" style={[styles.pill, { borderColor: theme.border }, style]}>
+    <ThemedView
+      type="backgroundElement"
+      style={[
+        styles.pill,
+        { borderColor: theme.border, borderWidth: tokens.borderWidth, borderRadius: tokens.radii.pill },
+        style,
+      ]}>
       <View
         style={styles.iconStage}
         accessibilityElementsHidden
@@ -125,8 +133,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: Spacing.two,
-    borderWidth: 1,
-    borderRadius: 999,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },

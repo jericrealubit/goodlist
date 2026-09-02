@@ -1,8 +1,8 @@
 import { ActivityIndicator, Pressable, StyleSheet, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 type PrimaryButtonProps = {
   title: string;
@@ -22,6 +22,7 @@ export function PrimaryButton({
   style,
 }: PrimaryButtonProps) {
   const theme = useTheme();
+  const tokens = useTokens();
   const isDisabled = disabled || loading;
 
   const backgroundColor =
@@ -37,7 +38,12 @@ export function PrimaryButton({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor, opacity: isDisabled ? 0.6 : pressed ? 0.85 : 1 },
+        {
+          backgroundColor,
+          borderRadius: tokens.radii.sm,
+          paddingVertical: tokens.spacing.three,
+          opacity: isDisabled ? 0.6 : pressed ? 0.85 : 1,
+        },
         style,
       ]}>
       {loading ? (
@@ -53,8 +59,6 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: Spacing.two,
-    paddingVertical: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
   },

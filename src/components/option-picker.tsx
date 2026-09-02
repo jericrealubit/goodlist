@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 type Option = { id: string; label: string; swatches?: string[] };
 
@@ -14,8 +15,9 @@ type OptionPickerProps = {
 };
 
 export function OptionPicker({ options, selectedId, onSelect, layout = 'column' }: OptionPickerProps) {
+  const tokens = useTokens();
   return (
-    <ThemedView style={[styles.container, layout === 'row' && styles.containerRow]}>
+    <ThemedView style={[styles.container, { gap: tokens.spacing.two }, layout === 'row' && styles.containerRow]}>
       {options.map((option) => {
         const isSelected = option.id === selectedId;
         return (
@@ -30,6 +32,7 @@ export function OptionPicker({ options, selectedId, onSelect, layout = 'column' 
               type={isSelected ? 'backgroundSelected' : 'backgroundElement'}
               style={[
                 styles.row,
+                { padding: tokens.spacing.three, borderRadius: tokens.radii.lg },
                 layout === 'row' && styles.rowCentered,
                 option.swatches && styles.rowSpaceBetween,
               ]}>
@@ -50,9 +53,7 @@ export function OptionPicker({ options, selectedId, onSelect, layout = 'column' 
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: Spacing.two,
-  },
+  container: {},
   containerRow: {
     flexDirection: 'row',
   },
@@ -62,10 +63,7 @@ const styles = StyleSheet.create({
   pressedRow: {
     flex: 1,
   },
-  row: {
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-  },
+  row: {},
   rowCentered: {
     alignItems: 'center',
   },

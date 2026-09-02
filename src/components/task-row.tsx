@@ -2,10 +2,11 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Sortable from 'react-native-sortables';
 
+import { Surface } from '@/components/surface';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 import type { Task } from '@/lib/types';
 
 function formatDueDate(dueAt: string) {
@@ -36,7 +37,17 @@ export function TaskRow({
   draggable,
 }: TaskRowProps) {
   const theme = useTheme();
+  const tokens = useTokens();
   const isCompleted = task.status === 'completed';
+
+  const checkboxStyle = [
+    styles.checkbox,
+    {
+      borderRadius: tokens.radii.pill,
+      borderColor: isCompleted ? theme.accent : theme.textSecondary,
+      backgroundColor: isCompleted ? theme.accent : 'transparent',
+    },
+  ];
 
   const checkbox = showCheckbox ? (
     draggable ? (
@@ -45,13 +56,7 @@ export function TaskRow({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: isCompleted }}
         accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
-        style={[
-          styles.checkbox,
-          {
-            borderColor: isCompleted ? theme.accent : theme.textSecondary,
-            backgroundColor: isCompleted ? theme.accent : 'transparent',
-          },
-        ]}>
+        style={checkboxStyle}>
         {isCompleted && <ThemedText style={styles.checkmark}>✓</ThemedText>}
       </Sortable.Touchable>
     ) : (
@@ -61,13 +66,7 @@ export function TaskRow({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: isCompleted }}
         accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
-        style={[
-          styles.checkbox,
-          {
-            borderColor: isCompleted ? theme.accent : theme.textSecondary,
-            backgroundColor: isCompleted ? theme.accent : 'transparent',
-          },
-        ]}>
+        style={checkboxStyle}>
         {isCompleted && <ThemedText style={styles.checkmark}>✓</ThemedText>}
       </Pressable>
     )
@@ -96,14 +95,17 @@ export function TaskRow({
     </ThemedView>
   );
 
+  const rowSpacing = { gap: tokens.spacing.three, padding: tokens.spacing.three };
+  const contentSpacing = { gap: tokens.spacing.three };
+
   return (
-    <ThemedView type="backgroundElement" style={styles.row}>
+    <Surface style={[styles.row, rowSpacing]}>
       {draggable ? (
         <Sortable.Touchable
           onTap={onPress}
           accessibilityRole="button"
           accessibilityLabel={task.title}
-          style={styles.pressableContent}>
+          style={[styles.pressableContent, contentSpacing]}>
           {checkbox}
           {textColumn}
         </Sortable.Touchable>
@@ -112,14 +114,14 @@ export function TaskRow({
           onPress={onPress}
           accessibilityRole="button"
           accessibilityLabel={task.title}
-          style={({ pressed }) => [styles.pressableContent, pressed && styles.pressed]}>
+          style={({ pressed }) => [styles.pressableContent, contentSpacing, pressed && styles.pressed]}>
           {checkbox}
           {textColumn}
         </Pressable>
       )}
 
       {trailingActions}
-    </ThemedView>
+    </Surface>
   );
 }
 
@@ -130,20 +132,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
   },
   pressableContent: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
   },
   checkbox: {
     width: 26,
     height: 26,
-    borderRadius: 13,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',

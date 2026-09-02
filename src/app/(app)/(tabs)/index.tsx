@@ -17,6 +17,7 @@ import { useNotifications } from '@/contexts/notifications-context';
 import { useSession } from '@/contexts/session-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
+import { useTokens } from '@/hooks/use-tokens';
 import { getErrorMessage } from '@/lib/errors';
 import { listOpenTasks } from '@/lib/queries/tasks';
 import { completeTask, createRequest, createTask, reopenTask, reorderTask } from '@/lib/mutations/tasks';
@@ -31,6 +32,7 @@ const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
 export default function TasksScreen() {
   const router = useRouter();
   const { topInset, bottomInset } = useTabScreenInsets();
+  const tokens = useTokens();
   const { group } = useGroup();
   const { user } = useSession();
   const { markAllRead } = useNotifications();
@@ -218,11 +220,11 @@ export default function TasksScreen() {
             style={styles.flex}
             contentContainerStyle={[
               styles.listContent,
-              { paddingBottom: bottomInset + Spacing.six + (showAssigneePicker ? Spacing.six : 0) },
+              { gap: tokens.spacing.two, paddingBottom: bottomInset + Spacing.six + (showAssigneePicker ? Spacing.six : 0) },
             ]}>
             <Sortable.Grid
               columns={1}
-              rowGap={Spacing.two}
+              rowGap={tokens.spacing.two}
               data={openVisibleTasks}
               keyExtractor={(item) => item.id}
               scrollableRef={scrollableRef}

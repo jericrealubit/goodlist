@@ -11,7 +11,7 @@
       "bundleIdentifier": "com.jericrealubit.goodlist"
     },
     "android": {
-      "package": "com.jericrealubit.goodlist",
+      "package": "com.goodlist.app",
       "adaptiveIcon": {
         "backgroundColor": "#072655",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
@@ -37,6 +37,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bdf3dfcf-6b92-4484-9cde-2f3da53658fa"
+      }
+    },
+    "owner": "jericrealubit"
   }
 }

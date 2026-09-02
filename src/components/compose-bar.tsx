@@ -3,8 +3,8 @@ import { ActivityIndicator, Pressable, StyleSheet, TextInput } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 type ComposeBarProps = {
   value: string;
@@ -19,10 +19,11 @@ export const ComposeBar = forwardRef<TextInput, ComposeBarProps>(function Compos
   ref,
 ) {
   const theme = useTheme();
+  const tokens = useTokens();
   const canSubmit = value.trim().length > 0 && !submitting;
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { gap: tokens.spacing.two }]}>
       <TextInput
         ref={ref}
         value={value}
@@ -38,6 +39,10 @@ export const ComposeBar = forwardRef<TextInput, ComposeBarProps>(function Compos
             color: theme.text,
             borderColor: theme.border,
             backgroundColor: theme.backgroundElement,
+            borderWidth: tokens.borderWidth,
+            borderRadius: tokens.radii.pill,
+            paddingHorizontal: tokens.spacing.three,
+            paddingVertical: tokens.spacing.two,
           },
         ]}
       />
@@ -49,7 +54,7 @@ export const ComposeBar = forwardRef<TextInput, ComposeBarProps>(function Compos
         accessibilityState={{ disabled: !canSubmit }}
         style={({ pressed }) => [
           styles.sendButton,
-          { backgroundColor: theme.primary, opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1 },
+          { backgroundColor: theme.primary, borderRadius: tokens.radii.pill, opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1 },
         ]}>
         {submitting ? <ActivityIndicator color="#ffffff" size="small" /> : <ThemedText style={styles.sendGlyph}>↑</ThemedText>}
       </Pressable>
@@ -61,20 +66,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: Spacing.five,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
     fontSize: 16,
   },
   sendButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -8,6 +8,7 @@ import { ThemedView } from './themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 export default function AppTabs() {
   const { unreadCount } = useNotifications();
@@ -39,6 +40,7 @@ type TabButtonProps = TabTriggerSlotProps & { hasBadge?: boolean };
 
 export function TabButton({ children, isFocused, hasBadge, ...props }: TabButtonProps) {
   const theme = useTheme();
+  const tokens = useTokens();
 
   return (
     <Pressable
@@ -48,7 +50,7 @@ export function TabButton({ children, isFocused, hasBadge, ...props }: TabButton
       style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
+        style={[styles.tabButtonView, { borderRadius: tokens.radii.md }]}>
         <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
           {children}
         </ThemedText>
@@ -59,9 +61,10 @@ export function TabButton({ children, isFocused, hasBadge, ...props }: TabButton
 }
 
 export function CustomTabList(props: TabListProps) {
+  const tokens = useTokens();
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
+      <ThemedView type="backgroundElement" style={[styles.innerContainer, { borderRadius: tokens.radii.pill }]}>
         <Image
           source={require('@/assets/images/icon.png')}
           style={styles.brandLogo}

@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 const FEATURES = [
   'Keep a personal to-do list that syncs across your devices.',
@@ -28,6 +29,7 @@ const TECH_STACK = [
 
 export default function AboutScreen() {
   const theme = useTheme();
+  const tokens = useTokens();
   const version = Constants.expoConfig?.version ?? '—';
 
   return (
@@ -71,7 +73,10 @@ export default function AboutScreen() {
               <ThemedView
                 key={tech}
                 type="backgroundElement"
-                style={[styles.chip, { borderColor: theme.border }]}>
+                style={[
+                  styles.chip,
+                  { borderColor: theme.border, borderWidth: tokens.borderWidth, borderRadius: tokens.radii.pill },
+                ]}>
                 <ThemedText type="small" themeColor="textSecondary">
                   {tech}
                 </ThemedText>
@@ -128,8 +133,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   chip: {
-    borderWidth: 1,
-    borderRadius: 999,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
   },

@@ -1,8 +1,8 @@
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTokens } from '@/hooks/use-tokens';
 
 export type TextFieldProps = TextInputProps & {
   label: string;
@@ -11,9 +11,10 @@ export type TextFieldProps = TextInputProps & {
 
 export function TextField({ label, error, style, ...rest }: TextFieldProps) {
   const theme = useTheme();
+  const tokens = useTokens();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { gap: tokens.spacing.one }]}>
       <ThemedText type="smallBold" themeColor="textSecondary">
         {label}
       </ThemedText>
@@ -26,6 +27,10 @@ export function TextField({ label, error, style, ...rest }: TextFieldProps) {
             color: theme.text,
             borderColor: error ? theme.danger : theme.border,
             backgroundColor: theme.backgroundElement,
+            borderWidth: tokens.borderWidth,
+            borderRadius: tokens.radii.sm,
+            paddingHorizontal: tokens.spacing.three,
+            paddingVertical: tokens.spacing.two,
           },
           style,
         ]}
@@ -41,14 +46,8 @@ export function TextField({ label, error, style, ...rest }: TextFieldProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: Spacing.one,
-  },
+  container: {},
   input: {
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
     fontSize: 16,
   },
 });

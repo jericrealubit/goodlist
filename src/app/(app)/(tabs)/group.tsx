@@ -5,6 +5,7 @@ import { ScrollView, Share, StyleSheet } from 'react-native';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
+import { useSurfaceStyle } from '@/components/surface';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -13,6 +14,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useGroup } from '@/contexts/group-context';
 import { useSession } from '@/contexts/session-context';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
+import { useTokens } from '@/hooks/use-tokens';
 import { getErrorMessage } from '@/lib/errors';
 import { leaveGroup, removeGroupMember, renameGroup, transferGroupOwnership } from '@/lib/mutations/group';
 
@@ -26,6 +28,8 @@ export default function GroupScreen() {
   const router = useRouter();
   const { user } = useSession();
   const { group, isLoading, error, refresh } = useGroup();
+  const tokens = useTokens();
+  const cardStyle = useSurfaceStyle();
 
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -131,7 +135,7 @@ export default function GroupScreen() {
           <ThemedText type="header" numberOfLines={1} style={styles.groupName}>
             {group.name}
           </ThemedText>
-          <ThemedView type="backgroundElement" style={styles.modePill}>
+          <ThemedView type="backgroundElement" style={[styles.modePill, { borderRadius: tokens.radii.pill }]}>
             <ThemedText type="small" themeColor="textSecondary">
               {modeLabel(group.mode)}
             </ThemedText>
@@ -146,7 +150,7 @@ export default function GroupScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.body, { paddingBottom: bottomInset + Spacing.four }]}
         keyboardShouldPersistTaps="handled">
-        <ThemedView type="backgroundElement" style={styles.inviteCard}>
+        <ThemedView style={[cardStyle, styles.inviteCard]}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Invite code
           </ThemedText>
@@ -212,7 +216,7 @@ export default function GroupScreen() {
             const name = member.profiles?.display_name || 'Unnamed';
 
             return (
-              <ThemedView key={member.user_id} type="backgroundElement" style={styles.memberCard}>
+              <ThemedView key={member.user_id} style={[cardStyle, styles.memberCard]}>
                 <ThemedView style={styles.memberRow}>
                   <ThemedText>
                     {name}
@@ -253,7 +257,7 @@ export default function GroupScreen() {
         </ThemedView>
 
         {pending ? (
-          <ThemedView type="backgroundElement" style={styles.confirmCard}>
+          <ThemedView style={[cardStyle, styles.confirmCard]}>
             <ThemedText type="small">
               {pending.type === 'leave'
                 ? 'Leave this household?'
@@ -365,7 +369,6 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
   },
   inviteCard: {
-    borderRadius: Spacing.three,
     padding: Spacing.four,
     alignItems: 'center',
     gap: Spacing.two,
@@ -387,7 +390,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   memberCard: {
-    borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -401,7 +403,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   confirmCard: {
-    borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.two,
   },
