@@ -1,6 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput } from 'react-native';
+import { KeyboardAvoidingView, Platform, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable, { type SortableGridDragEndParams } from 'react-native-sortables';
 
@@ -41,11 +42,13 @@ export default function TasksScreen() {
   const [openTasks, setOpenTasks] = useState<Task[] | null>(null);
   const [justCompleted, setJustCompleted] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TaskOrigin>('personal');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [composeText, setComposeText] = useState('');
   const [composeError, setComposeError] = useState<string | null>(null);
   const [composeSaving, setComposeSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const composeInputRef = useRef<TextInput>(null);
 
   const tab = group ? activeTab : 'personal';
@@ -75,7 +78,15 @@ export default function TasksScreen() {
 
   useRealtimeTasks(load);
 
+  async function handleRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
   async function handleToggle(task: Task) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActionError(null);
     if (task.status === 'open') {
       setOpenTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
       setJustCompleted((current) => [
@@ -87,6 +98,7 @@ export default function TasksScreen() {
       } catch {
         setJustCompleted((current) => current.filter((t) => t.id !== task.id));
         setOpenTasks((current) => (current ? [task, ...current] : [task]));
+        setActionError('Could not update this task.');
       }
     } else {
       setJustCompleted((current) => current.filter((t) => t.id !== task.id));
@@ -96,6 +108,7 @@ export default function TasksScreen() {
       } catch {
         setOpenTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
         setJustCompleted((current) => [...current, task]);
+        setActionError('Could not update this task.');
       }
     }
   }
@@ -131,7 +144,7 @@ export default function TasksScreen() {
     }
   }
 
-  function handleDragEnd({ data, toIndex }: SortableGridDragEndParams<Task>) {
+  function applyReorder(data: Task[], toIndex: number) {
     const movedItem = data[toIndex];
     const prev = data[toIndex - 1];
     const next = data[toIndex + 1];
@@ -146,15 +159,36 @@ export default function TasksScreen() {
       newSortOrder = movedItem.sort_order;
     }
 
+    setActionError(null);
     setOpenTasks((current) => {
       const otherTabs = (current ?? []).filter((t) => t.origin !== tab);
       const reorderedTab = data.map((t) => (t.id === movedItem.id ? { ...t, sort_order: newSortOrder } : t));
       return [...reorderedTab, ...otherTabs];
     });
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     reorderTask(movedItem.id, newSortOrder).catch(() => {
+      setActionError('Could not save the new order.');
       load();
     });
+  }
+
+  function handleDragEnd({ data, toIndex }: SortableGridDragEndParams<Task>) {
+    applyReorder(data, toIndex);
+  }
+
+  // Non-gesture alternative to drag-to-reorder (screen-reader "Move up"/"Move
+  // down" accessibility actions) — reuses the exact same sort_order math as
+  // dragging, just computed from a plain array move instead of the Sortable
+  // grid's own drag-end callback.
+  function handleMove(task: Task, direction: 'up' | 'down') {
+    const fromIndex = openVisibleTasks.findIndex((t) => t.id === task.id);
+    const toIndex = fromIndex + (direction === 'up' ? -1 : 1);
+    if (fromIndex === -1 || toIndex < 0 || toIndex >= openVisibleTasks.length) return;
+    const reordered = [...openVisibleTasks];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    applyReorder(reordered, toIndex);
   }
 
   function renderTaskRow(item: Task, draggable: boolean) {
@@ -165,6 +199,7 @@ export default function TasksScreen() {
         ? `From ${item.creator?.display_name || 'Unnamed'}`
         : `To ${item.assignee?.display_name || 'Unnamed'}`
       : undefined;
+    const indexInList = draggable ? openVisibleTasks.findIndex((t) => t.id === item.id) : -1;
     return (
       <TaskRow
         task={item}
@@ -173,6 +208,12 @@ export default function TasksScreen() {
         onToggleComplete={() => handleToggle(item)}
         onPress={() => router.push({ pathname: '/task/[id]', params: { id: item.id } })}
         draggable={draggable}
+        onMoveUp={draggable && indexInList > 0 ? () => handleMove(item, 'up') : undefined}
+        onMoveDown={
+          draggable && indexInList >= 0 && indexInList < openVisibleTasks.length - 1
+            ? () => handleMove(item, 'down')
+            : undefined
+        }
       />
     );
   }
@@ -184,9 +225,13 @@ export default function TasksScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
-        <ThemedText type="header">Tasks</ThemedText>
-        <ThemedText themeColor="textSecondary">{group ? group.name : 'Solo mode'}</ThemedText>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
+        <ThemedText type="header">{group ? group.name : 'Solo mode'}</ThemedText>
+        {actionError ? (
+          <ThemedText type="small" themeColor="danger">
+            {actionError}
+          </ThemedText>
+        ) : null}
       </ThemedView>
 
       {group ? (
@@ -200,7 +245,7 @@ export default function TasksScreen() {
         </ThemedView>
       ) : null}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         {openTasks === null ? (
           <LoadingState />
         ) : error ? (
@@ -218,6 +263,7 @@ export default function TasksScreen() {
           <Animated.ScrollView
             ref={scrollableRef}
             style={styles.flex}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             contentContainerStyle={[
               styles.listContent,
               { gap: tokens.spacing.two, paddingBottom: bottomInset + Spacing.six + (showAssigneePicker ? Spacing.six : 0) },
@@ -241,8 +287,7 @@ export default function TasksScreen() {
           </Animated.ScrollView>
         )}
 
-        <ThemedView
-          style={[styles.footer, { paddingBottom: bottomInset + Spacing.two }]}>
+        <ThemedView style={[styles.footer, { paddingBottom: Spacing.two }]}>
           {showAssigneePicker ? (
             <OptionPicker
               layout="row"
@@ -279,7 +324,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
+    paddingBottom: Spacing.two,
     gap: Spacing.half,
     alignSelf: 'center',
     width: '100%',

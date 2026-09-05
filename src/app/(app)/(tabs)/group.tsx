@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, Share, StyleSheet } from 'react-native';
+import { RefreshControl, ScrollView, Share, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -36,12 +36,19 @@ export default function GroupScreen() {
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
     }, [refresh]),
   );
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }
 
   function startRenaming() {
     setActionError(null);
@@ -149,7 +156,8 @@ export default function GroupScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.body, { paddingBottom: bottomInset + Spacing.four }]}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
         <ThemedView style={[cardStyle, styles.inviteCard]}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Invite code

@@ -1,125 +1,316 @@
-import { darkenToContrast, mixWithWhite } from '@/lib/color';
-import { Colors } from './theme';
+import type { ViewStyle } from 'react-native';
+
+import { Fonts } from './theme';
+import type { StyleTokens } from './style-variants';
 
 export type ThemeId =
-  | 'classic'
-  | 'neutralElegance'
-  | 'seashellGarnetAfternoon'
-  | 'tropicalJadeSunrise'
-  | 'jadePebbleMorning'
-  | 'sapphireNightfallWhisper'
-  | 'oceanRubyRadiance'
-  | 'jellyShoes'
-  | 'freshlySqueezed';
+  | 'minimalSage'
+  | 'darkNeon'
+  | 'colorful3d'
+  | 'swissMonochrome'
+  | 'lavenderGlass'
+  | 'brutalist'
+  | 'paperCollage'
+  | 'darkLuxury'
+  | 'natureZen';
 
-export type ThemeTokens = Record<keyof typeof Colors.light, string>;
+export type ThemeColors = {
+  text: string;
+  background: string;
+  backgroundElement: string;
+  backgroundSelected: string;
+  textSecondary: string;
+  primary: string;
+  accent: string;
+  danger: string;
+  border: string;
+};
+
+// Kept for the `ThemeColor` type (keyof) used by ThemedText/ThemedView's
+// `themeColor` prop — every theme's `colors` below has this exact shape.
+export type ThemeTokens = ThemeColors;
 
 export type ThemeDefinition = {
   id: ThemeId;
   label: string;
+  /** Preview swatches for the switcher's color dots. */
   swatches: string[];
-  tokens: { light: ThemeTokens; dark: ThemeTokens };
+  colors: ThemeColors;
+  tokens: StyleTokens;
 };
 
-type FixedThemeSeed = {
-  /** The palette's hero/most versatile swatch — used for buttons/CTAs. */
-  primary: string;
-  /** A second, visually distinct swatch (completed/positive color). */
-  accent: string;
-  /** Lightest/most neutral swatch — base for background/backgroundElement/backgroundSelected/border. */
-  seedLight: string;
-  /** Darkest swatch, only if dark enough to read as body text. Omit to synthesize a near-black instead. */
-  seedDark?: string;
+const NO_SHADOW: ViewStyle = {};
+
+const SOFT_SHADOW: ViewStyle = {
+  shadowColor: '#000000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  elevation: 3,
 };
 
-// Fixed across every non-Classic theme so destructive actions always read
-// as red, regardless of palette (see spec's Note on `danger`).
-const FIXED_DANGER = '#C0392B';
+const PRONOUNCED_SHADOW: ViewStyle = {
+  shadowColor: '#1B2A63',
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.18,
+  shadowRadius: 16,
+  elevation: 6,
+};
 
-function buildFixedTheme(seed: FixedThemeSeed): ThemeTokens {
-  const text = seed.seedDark ?? '#1A1A1A';
-  const background = mixWithWhite(seed.seedLight, 0.95);
-  return {
-    text,
-    background,
-    backgroundElement: mixWithWhite(seed.seedLight, 0.88),
-    backgroundSelected: mixWithWhite(seed.seedLight, 0.8),
-    textSecondary: mixWithWhite(text, 0.35),
-    // Clamped so hardcoded white button text (primary-button, compose-bar send button) stays legible.
-    primary: darkenToContrast(seed.primary, '#FFFFFF', 4.5),
-    // Clamped so accent-as-text ("Saved.") on `background` stays legible; this also keeps
-    // white-checkmark-on-accent (task-row) comfortably legible since `background` is near-white.
-    accent: darkenToContrast(seed.accent, background, 4.5),
-    danger: FIXED_DANGER,
-    border: mixWithWhite(seed.seedLight, 0.85),
-  };
-}
+const PURPLE_GLOW: ViewStyle = {
+  shadowColor: '#7C3AED',
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.35,
+  shadowRadius: 14,
+  elevation: 5,
+};
 
-function fixedTheme(
-  id: ThemeId,
-  label: string,
-  swatches: string[],
-  seed: FixedThemeSeed,
-): ThemeDefinition {
-  const tokens = buildFixedTheme(seed);
-  return { id, label, swatches, tokens: { light: tokens, dark: tokens } };
-}
+const GOLD_GLOW: ViewStyle = {
+  shadowColor: '#D4AF6A',
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.2,
+  shadowRadius: 10,
+  elevation: 3,
+};
+
+const WARM_SHADOW: ViewStyle = {
+  shadowColor: '#8A6A46',
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.12,
+  shadowRadius: 8,
+  elevation: 2,
+};
+
+const AIRY_SPACING = { half: 3, one: 6, two: 12, three: 20, four: 28, five: 40, six: 72 };
+const COMFORTABLE_SPACING = { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 };
+const COMPACT_SPACING = { half: 2, one: 3, two: 6, three: 12, four: 18, five: 24, six: 48 };
 
 export const themes: Record<ThemeId, ThemeDefinition> = {
-  classic: {
-    id: 'classic',
-    label: 'Classic',
-    swatches: [Colors.light.primary, Colors.light.accent, Colors.light.danger, Colors.dark.background],
-    tokens: { light: Colors.light, dark: Colors.dark },
+  minimalSage: {
+    id: 'minimalSage',
+    label: 'Minimal Sage',
+    swatches: ['#7C9473', '#5F7855', '#F5F1E6'],
+    colors: {
+      text: '#2B2E28',
+      background: '#F5F1E6',
+      backgroundElement: '#FFFFFF',
+      backgroundSelected: '#E8E2D0',
+      textSecondary: '#6B7A63',
+      primary: '#7C9473',
+      accent: '#5F7855',
+      danger: '#C0392B',
+      border: '#E3DCC8',
+    },
+    tokens: {
+      spacing: AIRY_SPACING,
+      radii: { sm: 12, md: 18, lg: 24, pill: 999 },
+      borderWidth: 0,
+      cardBorderWidth: 0,
+      surface: 'elevated',
+      shadow: SOFT_SHADOW,
+      font: { family: Fonts.rounded, titleWeight: '700', headingWeight: '700', bodyWeight: '500' },
+    },
   },
-  neutralElegance: fixedTheme(
-    'neutralElegance',
-    'Neutral Elegance',
-    ['#FFDBBB', '#CCBEB1', '#997E67', '#664930'],
-    { primary: '#997E67', accent: '#664930', seedLight: '#FFDBBB', seedDark: '#664930' },
-  ),
-  seashellGarnetAfternoon: fixedTheme(
-    'seashellGarnetAfternoon',
-    'Seashell Garnet Afternoon',
-    ['#F6C992', '#30525C', '#ACC0D3', '#D396A6', '#09A1A1', '#5484A4'],
-    { primary: '#09A1A1', accent: '#D396A6', seedLight: '#F6C992', seedDark: '#30525C' },
-  ),
-  tropicalJadeSunrise: fixedTheme(
-    'tropicalJadeSunrise',
-    'Tropical Jade Sunrise',
-    ['#FCA47C', '#23CED9', '#F9D779', '#A1CCA6', '#097C87'],
-    { primary: '#097C87', accent: '#FCA47C', seedLight: '#F9D779' },
-  ),
-  jadePebbleMorning: fixedTheme(
-    'jadePebbleMorning',
-    'Jade Pebble Morning',
-    ['#7B9669', '#E6E6E6', '#6C8480', '#BAC8B1', '#404E3B'],
-    { primary: '#7B9669', accent: '#6C8480', seedLight: '#E6E6E6', seedDark: '#404E3B' },
-  ),
-  sapphireNightfallWhisper: fixedTheme(
-    'sapphireNightfallWhisper',
-    'Sapphire Nightfall Whisper',
-    ['#0474C4', '#5379AE', '#2C444C', '#A8C4EC', '#06457F', '#262B40'],
-    { primary: '#0474C4', accent: '#06457F', seedLight: '#A8C4EC', seedDark: '#262B40' },
-  ),
-  oceanRubyRadiance: fixedTheme(
-    'oceanRubyRadiance',
-    'Ocean Ruby Radiance',
-    ['#D8226C', '#B2DAE4', '#F86A38', '#029456', '#005BB3'],
-    { primary: '#005BB3', accent: '#D8226C', seedLight: '#B2DAE4' },
-  ),
-  jellyShoes: fixedTheme(
-    'jellyShoes',
-    'Jelly Shoes',
-    ['#E0AFFF', '#C4D6FF', '#DD68E3', '#8866DE'],
-    { primary: '#8866DE', accent: '#DD68E3', seedLight: '#C4D6FF' },
-  ),
-  freshlySqueezed: fixedTheme(
-    'freshlySqueezed',
-    'Freshly Squeezed',
-    ['#FFBF00', '#F2CF7E', '#FFE642', '#FF7900'],
-    { primary: '#FF7900', accent: '#FFBF00', seedLight: '#F2CF7E' },
-  ),
+  darkNeon: {
+    id: 'darkNeon',
+    label: 'Dark Neon',
+    swatches: ['#7C3AED', '#22D3EE', '#000000'],
+    colors: {
+      text: '#FFFFFF',
+      background: '#000000',
+      backgroundElement: '#14141C',
+      backgroundSelected: '#1E1E2C',
+      textSecondary: '#9B9BB0',
+      primary: '#7C3AED',
+      accent: '#22D3EE',
+      danger: '#FF4D6D',
+      border: '#2A2A3A',
+    },
+    tokens: {
+      spacing: COMFORTABLE_SPACING,
+      radii: { sm: 10, md: 16, lg: 20, pill: 999 },
+      borderWidth: 1,
+      cardBorderWidth: 1,
+      surface: 'elevated',
+      shadow: PURPLE_GLOW,
+      font: { titleWeight: '800', headingWeight: '700', bodyWeight: '600' },
+    },
+  },
+  colorful3d: {
+    id: 'colorful3d',
+    label: 'Colorful 3D',
+    swatches: ['#3B5FE0', '#FF6B4A', '#4FBFA1'],
+    colors: {
+      text: '#1B2A63',
+      background: '#FAF6EF',
+      backgroundElement: '#FFFFFF',
+      backgroundSelected: '#F0E9DC',
+      textSecondary: '#6B7290',
+      primary: '#3B5FE0',
+      accent: '#4FBFA1',
+      danger: '#FF6B4A',
+      border: '#ECE3D0',
+    },
+    tokens: {
+      spacing: AIRY_SPACING,
+      radii: { sm: 16, md: 22, lg: 28, pill: 999 },
+      borderWidth: 0,
+      cardBorderWidth: 0,
+      surface: 'elevated',
+      shadow: PRONOUNCED_SHADOW,
+      font: { family: Fonts.rounded, titleWeight: '800', headingWeight: '700', bodyWeight: '600' },
+    },
+  },
+  swissMonochrome: {
+    id: 'swissMonochrome',
+    label: 'Swiss Monochrome',
+    swatches: ['#0A0A0A', '#E2231A', '#F5F4F2'],
+    colors: {
+      text: '#0A0A0A',
+      background: '#F5F4F2',
+      backgroundElement: '#FFFFFF',
+      backgroundSelected: '#ECECEC',
+      textSecondary: '#5A5A5A',
+      primary: '#E2231A',
+      accent: '#E2231A',
+      danger: '#E2231A',
+      border: '#0A0A0A',
+    },
+    tokens: {
+      spacing: COMPACT_SPACING,
+      radii: { sm: 0, md: 0, lg: 0, pill: 0 },
+      borderWidth: 1,
+      cardBorderWidth: 1,
+      surface: 'flat',
+      shadow: NO_SHADOW,
+      font: { titleWeight: '800', headingWeight: '700', bodyWeight: '500', headingLetterSpacing: -1 },
+    },
+  },
+  lavenderGlass: {
+    id: 'lavenderGlass',
+    label: 'Lavender Glass',
+    swatches: ['#7C5CFC', '#22C7D9', '#E9E4FB'],
+    colors: {
+      text: '#2E2A4A',
+      background: '#E9E4FB',
+      backgroundElement: '#F3F0FD',
+      backgroundSelected: '#D9CFFA',
+      textSecondary: '#6E6690',
+      primary: '#7C5CFC',
+      accent: '#22C7D9',
+      danger: '#E4685D',
+      border: '#C9BEF2',
+    },
+    tokens: {
+      spacing: AIRY_SPACING,
+      radii: { sm: 14, md: 20, lg: 26, pill: 999 },
+      borderWidth: 1,
+      cardBorderWidth: 1,
+      surface: 'glass',
+      shadow: SOFT_SHADOW,
+      font: { family: Fonts.rounded, titleWeight: '700', headingWeight: '700', bodyWeight: '500' },
+    },
+  },
+  brutalist: {
+    id: 'brutalist',
+    label: 'Brutalist',
+    swatches: ['#1E3AF1', '#FF3D7F', '#F2EEE4'],
+    colors: {
+      text: '#111111',
+      background: '#F2EEE4',
+      backgroundElement: '#F2EEE4',
+      backgroundSelected: '#FFE14D',
+      textSecondary: '#3A3A3A',
+      primary: '#1E3AF1',
+      accent: '#FF3D7F',
+      danger: '#E8432E',
+      border: '#111111',
+    },
+    tokens: {
+      spacing: COMPACT_SPACING,
+      radii: { sm: 0, md: 0, lg: 0, pill: 0 },
+      borderWidth: 3,
+      cardBorderWidth: 3,
+      surface: 'flat',
+      shadow: NO_SHADOW,
+      font: { titleWeight: '900', headingWeight: '800', bodyWeight: '700', headingLetterSpacing: -1 },
+    },
+  },
+  paperCollage: {
+    id: 'paperCollage',
+    label: 'Paper Collage',
+    swatches: ['#C1694A', '#7C8F6E', '#EDE4D3'],
+    colors: {
+      text: '#3B3128',
+      background: '#EDE4D3',
+      backgroundElement: '#F7F1E4',
+      backgroundSelected: '#E3D5B8',
+      textSecondary: '#8A7A63',
+      primary: '#C1694A',
+      accent: '#7C8F6E',
+      danger: '#C0392B',
+      border: '#D9C9A8',
+    },
+    tokens: {
+      spacing: AIRY_SPACING,
+      radii: { sm: 10, md: 16, lg: 20, pill: 999 },
+      borderWidth: 0,
+      cardBorderWidth: 0,
+      surface: 'elevated',
+      shadow: WARM_SHADOW,
+      font: { family: Fonts.serif, titleWeight: '600', headingWeight: '600', bodyWeight: '400' },
+    },
+  },
+  darkLuxury: {
+    id: 'darkLuxury',
+    label: 'Dark Luxury',
+    swatches: ['#D4AF6A', '#F2E6C9', '#000000'],
+    colors: {
+      text: '#F2E6C9',
+      background: '#000000',
+      backgroundElement: '#121212',
+      backgroundSelected: '#1C1C1C',
+      textSecondary: '#B8A46E',
+      primary: '#D4AF6A',
+      accent: '#D4AF6A',
+      danger: '#C0392B',
+      border: '#3A331F',
+    },
+    tokens: {
+      spacing: AIRY_SPACING,
+      radii: { sm: 10, md: 16, lg: 20, pill: 999 },
+      borderWidth: 1,
+      cardBorderWidth: 1,
+      surface: 'elevated',
+      shadow: GOLD_GLOW,
+      font: { family: Fonts.serif, titleWeight: '600', headingWeight: '700', bodyWeight: '400', headingLetterSpacing: 1 },
+    },
+  },
+  natureZen: {
+    id: 'natureZen',
+    label: 'Nature Zen',
+    swatches: ['#6E8C5E', '#C98657', '#F1ECDF'],
+    colors: {
+      text: '#2F3B2A',
+      background: '#F1ECDF',
+      backgroundElement: '#FBF8F0',
+      backgroundSelected: '#E6DFC9',
+      textSecondary: '#7A8570',
+      primary: '#6E8C5E',
+      accent: '#C98657',
+      danger: '#C0392B',
+      border: '#E0D6BC',
+    },
+    tokens: {
+      spacing: COMFORTABLE_SPACING,
+      radii: { sm: 12, md: 18, lg: 22, pill: 999 },
+      borderWidth: 0,
+      cardBorderWidth: 0,
+      surface: 'flat',
+      shadow: NO_SHADOW,
+      font: { family: Fonts.serif, titleWeight: '500', headingWeight: '600', bodyWeight: '400' },
+    },
+  },
 };
 
 export const THEME_LIST: ThemeDefinition[] = Object.values(themes);

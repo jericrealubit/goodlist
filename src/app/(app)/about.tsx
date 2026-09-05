@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DevSignatureBadge } from '@/components/dev-signature-badge';
 import { ThemedText } from '@/components/themed-text';
@@ -30,11 +31,12 @@ const TECH_STACK = [
 export default function AboutScreen() {
   const theme = useTheme();
   const tokens = useTokens();
+  const insets = useSafeAreaInsets();
   const version = Constants.expoConfig?.version ?? '—';
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.six }]}>
         <ThemedView style={styles.top}>
           <ThemedText type="title">goodlist</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">

@@ -39,6 +39,11 @@ yarn-error.*
 *service-account*.json
 credentials/
 
+# build artifacts (downloaded from EAS Build, never belong in the repo)
+*.aab
+*.apk
+*.ipa
+
 # typescript
 *.tsbuildinfo
 

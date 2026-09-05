@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -55,6 +55,8 @@ export default function HistoryScreen() {
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [deleteAllError, setDeleteAllError] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -73,6 +75,12 @@ export default function HistoryScreen() {
 
   useRealtimeTasks(load);
 
+  async function handleRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
   async function handleUndo(task: Task) {
     setTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
     try {
@@ -84,6 +92,7 @@ export default function HistoryScreen() {
   }
 
   async function handleDelete(task: Task) {
+    setConfirmingDeleteId(null);
     setTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
     try {
       await deleteTask(task.id);
@@ -109,9 +118,8 @@ export default function HistoryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
-        <ThemedText type="header">History</ThemedText>
-        <ThemedText themeColor="textSecondary">Completed and cancelled tasks</ThemedText>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
+        <ThemedText type="header">Completed and cancelled tasks</ThemedText>
       </ThemedView>
 
       {tasks && tasks.length > 0 ? (
@@ -125,7 +133,7 @@ export default function HistoryScreen() {
             <ThemedView style={styles.deleteAllConfirm}>
               <ThemedText type="small" themeColor="danger">
                 This permanently deletes everything in your history. Tasks someone else requested from you
-                won't be removed — only what you can delete.
+                won&apos;t be removed — only what you can delete.
               </ThemedText>
               <ThemedView style={styles.deleteAllButtons}>
                 <PrimaryButton
@@ -160,6 +168,7 @@ export default function HistoryScreen() {
         <FlatList
           data={tasks}
           keyExtractor={(task) => task.id}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           contentContainerStyle={[
             styles.listContent,
             { paddingBottom: bottomInset + Spacing.four },
@@ -188,12 +197,29 @@ export default function HistoryScreen() {
                       accessibilityLabel={`Undo "${item.title}"`}
                     />
                     {canDelete ? (
-                      <RowIconButton
-                        glyph="🗑"
-                        color={theme.danger}
-                        onPress={() => handleDelete(item)}
-                        accessibilityLabel={`Delete "${item.title}"`}
-                      />
+                      confirmingDeleteId === item.id ? (
+                        <>
+                          <RowIconButton
+                            glyph="✓"
+                            color={theme.danger}
+                            onPress={() => handleDelete(item)}
+                            accessibilityLabel={`Confirm delete "${item.title}"`}
+                          />
+                          <RowIconButton
+                            glyph="✕"
+                            color={theme.textSecondary}
+                            onPress={() => setConfirmingDeleteId(null)}
+                            accessibilityLabel={`Cancel delete "${item.title}"`}
+                          />
+                        </>
+                      ) : (
+                        <RowIconButton
+                          glyph="🗑"
+                          color={theme.danger}
+                          onPress={() => setConfirmingDeleteId(item.id)}
+                          accessibilityLabel={`Delete "${item.title}"`}
+                        />
+                      )
                     ) : null}
                   </ThemedView>
                 }
@@ -212,7 +238,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
+    paddingBottom: Spacing.two,
     gap: Spacing.half,
     alignSelf: 'center',
     width: '100%',

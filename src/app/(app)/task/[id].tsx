@@ -1,8 +1,8 @@
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 
+import { DueDatePicker } from '@/components/due-date-picker';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
@@ -34,14 +34,12 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 export default function EditTaskScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const theme = useTheme();
   const { user } = useSession();
 
   const [task, setTask] = useState<Task | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [dueAt, setDueAt] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -156,29 +154,7 @@ export default function EditTaskScreen() {
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   Due date (optional)
                 </ThemedText>
-                <Pressable
-                  disabled={isRequested && !isOpen}
-                  onPress={() => setShowDatePicker(true)}
-                  style={[styles.dueDateButton, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-                  <ThemedText>{dueAt ? dueAt.toLocaleDateString() : 'No due date'}</ThemedText>
-                </Pressable>
-                {dueAt && (!isRequested || isOpen) && (
-                  <Pressable onPress={() => setDueAt(null)}>
-                    <ThemedText type="link" themeColor="danger">
-                      Clear due date
-                    </ThemedText>
-                  </Pressable>
-                )}
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={dueAt ?? new Date()}
-                    mode="date"
-                    onChange={(_event, selectedDate) => {
-                      setShowDatePicker(Platform.OS === 'ios');
-                      if (selectedDate) setDueAt(selectedDate);
-                    }}
-                  />
-                )}
+                <DueDatePicker value={dueAt} onChange={setDueAt} disabled={isRequested && !isOpen} />
               </ThemedView>
 
               {isCreator && !isOpen ? (

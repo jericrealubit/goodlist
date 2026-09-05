@@ -38,7 +38,10 @@ export function OptionPicker({ options, selectedId, onSelect, layout = 'column' 
               ]}>
               <ThemedText type={isSelected ? 'smallBold' : 'default'}>{option.label}</ThemedText>
               {option.swatches ? (
-                <ThemedView style={styles.swatchRow}>
+                <ThemedView
+                  style={styles.swatchRow}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants">
                   {option.swatches.map((color, index) => (
                     <ThemedView key={index} style={[styles.swatchDot, { backgroundColor: color }]} />
                   ))}

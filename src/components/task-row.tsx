@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Sortable from 'react-native-sortables';
 
 import { Surface } from '@/components/surface';
@@ -25,6 +26,11 @@ type TaskRowProps = {
   // own drag gesture) instead of a plain Pressable, so a short tap still
   // opens/toggles while a long-press-and-move still drags the row.
   draggable?: boolean;
+  // Non-gesture alternative to drag-to-reorder, for screen readers. Provided
+  // only for draggable rows, and omitted at the first/last position so no
+  // dead action is announced.
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 };
 
 export function TaskRow({
@@ -35,10 +41,28 @@ export function TaskRow({
   showCheckbox = true,
   trailingActions,
   draggable,
+  onMoveUp,
+  onMoveDown,
 }: TaskRowProps) {
   const theme = useTheme();
   const tokens = useTokens();
   const isCompleted = task.status === 'completed';
+
+  const moveActions = draggable
+    ? [
+        ...(onMoveUp ? [{ name: 'moveUp', label: 'Move up' }] : []),
+        ...(onMoveDown ? [{ name: 'moveDown', label: 'Move down' }] : []),
+      ]
+    : [];
+
+  function handleAccessibilityAction(event: { nativeEvent: { actionName: string } }) {
+    if (event.nativeEvent.actionName === 'moveUp') onMoveUp?.();
+    else if (event.nativeEvent.actionName === 'moveDown') onMoveDown?.();
+  }
+
+  const accessibilityMoveProps = moveActions.length
+    ? { accessibilityActions: moveActions, onAccessibilityAction: handleAccessibilityAction }
+    : {};
 
   const checkboxStyle = [
     styles.checkbox,
@@ -98,8 +122,8 @@ export function TaskRow({
   const rowSpacing = { gap: tokens.spacing.three, padding: tokens.spacing.three };
   const contentSpacing = { gap: tokens.spacing.three };
 
-  return (
-    <Surface style={[styles.row, rowSpacing]}>
+  const rowContent = (
+    <>
       {draggable ? (
         <Sortable.Touchable
           onTap={onPress}
@@ -121,6 +145,38 @@ export function TaskRow({
       )}
 
       {trailingActions}
+    </>
+  );
+
+  // Swipeable exactly when the row is both completable by the viewer
+  // (showCheckbox) and in the open/draggable list (draggable is false for
+  // the completed section and for history.tsx) — the same eligibility the
+  // checkbox already uses, so swipe is just a second way to trigger the
+  // same onToggleComplete callback.
+  const swipeToCompleteEnabled = draggable && showCheckbox;
+
+  if (!swipeToCompleteEnabled) {
+    return (
+      <Surface style={[styles.row, rowSpacing]} {...accessibilityMoveProps}>
+        {rowContent}
+      </Surface>
+    );
+  }
+
+  return (
+    <Surface style={[styles.row, styles.clip]} {...accessibilityMoveProps}>
+      <Swipeable
+        containerStyle={styles.swipeable}
+        onSwipeableOpen={onToggleComplete}
+        renderLeftActions={() => (
+          <ThemedView style={[styles.doneAction, { backgroundColor: theme.accent }]}>
+            <ThemedText style={styles.doneLabel}>✓ Done</ThemedText>
+          </ThemedView>
+        )}>
+        <ThemedView style={[styles.row, rowSpacing, { backgroundColor: theme.backgroundElement }]}>
+          {rowContent}
+        </ThemedView>
+      </Swipeable>
     </Surface>
   );
 }
@@ -132,6 +188,24 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%',
+  },
+  clip: {
+    overflow: 'hidden',
+  },
+  swipeable: {
+    overflow: 'visible',
+    width: '100%',
+  },
+  doneAction: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  doneLabel: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
   pressableContent: {
     flex: 1,

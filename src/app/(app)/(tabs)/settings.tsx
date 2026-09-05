@@ -1,12 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
 
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
-import { StyleSwitcher } from '@/components/style-switcher';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -18,9 +16,6 @@ import { deleteMyAccount } from '@/lib/mutations/account';
 import { updateDisplayName } from '@/lib/mutations/profile';
 import { getMyProfile } from '@/lib/queries/profile';
 import { supabase } from '@/lib/supabase';
-
-const PRIVACY_POLICY_URL = 'https://claude.ai/code/artifact/310b2cfa-6efb-4da6-8659-d2e250c753d8';
-const TERMS_OF_SERVICE_URL = `${PRIVACY_POLICY_URL}#terms`;
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -87,9 +82,8 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.three }]}>
-        <ThemedText type="header">Settings</ThemedText>
-        <ThemedText themeColor="textSecondary">{user?.email ?? ''}</ThemedText>
+      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
+        <ThemedText type="header">{user?.email ?? ''}</ThemedText>
       </ThemedView>
 
       <ScrollView
@@ -120,16 +114,9 @@ export default function SettingsScreen() {
 
         <ThemedView style={styles.appearance}>
           <ThemedText type="smallBold" themeColor="textSecondary">
-            Color
+            Theme
           </ThemedText>
           <ThemeSwitcher />
-        </ThemedView>
-
-        <ThemedView style={styles.appearance}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            Style
-          </ThemedText>
-          <StyleSwitcher />
         </ThemedView>
 
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
@@ -174,12 +161,12 @@ export default function SettingsScreen() {
               About
             </ThemedText>
           </Pressable>
-          <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}>
+          <Pressable onPress={() => router.push('/privacy')}>
             <ThemedText type="link" themeColor="textSecondary">
               Privacy Policy
             </ThemedText>
           </Pressable>
-          <Pressable onPress={() => WebBrowser.openBrowserAsync(TERMS_OF_SERVICE_URL)}>
+          <Pressable onPress={() => router.push('/terms')}>
             <ThemedText type="link" themeColor="textSecondary">
               Terms of Service
             </ThemedText>
@@ -196,7 +183,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
+    paddingBottom: Spacing.two,
     gap: Spacing.half,
     alignSelf: 'center',
     width: '100%',
