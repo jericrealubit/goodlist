@@ -6,12 +6,12 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useNotifications } from '@/contexts/notifications-context';
+import { useUnreadCountQuery } from '@/hooks/use-notifications-query';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 
 export default function AppTabs() {
-  const { unreadCount } = useNotifications();
+  const { data: unreadCount = 0 } = useUnreadCountQuery();
 
   return (
     <Tabs>

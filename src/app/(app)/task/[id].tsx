@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
@@ -12,11 +12,16 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useTheme } from '@/hooks/use-theme';
+import {
+  useCancelTaskMutation,
+  useCompleteTaskMutation,
+  useDeleteTaskMutation,
+  useReopenTaskMutation,
+  useUpdateTaskMutation,
+} from '@/hooks/use-task-mutations';
+import { useTaskDetailQuery } from '@/hooks/use-tasks-query';
 import { getErrorMessage } from '@/lib/errors';
-import { cancelTask, completeTask, deleteTask, reopenTask, updateTask } from '@/lib/mutations/tasks';
-import { getTask } from '@/lib/queries/tasks';
 import { validateTaskTitle } from '@/lib/validation/task';
-import type { Task } from '@/lib/types';
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   const theme = useTheme();
@@ -36,80 +41,63 @@ export default function EditTaskScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useSession();
+  const { data: task } = useTaskDetailQuery(id);
+  const updateMutation = useUpdateTaskMutation();
+  const completeMutation = useCompleteTaskMutation();
+  const reopenMutation = useReopenTaskMutation();
+  const deleteMutation = useDeleteTaskMutation();
+  const cancelMutation = useCancelTaskMutation();
 
-  const [task, setTask] = useState<Task | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [dueAt, setDueAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    getTask(id).then((loaded) => {
-      if (!loaded) return;
-      setTask(loaded);
-      setTitle(loaded.title);
-      setNotes(loaded.notes ?? '');
-      setDueAt(loaded.due_at ? new Date(loaded.due_at) : null);
-    });
-  }, [id]);
+    if (!task || initializedRef.current) return;
+    initializedRef.current = true;
+    setTitle(task.title);
+    setNotes(task.notes ?? '');
+    setDueAt(task.due_at ? new Date(task.due_at) : null);
+  }, [task]);
 
-  async function handleSave() {
+  // Every action below is optimistic — the mutation's own onMutate already
+  // updates the cache instantly, so the screen can dismiss right away rather
+  // than waiting on a network round trip that may be paused for a long time
+  // while offline. A later failure is surfaced by the mutation's shared
+  // onError rolling back the cache, not by this now-unmounted screen.
+  function handleSave() {
     const titleError = validateTaskTitle(title);
     if (titleError) {
       setError(titleError);
       return;
     }
     setError(null);
-    setSaving(true);
-    try {
-      await updateTask(id, { title, notes, due_at: dueAt ? dueAt.toISOString() : null });
-      router.back();
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not save this task.'));
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(
+      { id, title, notes, due_at: dueAt ? dueAt.toISOString() : null },
+      { onError: (err) => setError(getErrorMessage(err, 'Could not save this task.')) },
+    );
+    router.back();
   }
 
-  async function handleToggleComplete() {
+  function handleToggleComplete() {
     if (!task) return;
-    setSaving(true);
-    try {
-      if (task.status === 'open') {
-        await completeTask(task.id);
-      } else {
-        await reopenTask(task.id);
-      }
-      router.back();
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not update this task.'));
-      setSaving(false);
-    }
+    const mutation = task.status === 'open' ? completeMutation : reopenMutation;
+    mutation.mutate(task, { onError: (err) => setError(getErrorMessage(err, 'Could not update this task.')) });
+    router.back();
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!task) return;
-    setSaving(true);
-    try {
-      await deleteTask(task.id);
-      router.back();
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not delete this task.'));
-      setSaving(false);
-    }
+    deleteMutation.mutate(task, { onError: (err) => setError(getErrorMessage(err, 'Could not delete this task.')) });
+    router.back();
   }
 
-  async function handleCancelRequest() {
+  function handleCancelRequest() {
     if (!task) return;
-    setSaving(true);
-    try {
-      await cancelTask(task.id);
-      router.back();
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not cancel this request.'));
-      setSaving(false);
-    }
+    cancelMutation.mutate(task, { onError: (err) => setError(getErrorMessage(err, 'Could not cancel this request.')) });
+    router.back();
   }
 
   if (!task) {
@@ -172,21 +160,20 @@ export default function EditTaskScreen() {
 
           {!isRequested && (
             <>
-              <PrimaryButton title="Save changes" onPress={handleSave} loading={saving} />
+              <PrimaryButton title="Save changes" onPress={handleSave} />
               <PrimaryButton
                 title={task.status === 'open' ? 'Mark complete' : 'Reopen task'}
                 onPress={handleToggleComplete}
-                loading={saving}
                 variant="secondary"
               />
-              <PrimaryButton title="Delete task" onPress={handleDelete} loading={saving} variant="danger" />
+              <PrimaryButton title="Delete task" onPress={handleDelete} variant="danger" />
             </>
           )}
 
           {isCreator && isOpen && (
             <>
-              <PrimaryButton title="Save changes" onPress={handleSave} loading={saving} />
-              <PrimaryButton title="Cancel request" onPress={handleCancelRequest} loading={saving} variant="danger" />
+              <PrimaryButton title="Save changes" onPress={handleSave} />
+              <PrimaryButton title="Cancel request" onPress={handleCancelRequest} variant="danger" />
             </>
           )}
 
@@ -194,7 +181,6 @@ export default function EditTaskScreen() {
             <PrimaryButton
               title={task.status === 'open' ? 'Mark complete' : 'Reopen task'}
               onPress={handleToggleComplete}
-              loading={saving}
             />
           )}
         </ScrollView>

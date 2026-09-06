@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
@@ -10,14 +11,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { GROUP_MODE_OPTIONS, roleOptionsForMode } from '@/constants/group';
 import { Spacing } from '@/constants/theme';
-import { useGroup } from '@/contexts/group-context';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { getErrorMessage } from '@/lib/errors';
 import { createGroup } from '@/lib/mutations/group';
+import { groupKeys } from '@/lib/query-client';
 import type { GroupMode, MemberRole } from '@/lib/types';
 
 export default function CreateGroupScreen() {
   const router = useRouter();
-  const { refresh } = useGroup();
+  const queryClient = useQueryClient();
+  const isOnline = useOnlineStatus();
   const [name, setName] = useState('');
   const [mode, setMode] = useState<GroupMode>('family');
   const [memberRole, setMemberRole] = useState<MemberRole | null>(null);
@@ -42,7 +45,7 @@ export default function CreateGroupScreen() {
     setSaving(true);
     try {
       await createGroup(name, mode, memberRole);
-      await refresh();
+      await queryClient.invalidateQueries({ queryKey: groupKeys.mine });
       router.back();
     } catch (err) {
       setError(getErrorMessage(err, 'Could not create this group.'));
@@ -56,7 +59,7 @@ export default function CreateGroupScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedText themeColor="textSecondary">
-            Give your group a name. You can invite others once it's created.
+            Give your group a name. You can invite others once it&apos;s created.
           </ThemedText>
           <TextField label="Group name" value={name} onChangeText={setName} placeholder="The Smiths" autoFocus />
 
@@ -79,7 +82,12 @@ export default function CreateGroupScreen() {
               {error}
             </ThemedText>
           ) : null}
-          <PrimaryButton title="Create group" onPress={handleCreate} loading={saving} />
+          {!isOnline ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Creating a group requires an internet connection.
+            </ThemedText>
+          ) : null}
+          <PrimaryButton title="Create group" onPress={handleCreate} loading={saving} disabled={!isOnline} />
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>

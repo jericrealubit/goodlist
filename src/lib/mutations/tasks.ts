@@ -1,21 +1,22 @@
 import { supabase } from '@/lib/supabase';
 import type { NewRequestInput, NewTaskInput, Task, UpdateTaskInput } from '@/lib/types';
 
+// id/sortOrder are generated client-side (see src/hooks/use-task-mutations.ts)
+// so an optimistically-created row IS the final row — no server round trip
+// is needed before it can be shown, and no reconciliation step is needed
+// once the create actually syncs.
 export async function createTask(input: NewTaskInput): Promise<Task> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in.');
-
   const { data, error } = await supabase
     .from('tasks')
     .insert({
+      id: input.id,
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
-      creator_id: user.id,
-      assignee_id: user.id,
+      creator_id: input.creatorId,
+      assignee_id: input.creatorId,
       origin: 'personal',
+      sort_order: input.sortOrder,
     })
     .select('*')
     .single();
@@ -25,21 +26,18 @@ export async function createTask(input: NewTaskInput): Promise<Task> {
 }
 
 export async function createRequest(input: NewRequestInput): Promise<Task> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in.');
-
   const { data, error } = await supabase
     .from('tasks')
     .insert({
+      id: input.id,
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
-      creator_id: user.id,
+      creator_id: input.creatorId,
       assignee_id: input.assigneeId,
       family_id: input.familyId,
       origin: 'requested',
+      sort_order: input.sortOrder,
     })
     .select('*')
     .single();

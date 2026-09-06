@@ -2,7 +2,7 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard } from 'react-native';
 
-import { useNotifications } from '@/contexts/notifications-context';
+import { useUnreadCountQuery } from '@/hooks/use-notifications-query';
 import { useTheme } from '@/hooks/use-theme';
 
 // Hiding NativeTabs (an unstable API) at the exact instant the keyboard
@@ -35,7 +35,7 @@ function useHideTabBarOnKeyboard() {
 
 export default function AppTabs() {
   const colors = useTheme();
-  const { unreadCount } = useNotifications();
+  const { data: unreadCount = 0 } = useUnreadCountQuery();
   const tabBarHidden = useHideTabBarOnKeyboard();
 
   return (

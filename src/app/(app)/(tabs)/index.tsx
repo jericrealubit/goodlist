@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -9,20 +10,30 @@ import Sortable, { type SortableGridDragEndParams } from 'react-native-sortables
 import { ComposeBar } from '@/components/compose-bar';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
+import { OfflineBanner } from '@/components/offline-banner';
 import { OptionPicker } from '@/components/option-picker';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useGroup } from '@/contexts/group-context';
-import { useNotifications } from '@/contexts/notifications-context';
 import { useSession } from '@/contexts/session-context';
+import { useGroupQuery } from '@/hooks/use-group-query';
+import { useMarkAllReadMutation } from '@/hooks/use-notifications-mutations';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
+import {
+  buildNewRequestInput,
+  buildNewTaskInput,
+  useCompleteTaskMutation,
+  useCreateRequestMutation,
+  useCreateTaskMutation,
+  useReopenTaskMutation,
+  useReorderTaskMutation,
+} from '@/hooks/use-task-mutations';
+import { useOpenTasksQuery } from '@/hooks/use-tasks-query';
 import { useTokens } from '@/hooks/use-tokens';
 import { getErrorMessage } from '@/lib/errors';
-import { listOpenTasks } from '@/lib/queries/tasks';
-import { completeTask, createRequest, createTask, reopenTask, reorderTask } from '@/lib/mutations/tasks';
+import { taskKeys } from '@/lib/query-client';
 import { validateTaskTitle } from '@/lib/validation/task';
 import type { Task, TaskOrigin } from '@/lib/types';
 
@@ -35,23 +46,28 @@ export default function TasksScreen() {
   const router = useRouter();
   const { topInset, bottomInset } = useTabScreenInsets();
   const tokens = useTokens();
-  const { group } = useGroup();
+  const { data: group } = useGroupQuery();
   const { user } = useSession();
-  const { markAllRead } = useNotifications();
+  const { mutate: markAllRead } = useMarkAllReadMutation();
+  const queryClient = useQueryClient();
+  const { data: openTasks, isLoading, isError, error: queryError, refetch } = useOpenTasksQuery();
+  const createTaskMutation = useCreateTaskMutation();
+  const createRequestMutation = useCreateRequestMutation();
+  const completeMutation = useCompleteTaskMutation();
+  const reopenMutation = useReopenTaskMutation();
+  const reorderMutation = useReorderTaskMutation();
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
-  const [openTasks, setOpenTasks] = useState<Task[] | null>(null);
   const [justCompleted, setJustCompleted] = useState<Task[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TaskOrigin>('personal');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [composeText, setComposeText] = useState('');
   const [composeError, setComposeError] = useState<string | null>(null);
-  const [composeSaving, setComposeSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const composeInputRef = useRef<TextInput>(null);
 
+  const error = isError && !openTasks ? getErrorMessage(queryError, 'Could not load your tasks.') : null;
   const tab = group ? activeTab : 'personal';
 
   const otherMembers = useMemo(
@@ -59,65 +75,50 @@ export default function TasksScreen() {
     [group, user],
   );
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const data = await listOpenTasks();
-      setOpenTasks(data);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not load your tasks.'));
-    }
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
       setJustCompleted([]);
-      load();
       markAllRead();
-    }, [load, markAllRead]),
+    }, [markAllRead]),
   );
 
-  useRealtimeTasks(load);
+  useRealtimeTasks();
 
   async function handleRefresh() {
     setRefreshing(true);
-    await load();
+    await refetch();
     setRefreshing(false);
   }
 
-  async function handleToggle(task: Task) {
+  function handleToggle(task: Task) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActionError(null);
     if (task.status === 'open') {
-      setOpenTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
       setJustCompleted((current) => [
         ...current,
         { ...task, status: 'completed', completed_at: new Date().toISOString() },
       ]);
-      try {
-        await completeTask(task.id);
-      } catch {
-        setJustCompleted((current) => current.filter((t) => t.id !== task.id));
-        setOpenTasks((current) => (current ? [task, ...current] : [task]));
-        setActionError('Could not update this task.');
-      }
+      completeMutation.mutate(task, {
+        onError: () => {
+          setJustCompleted((current) => current.filter((t) => t.id !== task.id));
+          setActionError('Could not update this task.');
+        },
+      });
     } else {
       setJustCompleted((current) => current.filter((t) => t.id !== task.id));
-      setOpenTasks((current) => (current ? [{ ...task, status: 'open', completed_at: null }, ...current] : current));
-      try {
-        await reopenTask(task.id);
-      } catch {
-        setOpenTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
-        setJustCompleted((current) => [...current, task]);
-        setActionError('Could not update this task.');
-      }
+      reopenMutation.mutate(task, {
+        onError: () => {
+          setJustCompleted((current) => [...current, task]);
+          setActionError('Could not update this task.');
+        },
+      });
     }
   }
 
   const effectiveAssigneeId =
     otherMembers.length === 1 ? otherMembers[0].user_id : otherMembers.length >= 2 ? assigneeId ?? otherMembers[0].user_id : null;
 
-  async function handleSubmitCompose() {
+  function handleSubmitCompose() {
     const titleError = validateTaskTitle(composeText);
     if (titleError) {
       setComposeError(titleError);
@@ -128,20 +129,22 @@ export default function TasksScreen() {
       return;
     }
     setComposeError(null);
-    setComposeSaving(true);
+    const title = composeText;
+    setComposeText('');
     composeInputRef.current?.focus();
-    try {
-      const created =
-        tab === 'personal'
-          ? await createTask({ title: composeText })
-          : await createRequest({ title: composeText, assigneeId: effectiveAssigneeId!, familyId: group!.id });
-      setOpenTasks((current) => (current ? [created, ...current] : [created]));
-      setComposeText('');
-      composeInputRef.current?.focus();
-    } catch (err) {
+
+    const onError = (err: unknown) => {
       setComposeError(getErrorMessage(err, 'Could not add this task.'));
-    } finally {
-      setComposeSaving(false);
+      setComposeText(title);
+    };
+
+    if (tab === 'personal') {
+      createTaskMutation.mutate(buildNewTaskInput({ title }, user!.id), { onError });
+    } else {
+      createRequestMutation.mutate(
+        buildNewRequestInput({ title, assigneeId: effectiveAssigneeId!, familyId: group!.id }, user!.id),
+        { onError },
+      );
     }
   }
 
@@ -161,17 +164,17 @@ export default function TasksScreen() {
     }
 
     setActionError(null);
-    setOpenTasks((current) => {
+    queryClient.setQueryData<Task[]>(taskKeys.open, (current) => {
       const otherTabs = (current ?? []).filter((t) => t.origin !== tab);
       const reorderedTab = data.map((t) => (t.id === movedItem.id ? { ...t, sort_order: newSortOrder } : t));
       return [...reorderedTab, ...otherTabs];
     });
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    reorderTask(movedItem.id, newSortOrder).catch(() => {
-      setActionError('Could not save the new order.');
-      load();
-    });
+    reorderMutation.mutate(
+      { id: movedItem.id, sortOrder: newSortOrder },
+      { onError: () => setActionError('Could not save the new order.') },
+    );
   }
 
   function handleDragEnd({ data, toIndex }: SortableGridDragEndParams<Task>) {
@@ -235,6 +238,8 @@ export default function TasksScreen() {
         ) : null}
       </ThemedView>
 
+      <OfflineBanner />
+
       {group ? (
         <ThemedView style={styles.tabRow}>
           <OptionPicker
@@ -247,10 +252,10 @@ export default function TasksScreen() {
       ) : null}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
-        {openTasks === null ? (
+        {isLoading ? (
           <LoadingState />
         ) : error ? (
-          <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={load} />
+          <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={refetch} />
         ) : isEmpty ? (
           <EmptyState
             title={tab === 'personal' ? 'Nothing on your list yet' : 'No requests yet'}
@@ -307,7 +312,6 @@ export default function TasksScreen() {
             value={composeText}
             onChangeText={setComposeText}
             onSubmit={handleSubmitCompose}
-            submitting={composeSaving}
             placeholder={tab === 'personal' ? 'I want to...' : 'Ask for...'}
           />
         </ThemedView>

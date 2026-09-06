@@ -11,8 +11,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleLabel } from '@/constants/group';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useGroup } from '@/contexts/group-context';
 import { useSession } from '@/contexts/session-context';
+import { useGroupQuery } from '@/hooks/use-group-query';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { useTokens } from '@/hooks/use-tokens';
 import { getErrorMessage } from '@/lib/errors';
@@ -27,7 +28,9 @@ export default function GroupScreen() {
   const { topInset, bottomInset } = useTabScreenInsets();
   const router = useRouter();
   const { user } = useSession();
-  const { group, isLoading, error, refresh } = useGroup();
+  const { data: group, isLoading, isError, error: queryError, refetch } = useGroupQuery();
+  const error = isError && !group ? getErrorMessage(queryError, 'Could not load your group.') : null;
+  const isOnline = useOnlineStatus();
   const tokens = useTokens();
   const cardStyle = useSurfaceStyle();
 
@@ -40,13 +43,13 @@ export default function GroupScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      refresh();
-    }, [refresh]),
+      refetch();
+    }, [refetch]),
   );
 
   async function handleRefresh() {
     setRefreshing(true);
-    await refresh();
+    await refetch();
     setRefreshing(false);
   }
 
@@ -61,7 +64,7 @@ export default function GroupScreen() {
     setActionLoading(true);
     try {
       await renameGroup(renameValue);
-      await refresh();
+      await refetch();
       setRenaming(false);
     } catch (err) {
       setActionError(getErrorMessage(err, 'Could not rename your household.'));
@@ -82,7 +85,7 @@ export default function GroupScreen() {
       } else {
         await transferGroupOwnership(pending.userId);
       }
-      await refresh();
+      await refetch();
       setPending(null);
     } catch (err) {
       setActionError(getErrorMessage(err, 'Could not complete that action.'));
@@ -97,7 +100,7 @@ export default function GroupScreen() {
 
   if (error) {
     return (
-      <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={refresh} />
+      <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={refetch} />
     );
   }
 
@@ -151,6 +154,11 @@ export default function GroupScreen() {
         <ThemedText themeColor="textSecondary">
           {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
         </ThemedText>
+        {!isOnline ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            You&apos;re offline — group changes require an internet connection.
+          </ThemedText>
+        ) : null}
       </ThemedView>
 
       <ScrollView
@@ -191,7 +199,7 @@ export default function GroupScreen() {
                     title="Save"
                     onPress={handleRename}
                     loading={actionLoading}
-                    disabled={!renameValue.trim()}
+                    disabled={!renameValue.trim() || !isOnline}
                     style={styles.inlineButton}
                   />
                   <PrimaryButton
@@ -208,7 +216,7 @@ export default function GroupScreen() {
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   Group name
                 </ThemedText>
-                <PrimaryButton title="Rename Group" variant="secondary" onPress={startRenaming} />
+                <PrimaryButton title="Rename Group" variant="secondary" onPress={startRenaming} disabled={!isOnline} />
               </>
             )}
           </ThemedView>
@@ -248,6 +256,7 @@ export default function GroupScreen() {
                         setActionError(null);
                         setPending({ type: 'transfer', userId: member.user_id, name });
                       }}
+                      disabled={!isOnline}
                       style={styles.inlineButton}
                     />
                     <PrimaryButton
@@ -257,6 +266,7 @@ export default function GroupScreen() {
                         setActionError(null);
                         setPending({ type: 'remove', userId: member.user_id, name });
                       }}
+                      disabled={!isOnline}
                       style={styles.inlineButton}
                     />
                   </ThemedView>
@@ -286,6 +296,7 @@ export default function GroupScreen() {
                 variant={pending.type === 'transfer' ? 'primary' : 'danger'}
                 onPress={handleConfirmPending}
                 loading={actionLoading}
+                disabled={!isOnline}
                 style={styles.inlineButton}
               />
               <PrimaryButton
@@ -314,6 +325,7 @@ export default function GroupScreen() {
                 setActionError(null);
                 setPending({ type: 'leave' });
               }}
+              disabled={!isOnline}
             />
           </ThemedView>
         )}

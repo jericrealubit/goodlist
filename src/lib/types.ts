@@ -27,6 +27,9 @@ export type Task = {
 };
 
 export type NewTaskInput = {
+  id: string;
+  creatorId: string;
+  sortOrder: number;
   title: string;
   notes?: string | null;
   due_at?: string | null;
@@ -39,6 +42,9 @@ export type UpdateTaskInput = {
 };
 
 export type NewRequestInput = {
+  id: string;
+  creatorId: string;
+  sortOrder: number;
   title: string;
   notes?: string | null;
   due_at?: string | null;

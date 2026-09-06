@@ -1,5 +1,6 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { LoadingState } from '@/components/loading-state';
@@ -10,53 +11,53 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useProfileQuery } from '@/hooks/use-profile-query';
+import { useUpdateDisplayNameMutation } from '@/hooks/use-profile-mutations';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { getErrorMessage } from '@/lib/errors';
 import { deleteMyAccount } from '@/lib/mutations/account';
-import { updateDisplayName } from '@/lib/mutations/profile';
-import { getMyProfile } from '@/lib/queries/profile';
 import { supabase } from '@/lib/supabase';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { topInset, bottomInset } = useTabScreenInsets();
   const { user, signOut } = useSession();
+  const { data: profile, isLoading: profileLoading } = useProfileQuery();
+  const updateDisplayNameMutation = useUpdateDisplayNameMutation();
+  const isOnline = useOnlineStatus();
   const [displayName, setDisplayName] = useState('');
-  const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [loadedProfileId, setLoadedProfileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      getMyProfile().then((profile) => {
-        if (!cancelled) {
-          setDisplayName(profile?.display_name ?? '');
-          setLoaded(true);
-        }
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, []),
-  );
+  // Seed the editable field from the fetched profile exactly once (not on
+  // every background refetch, which would clobber an in-progress edit).
+  // Adjusting state during render like this — rather than in a useEffect —
+  // is the pattern React recommends for "reset state when a prop changes":
+  // https://react.dev/learn/you-might-not-need-an-effect
+  if (profile && loadedProfileId !== profile.id) {
+    setLoadedProfileId(profile.id);
+    setDisplayName(profile.display_name ?? '');
+  }
 
-  async function handleSave() {
+  function handleSave() {
+    if (!user) return;
     setError(null);
-    setSaved(false);
-    setSaving(true);
-    try {
-      await updateDisplayName(displayName);
-      setSaved(true);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not save your changes.'));
-    } finally {
-      setSaving(false);
-    }
+    updateDisplayNameMutation.mutate(
+      { userId: user.id, displayName },
+      {
+        onError: (err) => {
+          setError(getErrorMessage(err, 'Could not save your changes.'));
+          setSaved(false);
+        },
+      },
+    );
+    setSaved(true);
   }
 
   async function handleDeleteAccount() {
@@ -69,6 +70,11 @@ export default function SettingsScreen() {
       setDeleting(false);
       return;
     }
+    // Wipe the cache (including any paused offline mutations) before signing
+    // out — the account is already gone server-side, so nothing queued for
+    // it should ever be replayed.
+    queryClient.clear();
+    queryClient.getMutationCache().clear();
     // The account row is already gone server-side at this point, so a normal
     // signOut() may fail validating a session whose user no longer exists.
     // scope: 'local' just clears on-device storage without that round trip,
@@ -76,7 +82,7 @@ export default function SettingsScreen() {
     await supabase.auth.signOut({ scope: 'local' });
   }
 
-  if (!loaded) {
+  if (profileLoading) {
     return <LoadingState />;
   }
 
@@ -105,7 +111,7 @@ export default function SettingsScreen() {
               Saved.
             </ThemedText>
           ) : null}
-          <PrimaryButton title="Save" onPress={handleSave} loading={saving} />
+          <PrimaryButton title="Save" onPress={handleSave} />
         </ThemedView>
 
         <ThemedView style={styles.appearance}>
@@ -130,10 +136,16 @@ export default function SettingsScreen() {
                 undone. If you own a household with other members, transfer ownership or remove
                 them first — you won&apos;t be able to delete your account until you do.
               </ThemedText>
+              {!isOnline ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Deleting your account requires an internet connection.
+                </ThemedText>
+              ) : null}
               <PrimaryButton
                 title="Yes, delete my account"
                 onPress={handleDeleteAccount}
                 loading={deleting}
+                disabled={!isOnline}
                 variant="danger"
               />
               <PrimaryButton

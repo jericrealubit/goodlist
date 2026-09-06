@@ -1,5 +1,5 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -13,9 +13,9 @@ import { useSession } from '@/contexts/session-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { useTheme } from '@/hooks/use-theme';
+import { useDeleteAllHistoryMutation, useDeleteTaskMutation, useReopenTaskMutation } from '@/hooks/use-task-mutations';
+import { useHistoryQuery } from '@/hooks/use-tasks-query';
 import { getErrorMessage } from '@/lib/errors';
-import { deleteAllHistory, deleteTask, reopenTask } from '@/lib/mutations/tasks';
-import { listHistory } from '@/lib/queries/tasks';
 import type { Task } from '@/lib/types';
 
 function RowIconButton({
@@ -50,70 +50,43 @@ export default function HistoryScreen() {
   const { topInset, bottomInset } = useTabScreenInsets();
   const theme = useTheme();
   const { user } = useSession();
-  const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, isError, error: queryError, refetch } = useHistoryQuery();
+  const tasks = data ?? [];
+  const reopenMutation = useReopenTaskMutation();
+  const deleteMutation = useDeleteTaskMutation();
+  const deleteAllMutation = useDeleteAllHistoryMutation();
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
-  const [deletingAll, setDeletingAll] = useState(false);
-  const [deleteAllError, setDeleteAllError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      setTasks(await listHistory());
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not load your history.'));
-    }
-  }, []);
+  const error = isError && !data ? getErrorMessage(queryError, 'Could not load your history.') : null;
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
-
-  useRealtimeTasks(load);
+  useRealtimeTasks();
 
   async function handleRefresh() {
     setRefreshing(true);
-    await load();
+    await refetch();
     setRefreshing(false);
   }
 
-  async function handleUndo(task: Task) {
-    setTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
-    try {
-      await reopenTask(task.id);
-    } catch (err) {
-      setTasks((current) => (current ? [task, ...current] : [task]));
-      setError(getErrorMessage(err, 'Could not undo this task.'));
-    }
+  function handleUndo(task: Task) {
+    reopenMutation.mutate(task, { onError: () => setActionError('Could not undo this task.') });
   }
 
-  async function handleDelete(task: Task) {
+  function handleDelete(task: Task) {
     setConfirmingDeleteId(null);
-    setTasks((current) => current?.filter((t) => t.id !== task.id) ?? current);
-    try {
-      await deleteTask(task.id);
-    } catch (err) {
-      setTasks((current) => (current ? [task, ...current] : [task]));
-      setError(getErrorMessage(err, 'Could not delete this task.'));
-    }
+    deleteMutation.mutate(task, { onError: () => setActionError('Could not delete this task.') });
   }
 
-  async function handleDeleteAll() {
-    setDeleteAllError(null);
-    setDeletingAll(true);
-    try {
-      await deleteAllHistory();
-      setConfirmingDeleteAll(false);
-      await load();
-    } catch (err) {
-      setDeleteAllError(getErrorMessage(err, 'Could not delete your history.'));
-    } finally {
-      setDeletingAll(false);
-    }
+  function handleDeleteAll() {
+    if (!user) return;
+    setActionError(null);
+    deleteAllMutation.mutate(
+      { userId: user.id },
+      { onError: () => setActionError('Could not delete your history.') },
+    );
+    setConfirmingDeleteAll(false);
   }
 
   return (
@@ -124,9 +97,9 @@ export default function HistoryScreen() {
 
       {tasks && tasks.length > 0 ? (
         <ThemedView style={styles.deleteAllZone}>
-          {deleteAllError ? (
+          {actionError ? (
             <ThemedText type="small" themeColor="danger">
-              {deleteAllError}
+              {actionError}
             </ThemedText>
           ) : null}
           {confirmingDeleteAll ? (
@@ -139,14 +112,12 @@ export default function HistoryScreen() {
                 <PrimaryButton
                   title="Yes, delete all"
                   onPress={handleDeleteAll}
-                  loading={deletingAll}
                   variant="danger"
                   style={styles.deleteAllButton}
                 />
                 <PrimaryButton
                   title="Cancel"
                   onPress={() => setConfirmingDeleteAll(false)}
-                  disabled={deletingAll}
                   variant="secondary"
                   style={styles.deleteAllButton}
                 />
@@ -158,10 +129,10 @@ export default function HistoryScreen() {
         </ThemedView>
       ) : null}
 
-      {tasks === null ? (
+      {isLoading ? (
         <LoadingState />
       ) : error ? (
-        <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={load} />
+        <EmptyState title="Something went wrong" message={error} actionLabel="Retry" onAction={refetch} />
       ) : tasks.length === 0 ? (
         <EmptyState title="No history yet" message="Tasks you complete will show up here." />
       ) : (

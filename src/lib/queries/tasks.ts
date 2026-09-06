@@ -9,7 +9,12 @@ export async function listOpenTasks(): Promise<Task[]> {
     .from('tasks')
     .select(TASK_SELECT)
     .eq('status', 'open')
-    .order('sort_order', { ascending: true });
+    // Secondary tie-breaker: offline reorders across devices can produce
+    // duplicate/overlapping sort_order floats with no server-side conflict
+    // detection to prevent it. This at least keeps ties in a stable order
+    // instead of flapping between refetches.
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
   return data ?? [];

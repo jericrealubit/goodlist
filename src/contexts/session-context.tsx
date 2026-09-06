@@ -1,6 +1,7 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 
+import { queryClient } from '@/lib/query-client';
 import { supabase } from '@/lib/supabase';
 
 type SessionContextValue = {
@@ -35,6 +36,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === 'SIGNED_OUT') {
         setSession(null);
+        // A device switching accounts (or a mutation queued offline by the
+        // previous user and still paused) must never leak into the next
+        // signed-in session's cache or replay under its identity.
+        queryClient.clear();
+        queryClient.getMutationCache().clear();
       } else if (nextSession) {
         setSession(nextSession);
       }
