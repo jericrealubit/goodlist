@@ -160,7 +160,18 @@ export default function SettingsScreen() {
           )}
         </ThemedView>
 
-        <ThemedView style={styles.legal}>
+        <ThemedView style={styles.linkGroup}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Community
+          </ThemedText>
+          <Pressable onPress={() => router.push('/stats')}>
+            <ThemedText type="link" themeColor="textSecondary">
+              User statistics
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
+
+        <ThemedView style={styles.linkGroup}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Legal
           </ThemedText>
@@ -208,7 +219,7 @@ const styles = StyleSheet.create({
   dangerZone: {
     gap: Spacing.two,
   },
-  legal: {
+  linkGroup: {
     gap: Spacing.two,
   },
 });
