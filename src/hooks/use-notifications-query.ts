@@ -16,17 +16,30 @@ export function useUnreadCountQuery() {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('notifications-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        () => queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount }),
-      )
-      .subscribe();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      // A prior mount's cleanup may still be mid-flight (removeChannel is
+      // async): supabase.channel() dedupes by topic and would otherwise hand
+      // back that still-`joined` channel, and .on() throws on it.
+      const stale = supabase.getChannels().find((c) => c.topic === 'realtime:notifications-changes');
+      if (stale) await supabase.removeChannel(stale);
+      if (cancelled) return;
+
+      channel = supabase
+        .channel('notifications-changes')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          () => queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount }),
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
 
