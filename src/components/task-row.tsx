@@ -14,6 +14,11 @@ function formatDueDate(dueAt: string) {
   return new Date(dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function formatCompletedAt(completedAt: string) {
+  const date = new Date(completedAt);
+  return `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+}
+
 type TaskRowProps = {
   task: Task;
   onToggleComplete: () => void;
@@ -109,6 +114,11 @@ export function TaskRow({
       {task.due_at ? (
         <ThemedText type="small" themeColor="textSecondary">
           Due {formatDueDate(task.due_at)}
+        </ThemedText>
+      ) : null}
+      {isCompleted && task.completed_at ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Completed {formatCompletedAt(task.completed_at)}
         </ThemedText>
       ) : null}
       {subtitle ? (
