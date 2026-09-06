@@ -158,6 +158,10 @@ export default function EditTaskScreen() {
             </ThemedText>
           ) : null}
 
+          {isRequested && task.family_id ? (
+            <PrimaryButton title="View group" onPress={() => router.push('/group')} variant="secondary" />
+          ) : null}
+
           {!isRequested && (
             <>
               <PrimaryButton title="Save changes" onPress={handleSave} />

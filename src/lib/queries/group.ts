@@ -21,7 +21,9 @@ export async function getMyGroups(): Promise<GroupSummary[]> {
   const familyIds = memberships.map((m) => m.family_id);
   const { data: allMembers, error: membersError } = await supabase
     .from('family_members')
-    .select('family_id, user_id, profile_type, role, member_role, joined_at, profiles(display_name)')
+    .select(
+      'family_id, user_id, profile_type, role, member_role, joined_at, profiles!family_members_user_profile_fk(display_name)',
+    )
     .in('family_id', familyIds);
 
   if (membersError) throw membersError;
