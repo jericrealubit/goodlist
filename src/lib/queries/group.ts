@@ -1,33 +1,38 @@
 import { supabase } from '@/lib/supabase';
 import type { Group, GroupMember, GroupMode, GroupSummary } from '@/lib/types';
 
-export async function getMyGroup(): Promise<GroupSummary | null> {
+// A user can belong to up to 2 households. Two round trips total (not
+// 1+N): fetch every membership row once, then one query for every group's
+// member list, bucketed client-side by family_id.
+export async function getMyGroups(): Promise<GroupSummary[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return [];
 
-  const { data: membership, error: membershipError } = await supabase
+  const { data: memberships, error: membershipError } = await supabase
     .from('family_members')
     .select('family_id, role, families(*)')
-    .eq('user_id', user.id)
-    .maybeSingle();
+    .eq('user_id', user.id);
 
   if (membershipError) throw membershipError;
-  if (!membership || !membership.families) return null;
+  if (!memberships?.length) return [];
 
-  const { data: members, error: membersError } = await supabase
+  const familyIds = memberships.map((m) => m.family_id);
+  const { data: allMembers, error: membersError } = await supabase
     .from('family_members')
     .select('family_id, user_id, profile_type, role, member_role, joined_at, profiles(display_name)')
-    .eq('family_id', membership.family_id);
+    .in('family_id', familyIds);
 
   if (membersError) throw membersError;
 
-  return {
-    ...(membership.families as unknown as Group),
-    role: membership.role,
-    members: (members ?? []) as unknown as GroupMember[],
-  };
+  return memberships
+    .filter((m) => m.families)
+    .map((m) => ({
+      ...(m.families as unknown as Group),
+      role: m.role,
+      members: (allMembers ?? []).filter((mem) => mem.family_id === m.family_id) as unknown as GroupMember[],
+    }));
 }
 
 export async function previewGroupByInviteCode(

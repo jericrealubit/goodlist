@@ -17,7 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
-import { useGroupQuery } from '@/hooks/use-group-query';
+import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useMarkAllReadMutation } from '@/hooks/use-notifications-mutations';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
@@ -46,7 +46,7 @@ export default function TasksScreen() {
   const router = useRouter();
   const { topInset, bottomInset } = useTabScreenInsets();
   const tokens = useTokens();
-  const { data: group } = useGroupQuery();
+  const { data: groups } = useGroupsQuery();
   const { user } = useSession();
   const { mutate: markAllRead } = useMarkAllReadMutation();
   const queryClient = useQueryClient();
@@ -61,18 +61,31 @@ export default function TasksScreen() {
   const [justCompleted, setJustCompleted] = useState<Task[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TaskOrigin>('personal');
-  const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [assigneeKey, setAssigneeKey] = useState<string | null>(null);
   const [composeText, setComposeText] = useState('');
   const [composeError, setComposeError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const composeInputRef = useRef<TextInput>(null);
 
   const error = isError && !openTasks ? getErrorMessage(queryError, 'Could not load your tasks.') : null;
-  const tab = group ? activeTab : 'personal';
+  const tab = groups?.length ? activeTab : 'personal';
 
-  const otherMembers = useMemo(
-    () => group?.members.filter((m) => m.user_id !== user?.id) ?? [],
-    [group, user],
+  // Pooled across every group the user belongs to (up to 2) rather than
+  // scoped to a single one — picking an option determines which group's
+  // family_id the created request attaches to.
+  const otherMemberOptions = useMemo(
+    () =>
+      (groups ?? []).flatMap((g) =>
+        g.members
+          .filter((m) => m.user_id !== user?.id)
+          .map((m) => ({
+            userId: m.user_id,
+            familyId: g.id,
+            displayName: m.profiles?.display_name || 'Unnamed',
+            groupName: g.name,
+          })),
+      ),
+    [groups, user],
   );
 
   useFocusEffect(
@@ -115,8 +128,15 @@ export default function TasksScreen() {
     }
   }
 
-  const effectiveAssigneeId =
-    otherMembers.length === 1 ? otherMembers[0].user_id : otherMembers.length >= 2 ? assigneeId ?? otherMembers[0].user_id : null;
+  // Falls back to the first option (rather than resetting via an effect)
+  // whenever the stored key doesn't match anything currently pooled — e.g.
+  // right after the very first render, or if the user left a group mid-session.
+  const effectiveAssignee =
+    otherMemberOptions.length === 1
+      ? otherMemberOptions[0]
+      : otherMemberOptions.length >= 2
+        ? (otherMemberOptions.find((o) => `${o.familyId}:${o.userId}` === assigneeKey) ?? otherMemberOptions[0])
+        : null;
 
   function handleSubmitCompose() {
     const titleError = validateTaskTitle(composeText);
@@ -124,7 +144,7 @@ export default function TasksScreen() {
       setComposeError(titleError);
       return;
     }
-    if (tab === 'requested' && (!group || !effectiveAssigneeId)) {
+    if (tab === 'requested' && !effectiveAssignee) {
       setComposeError('Choose who this task is for.');
       return;
     }
@@ -142,7 +162,10 @@ export default function TasksScreen() {
       createTaskMutation.mutate(buildNewTaskInput({ title }, user!.id), { onError });
     } else {
       createRequestMutation.mutate(
-        buildNewRequestInput({ title, assigneeId: effectiveAssigneeId!, familyId: group!.id }, user!.id),
+        buildNewRequestInput(
+          { title, assigneeId: effectiveAssignee!.userId, familyId: effectiveAssignee!.familyId },
+          user!.id,
+        ),
         { onError },
       );
     }
@@ -225,12 +248,13 @@ export default function TasksScreen() {
   const openVisibleTasks = (openTasks ?? []).filter((t) => t.origin === tab);
   const completedVisibleTasks = justCompleted.filter((t) => t.origin === tab);
   const isEmpty = openVisibleTasks.length === 0 && completedVisibleTasks.length === 0;
-  const showAssigneePicker = tab === 'requested' && otherMembers.length >= 2;
+  const showAssigneePicker = tab === 'requested' && otherMemberOptions.length >= 2;
+  const headerTitle = !groups?.length ? 'Solo mode' : groups.length === 1 ? groups[0].name : 'Groups';
 
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
-        <ThemedText type="header">{group ? group.name : 'Solo mode'}</ThemedText>
+        <ThemedText type="header">{headerTitle}</ThemedText>
         {actionError ? (
           <ThemedText type="small" themeColor="danger">
             {actionError}
@@ -240,7 +264,7 @@ export default function TasksScreen() {
 
       <OfflineBanner />
 
-      {group ? (
+      {groups?.length ? (
         <ThemedView style={styles.tabRow}>
           <OptionPicker
             layout="row"
@@ -297,9 +321,12 @@ export default function TasksScreen() {
           {showAssigneePicker ? (
             <OptionPicker
               layout="row"
-              options={otherMembers.map((m) => ({ id: m.user_id, label: m.profiles?.display_name || 'Unnamed' }))}
-              selectedId={effectiveAssigneeId}
-              onSelect={setAssigneeId}
+              options={otherMemberOptions.map((o) => ({
+                id: `${o.familyId}:${o.userId}`,
+                label: groups && groups.length > 1 ? `${o.displayName} (${o.groupName})` : o.displayName,
+              }))}
+              selectedId={effectiveAssignee ? `${effectiveAssignee.familyId}:${effectiveAssignee.userId}` : null}
+              onSelect={setAssigneeKey}
             />
           ) : null}
           {composeError ? (

@@ -11,16 +11,21 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { GROUP_MODE_OPTIONS, roleOptionsForMode } from '@/constants/group';
 import { Spacing } from '@/constants/theme';
+import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { getErrorMessage } from '@/lib/errors';
 import { createGroup } from '@/lib/mutations/group';
 import { groupKeys } from '@/lib/query-client';
 import type { GroupMode, MemberRole } from '@/lib/types';
 
+const MAX_GROUPS = 2;
+
 export default function CreateGroupScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
+  const { data: groups } = useGroupsQuery();
+  const atCap = (groups?.length ?? 0) >= MAX_GROUPS;
   const [name, setName] = useState('');
   const [mode, setMode] = useState<GroupMode>('family');
   const [memberRole, setMemberRole] = useState<MemberRole | null>(null);
@@ -82,12 +87,16 @@ export default function CreateGroupScreen() {
               {error}
             </ThemedText>
           ) : null}
-          {!isOnline ? (
+          {atCap ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              You&apos;ve already joined the maximum of {MAX_GROUPS} groups.
+            </ThemedText>
+          ) : !isOnline ? (
             <ThemedText type="small" themeColor="textSecondary">
               Creating a group requires an internet connection.
             </ThemedText>
           ) : null}
-          <PrimaryButton title="Create group" onPress={handleCreate} loading={saving} disabled={!isOnline} />
+          <PrimaryButton title="Create group" onPress={handleCreate} loading={saving} disabled={!isOnline || atCap} />
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>

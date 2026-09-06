@@ -41,9 +41,9 @@ export function buildNewRequestInput(
 }
 
 function findMemberName(familyId: string, userId: string): string | null {
-  const group = queryClient.getQueryData<GroupSummary>(groupKeys.mine);
-  if (!group || group.id !== familyId) return null;
-  return group.members.find((m) => m.user_id === userId)?.profiles?.display_name ?? null;
+  const groups = queryClient.getQueryData<GroupSummary[]>(groupKeys.mine);
+  const group = groups?.find((g) => g.id === familyId);
+  return group?.members.find((m) => m.user_id === userId)?.profiles?.display_name ?? null;
 }
 
 type OpenHistoryContext = { previousOpen?: Task[]; previousHistory?: Task[] };

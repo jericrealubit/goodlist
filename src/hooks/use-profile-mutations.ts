@@ -5,7 +5,7 @@ import { groupKeys, profileKeys, queryClient } from '@/lib/query-client';
 import type { GroupSummary, Profile } from '@/lib/types';
 
 type UpdateDisplayNameVariables = { userId: string; displayName: string };
-type UpdateDisplayNameContext = { previousProfile?: Profile | null; previousGroup?: GroupSummary | null };
+type UpdateDisplayNameContext = { previousProfile?: Profile | null; previousGroups?: GroupSummary[] };
 
 export const updateDisplayNameMutationOptions: UseMutationOptions<
   Profile,
@@ -21,28 +21,26 @@ export const updateDisplayNameMutationOptions: UseMutationOptions<
       queryClient.cancelQueries({ queryKey: groupKeys.mine }),
     ]);
     const previousProfile = queryClient.getQueryData<Profile | null>(profileKeys.mine);
-    const previousGroup = queryClient.getQueryData<GroupSummary | null>(groupKeys.mine);
+    const previousGroups = queryClient.getQueryData<GroupSummary[]>(groupKeys.mine);
     const trimmed = displayName.trim() || null;
 
     queryClient.setQueryData<Profile | null>(profileKeys.mine, (old) => (old ? { ...old, display_name: trimmed } : old));
-    // group.tsx renders member names from this separate query — patch its
-    // matching member entry too, or a self-rename won't show up there until
-    // the next refetch.
-    queryClient.setQueryData<GroupSummary | null>(groupKeys.mine, (old) =>
-      old
-        ? {
-            ...old,
-            members: old.members.map((m) =>
-              m.user_id === userId ? { ...m, profiles: { ...m.profiles, display_name: trimmed } } : m,
-            ),
-          }
-        : old,
+    // group.tsx renders member names from this separate query — patch the
+    // matching member entry in every group the user belongs to (up to 2), or
+    // a self-rename won't show up there until the next refetch.
+    queryClient.setQueryData<GroupSummary[]>(groupKeys.mine, (old) =>
+      old?.map((group) => ({
+        ...group,
+        members: group.members.map((m) =>
+          m.user_id === userId ? { ...m, profiles: { ...m.profiles, display_name: trimmed } } : m,
+        ),
+      })),
     );
-    return { previousProfile, previousGroup };
+    return { previousProfile, previousGroups };
   },
   onError: (_err, _vars, context) => {
     if (context?.previousProfile !== undefined) queryClient.setQueryData(profileKeys.mine, context.previousProfile);
-    if (context?.previousGroup !== undefined) queryClient.setQueryData(groupKeys.mine, context.previousGroup);
+    if (context?.previousGroups !== undefined) queryClient.setQueryData(groupKeys.mine, context.previousGroups);
   },
   onSettled: () => {
     queryClient.invalidateQueries({ queryKey: profileKeys.mine });

@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleOptionsForMode } from '@/constants/group';
 import { Spacing } from '@/constants/theme';
+import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { getErrorMessage } from '@/lib/errors';
 import { joinGroup } from '@/lib/mutations/group';
@@ -18,10 +19,14 @@ import { previewGroupByInviteCode } from '@/lib/queries/group';
 import { groupKeys } from '@/lib/query-client';
 import type { GroupMode, MemberRole } from '@/lib/types';
 
+const MAX_GROUPS = 2;
+
 export default function JoinGroupScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
+  const { data: groups } = useGroupsQuery();
+  const atCap = (groups?.length ?? 0) >= MAX_GROUPS;
   const [code, setCode] = useState('');
   const [preview, setPreview] = useState<{ name: string; mode: GroupMode } | null>(null);
   const [memberRole, setMemberRole] = useState<MemberRole | null>(null);
@@ -96,12 +101,16 @@ export default function JoinGroupScreen() {
                   {error}
                 </ThemedText>
               ) : null}
-              {!isOnline ? (
+              {atCap ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  You&apos;ve already joined the maximum of {MAX_GROUPS} groups.
+                </ThemedText>
+              ) : !isOnline ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   Looking up an invite code requires an internet connection.
                 </ThemedText>
               ) : null}
-              <PrimaryButton title="Continue" onPress={handleContinue} loading={saving} disabled={!isOnline} />
+              <PrimaryButton title="Continue" onPress={handleContinue} loading={saving} disabled={!isOnline || atCap} />
             </>
           ) : (
             <>
@@ -117,12 +126,16 @@ export default function JoinGroupScreen() {
                   {error}
                 </ThemedText>
               ) : null}
-              {!isOnline ? (
+              {atCap ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  You&apos;ve already joined the maximum of {MAX_GROUPS} groups.
+                </ThemedText>
+              ) : !isOnline ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   Joining a group requires an internet connection.
                 </ThemedText>
               ) : null}
-              <PrimaryButton title="Join group" onPress={handleJoin} loading={saving} disabled={!isOnline} />
+              <PrimaryButton title="Join group" onPress={handleJoin} loading={saving} disabled={!isOnline || atCap} />
               <PrimaryButton title="Back" variant="secondary" onPress={handleBack} disabled={saving} />
             </>
           )}

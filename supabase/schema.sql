@@ -677,3 +677,253 @@ begin
   delete from auth.users where id = auth.uid();
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- multi-household support (up to 2 households per user)
+-- ---------------------------------------------------------------------------
+
+-- create or replace does NOT replace a function whose argument list changed
+-- (Postgres treats it as a distinct overload) — the four functions below
+-- gain a p_family_id parameter, so their old signatures must be dropped
+-- first or the old, single-membership-assuming versions stay live and
+-- callable alongside the new ones.
+drop function if exists public.rename_household(text);
+drop function if exists public.leave_household();
+drop function if exists public.remove_household_member(uuid);
+drop function if exists public.transfer_household_ownership(uuid);
+
+create or replace function public.create_household(p_name text, p_mode text default 'family', p_member_role text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_membership_count int;
+begin
+  -- Serializes concurrent calls from the same user so two simultaneous
+  -- create/join attempts can't both pass the count check below and push the
+  -- caller past the 2-household cap.
+  perform pg_advisory_xact_lock(hashtext('household_membership:' || auth.uid()::text));
+
+  select count(*) into v_membership_count from public.family_members where user_id = auth.uid();
+  if v_membership_count >= 2 then
+    raise exception 'You already belong to the maximum of 2 households.';
+  end if;
+
+  if p_mode not in ('family', 'team') then
+    raise exception 'Invalid group type.';
+  end if;
+
+  if not public.family_role_is_valid(p_mode, p_member_role) then
+    raise exception 'Invalid role for this group type.';
+  end if;
+
+  insert into public.families (name, created_by, mode)
+  values (p_name, auth.uid(), p_mode)
+  returning id into v_family_id;
+
+  insert into public.family_members (family_id, user_id, role, member_role)
+  values (v_family_id, auth.uid(), 'owner', p_member_role);
+
+  return v_family_id;
+end;
+$$;
+
+create or replace function public.join_household(p_invite_code text, p_member_role text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_mode text;
+  v_membership_count int;
+begin
+  perform pg_advisory_xact_lock(hashtext('household_membership:' || auth.uid()::text));
+
+  select count(*) into v_membership_count from public.family_members where user_id = auth.uid();
+  if v_membership_count >= 2 then
+    raise exception 'You already belong to the maximum of 2 households.';
+  end if;
+
+  select id, mode into v_family_id, v_mode from public.families where invite_code = upper(p_invite_code);
+  if v_family_id is null then
+    raise exception 'Invalid invite code.';
+  end if;
+
+  -- With multiple memberships possible, re-joining a household the caller is
+  -- already in must fail with a clean message instead of a raw composite-PK
+  -- unique-violation error.
+  if exists (select 1 from public.family_members where family_id = v_family_id and user_id = auth.uid()) then
+    raise exception 'You are already a member of this household.';
+  end if;
+
+  if not public.family_role_is_valid(v_mode, p_member_role) then
+    raise exception 'Invalid role for this group type.';
+  end if;
+
+  insert into public.family_members (family_id, user_id, role, member_role)
+  values (v_family_id, auth.uid(), 'member', p_member_role);
+
+  return v_family_id;
+end;
+$$;
+
+create or replace function public.rename_household(p_family_id uuid, p_name text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  select role into v_role
+  from public.family_members
+  where family_id = p_family_id and user_id = auth.uid();
+
+  if v_role is null then
+    raise exception 'You are not a member of that household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can rename it.';
+  end if;
+  if trim(p_name) = '' then
+    raise exception 'Household name cannot be empty.';
+  end if;
+
+  update public.families set name = trim(p_name) where id = p_family_id;
+end;
+$$;
+
+create or replace function public.leave_household(p_family_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+  v_other_members int;
+begin
+  select role into v_role
+  from public.family_members
+  where family_id = p_family_id and user_id = auth.uid();
+
+  if v_role is null then
+    raise exception 'You are not a member of that household.';
+  end if;
+
+  if v_role = 'owner' then
+    select count(*) into v_other_members
+    from public.family_members
+    where family_id = p_family_id and user_id <> auth.uid();
+
+    if v_other_members > 0 then
+      raise exception 'Transfer ownership or remove all other members before leaving.';
+    end if;
+
+    -- Sole remaining member and owner: the household would be empty, so
+    -- remove it entirely rather than leaving an orphaned row behind.
+    delete from public.families where id = p_family_id;
+  else
+    delete from public.family_members where family_id = p_family_id and user_id = auth.uid();
+  end if;
+end;
+$$;
+
+create or replace function public.remove_household_member(p_family_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  select role into v_role
+  from public.family_members
+  where family_id = p_family_id and user_id = auth.uid();
+
+  if v_role is null then
+    raise exception 'You are not a member of that household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can remove a member.';
+  end if;
+  if p_user_id = auth.uid() then
+    raise exception 'Use "Leave household" to remove yourself.';
+  end if;
+  if not exists (
+    select 1 from public.family_members where family_id = p_family_id and user_id = p_user_id
+  ) then
+    raise exception 'That person is not in your household.';
+  end if;
+
+  delete from public.family_members where family_id = p_family_id and user_id = p_user_id;
+end;
+$$;
+
+create or replace function public.transfer_household_ownership(p_family_id uuid, p_new_owner_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  select role into v_role
+  from public.family_members
+  where family_id = p_family_id and user_id = auth.uid();
+
+  if v_role is null then
+    raise exception 'You are not a member of that household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can transfer ownership.';
+  end if;
+  if p_new_owner_id = auth.uid() then
+    raise exception 'You already own this household.';
+  end if;
+  if not exists (
+    select 1 from public.family_members where family_id = p_family_id and user_id = p_new_owner_id
+  ) then
+    raise exception 'That person is not in your household.';
+  end if;
+
+  update public.family_members set role = 'member' where family_id = p_family_id and user_id = auth.uid();
+  update public.family_members set role = 'owner' where family_id = p_family_id and user_id = p_new_owner_id;
+end;
+$$;
+
+-- Keeps its 0-argument signature — plain create or replace overwrites it in
+-- place, no drop needed. Set-based (EXISTS), not looped: at most 2 rows, so
+-- an EXISTS over "any owned household with other members" is simpler than
+-- tracking loop state, and it checks ALL memberships instead of just one.
+create or replace function public.delete_my_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (
+    select 1
+    from public.family_members fm
+    where fm.user_id = auth.uid()
+      and fm.role = 'owner'
+      and exists (
+        select 1 from public.family_members other
+        where other.family_id = fm.family_id and other.user_id <> auth.uid()
+      )
+  ) then
+    raise exception 'Transfer ownership or remove all other members before deleting your account.';
+  end if;
+
+  delete from auth.users where id = auth.uid();
+end;
+$$;

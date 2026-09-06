@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { groupKeys } from '@/lib/query-client';
-import { getMyGroup } from '@/lib/queries/group';
+import { getMyGroups } from '@/lib/queries/group';
 
-export function useGroupQuery() {
-  return useQuery({ queryKey: groupKeys.mine, queryFn: getMyGroup });
+export function useGroupsQuery() {
+  return useQuery({ queryKey: groupKeys.mine, queryFn: getMyGroups });
 }

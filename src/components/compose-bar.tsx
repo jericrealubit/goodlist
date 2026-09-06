@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, TextInput } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
+import { SendButton } from '@/components/send-button';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
@@ -46,18 +46,7 @@ export const ComposeBar = forwardRef<TextInput, ComposeBarProps>(function Compos
           },
         ]}
       />
-      <Pressable
-        onPressIn={onSubmit}
-        disabled={!canSubmit}
-        accessibilityRole="button"
-        accessibilityLabel="Add task"
-        accessibilityState={{ disabled: !canSubmit }}
-        style={({ pressed }) => [
-          styles.sendButton,
-          { backgroundColor: theme.primary, borderRadius: tokens.radii.pill, opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1 },
-        ]}>
-        {submitting ? <ActivityIndicator color="#ffffff" size="small" /> : <ThemedText style={styles.sendGlyph}>↑</ThemedText>}
-      </Pressable>
+      <SendButton onPress={onSubmit} disabled={!canSubmit} loading={submitting} />
     </ThemedView>
   );
 });
@@ -70,16 +59,5 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendGlyph: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
   },
 });
