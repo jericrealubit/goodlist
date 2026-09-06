@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -42,15 +43,17 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.flex}>
-        <SafeAreaProvider>
-          <AppThemeProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <SessionProvider>
-                <RootNavigator />
-              </SessionProvider>
-            </ThemeProvider>
-          </AppThemeProvider>
-        </SafeAreaProvider>
+        <KeyboardProvider>
+          <SafeAreaProvider>
+            <AppThemeProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <SessionProvider>
+                  <RootNavigator />
+                </SessionProvider>
+              </ThemeProvider>
+            </AppThemeProvider>
+          </SafeAreaProvider>
+        </KeyboardProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );

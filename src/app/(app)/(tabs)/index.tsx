@@ -1,7 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, RefreshControl, StyleSheet, TextInput } from 'react-native';
+import { Platform, RefreshControl, StyleSheet, TextInput } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable, { type SortableGridDragEndParams } from 'react-native-sortables';
 

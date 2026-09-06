@@ -47,7 +47,7 @@ export const ComposeBar = forwardRef<TextInput, ComposeBarProps>(function Compos
         ]}
       />
       <Pressable
-        onPress={onSubmit}
+        onPressIn={onSubmit}
         disabled={!canSubmit}
         accessibilityRole="button"
         accessibilityLabel="Add task"

@@ -119,7 +119,7 @@ export default function HistoryScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
-        <ThemedText type="header">Completed and cancelled tasks</ThemedText>
+        <ThemedText type="header">Completed tasks</ThemedText>
       </ThemedView>
 
       {tasks && tasks.length > 0 ? (

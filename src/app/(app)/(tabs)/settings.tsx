@@ -82,16 +82,12 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
-        <ThemedText type="header">{user?.email ?? ''}</ThemedText>
-      </ThemedView>
-
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Spacing.four,
+            paddingTop: topInset + Spacing.four,
             paddingBottom: bottomInset + Spacing.four,
           },
         ]}
@@ -180,14 +176,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.two,
-    gap: Spacing.half,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: MaxContentWidth,
   },
   scroll: {
     flex: 1,

@@ -178,16 +178,13 @@ export default function GroupScreen() {
 
         {isOwner ? (
           <ThemedView style={styles.section}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              Household name
-            </ThemedText>
             {renaming ? (
               <ThemedView style={styles.renameRow}>
                 <TextField
-                  label="Household name"
+                  label="Group name"
                   value={renameValue}
                   onChangeText={setRenameValue}
-                  placeholder="Household name"
+                  placeholder="Group name"
                 />
                 <ThemedView style={styles.inlineButtons}>
                   <PrimaryButton
@@ -207,7 +204,12 @@ export default function GroupScreen() {
                 </ThemedView>
               </ThemedView>
             ) : (
-              <PrimaryButton title="Rename household" variant="secondary" onPress={startRenaming} />
+              <>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  Group name
+                </ThemedText>
+                <PrimaryButton title="Rename Group" variant="secondary" onPress={startRenaming} />
+              </>
             )}
           </ThemedView>
         ) : null}
