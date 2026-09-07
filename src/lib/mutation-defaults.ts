@@ -1,7 +1,11 @@
 import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
 
 import { markAllReadMutationOptions } from '@/hooks/use-notifications-mutations';
-import { updateDisplayNameMutationOptions } from '@/hooks/use-profile-mutations';
+import {
+  syncDeviceLocaleMutationOptions,
+  updateDisplayNameMutationOptions,
+  updateLocaleSharingMutationOptions,
+} from '@/hooks/use-profile-mutations';
 import { taskMutationOptionsByKey } from '@/hooks/use-task-mutations';
 
 function register<TData, TError, TVariables, TContext>(
@@ -31,5 +35,7 @@ export function registerMutationDefaults(queryClient: QueryClient) {
   register(queryClient, taskMutationOptionsByKey.deleteAllHistory);
   register(queryClient, taskMutationOptionsByKey.reorder);
   register(queryClient, updateDisplayNameMutationOptions);
+  register(queryClient, syncDeviceLocaleMutationOptions);
+  register(queryClient, updateLocaleSharingMutationOptions);
   register(queryClient, markAllReadMutationOptions);
 }
