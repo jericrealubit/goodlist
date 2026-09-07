@@ -18,7 +18,7 @@ export function LegalScreen({ title, children }: { title: string; children: Reac
         <ThemedView style={styles.header}>
           <ThemedText type="title">{title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Effective September 1, 2026
+            Effective September 7, 2026
           </ThemedText>
         </ThemedView>
         {children}

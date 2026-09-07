@@ -59,12 +59,13 @@ export default function PrivacyScreen() {
         <Para>We don&apos;t use your data to train models, sell it, or use it for advertising.</Para>
       </Clause>
 
-      <Clause number={4} title="Sharing within your household">
+      <Clause number={4} title="Sharing within your group">
         <Para>
-          Goodlist is built around small, invite-only households. If you join or create one, your
-          display name and any tasks marked as shared or requested within that household become
-          visible to the other members — that visibility is the point of the feature, and it&apos;s
-          limited to people who joined using your household&apos;s invite code.
+          Goodlist is built around small, invite-only groups — Family or Team mode, up to two per
+          account. If you join or create one, your display name and any tasks marked as shared or
+          requested within that group become visible to the other members — that visibility is the
+          point of the feature, and it&apos;s limited to people who joined using your group&apos;s
+          invite code.
         </Para>
         <Para>
           Outside of your own household, we don&apos;t share your personal data with other users, and
@@ -81,9 +82,9 @@ export default function PrivacyScreen() {
           and tasks.
         </Para>
         <Callout variant="warn">
-          <Bold>If you own a household</Bold> (you created it) and other members still belong to it, we
+          <Bold>If you own a group</Bold> (you created it) and other members still belong to it, we
           block account deletion until you transfer ownership to someone else or remove the other
-          members first — so a deletion can&apos;t destroy a household out from under the people in it.
+          members first — so a deletion can&apos;t destroy a group out from under the people in it.
         </Callout>
         <Para>
           You can also clear your completed/cancelled task history from the History screen at any time,
@@ -94,7 +95,7 @@ export default function PrivacyScreen() {
       <Clause number={6} title="Children's privacy">
         <Para>
           Goodlist is not directed at children under 13, and we do not knowingly collect personal
-          information from children under 13. Household member roles like &quot;child&quot; are
+          information from children under 13. Family-group member roles like &quot;child&quot; are
           currently descriptive labels only — Goodlist does not yet offer separate child accounts,
           logins, or parental-control features.
         </Para>

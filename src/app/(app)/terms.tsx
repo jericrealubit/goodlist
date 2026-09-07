@@ -12,9 +12,11 @@ export default function TermsScreen() {
 
       <Clause number={2} title="The service">
         <Para>
-          Goodlist is a task-management app for personal to-dos and household task sharing, including
-          task requests between household members, completion history, and appearance customization. We
-          may add, change, or remove features over time as the app evolves.
+          Goodlist is a task-management app for personal to-dos and group task sharing. Features include
+          creating or joining up to two groups (Family or Team mode, each with its own member roles),
+          requesting tasks from group members, in-app notifications, a searchable completion history with
+          undo, offline support with automatic sync, and appearance customization. We may add, change, or
+          remove features over time as the app evolves.
         </Para>
       </Clause>
 
@@ -28,16 +30,16 @@ export default function TermsScreen() {
         />
       </Clause>
 
-      <Clause number={4} title="Households & sharing">
+      <Clause number={4} title="Groups & sharing">
         <Para>
-          Only invite people you trust to your household — they&apos;ll be able to see the display names
-          and shared/requested tasks associated with that household. Anyone with your household&apos;s
-          invite code can join it, so treat the code like you would a shared password.
+          Only invite people you trust to your group — they&apos;ll be able to see the display names and
+          shared/requested tasks associated with that group. Anyone with your group&apos;s invite code can
+          join it, so treat the code like you would a shared password. You can belong to at most two
+          groups at a time.
         </Para>
         <Callout>
-          As noted in the Privacy Policy: if you own a household with other members in it, you
-          won&apos;t be able to delete your account until you transfer ownership or remove those members
-          first.
+          As noted in the Privacy Policy: if you own a group with other members in it, you won&apos;t be
+          able to delete your account until you transfer ownership or remove those members first.
         </Callout>
       </Clause>
 

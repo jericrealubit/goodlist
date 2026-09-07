@@ -10,12 +10,15 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 
 const FEATURES = [
-  'Keep a personal to-do list that syncs across your devices.',
-  'Share a household or group and hand off tasks to each other.',
-  'Request a task from a member and track it until it’s done.',
-  'Drag to reorder, check off when complete, and reopen if needed.',
-  'Browse a full history of finished tasks — with one-tap undo.',
-  'Everyone in a group sees changes the moment they happen.',
+  'Keep a personal to-do list that syncs across your devices, even offline.',
+  'Create or join up to two groups — Family or Team mode, each with its own member roles.',
+  'Request a task from a group member, and jump straight to that task’s group.',
+  'Drag to reorder, tap or swipe to complete, and reopen anything you finish by mistake.',
+  'Browse a full history of finished and cancelled tasks, each timestamped with when it was completed.',
+  'Get notified the moment someone requests a task from you — updates arrive live across every device.',
+  'Works offline: changes queue up and sync automatically once you’re back online.',
+  'Pick from nine built-in color themes, light or dark.',
+  'See anonymous community stats — how many people use Goodlist, and how many share a group.',
 ];
 
 const TECH_STACK = [
@@ -25,6 +28,7 @@ const TECH_STACK = [
   'TypeScript',
   'Supabase',
   'PostgreSQL',
+  'TanStack Query',
   'Reanimated',
 ];
 
