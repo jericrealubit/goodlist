@@ -186,7 +186,7 @@ export function renderHtml(d) {
 
   <div class="note">
     <h2>How to read this</h2>
-    <p><strong>Country is exact.</strong> It comes from the Region setting on the device — not GPS, and not an IP lookup.</p>
+    <p><strong>Country comes from the device time zone</strong> — <code>Australia/Perth</code> means Australia. Not GPS, and not an IP lookup. The device's Region setting is only a fallback for zones we don't recognise, because it reflects a language preference rather than where someone is: a phone in Perth set to English (US) reports <code>US</code>.</p>
     <p><strong>State and city are approximate.</strong> They are inferred from the device time zone, the only sub-national signal available without a location permission. A zone like <code>America/Los_Angeles</code> spans several states, so a state appears only where the zone narrows it down, and a city only where the zone is itself a single city (Singapore, Hong Kong). Everything else falls back to the raw time zone, which is factual.</p>
     <p>Located covers ${d.sharedUsers} of ${d.totalUsers} accounts. Counts only — this report contains no user identifiers.</p>
   </div>

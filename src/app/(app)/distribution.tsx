@@ -81,9 +81,9 @@ export default function DistributionScreen() {
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             <ThemedText type="smallBold" themeColor="textSecondary">
-              Country is exact
+              Country comes from the device time zone
             </ThemedText>
-            {' — it comes from the Region setting on the device, not from GPS or an IP lookup.'}
+            {' — Australia/Perth means Australia. Not GPS, and not an IP lookup. The device’s Region setting is only a fallback for unrecognised zones, because it reflects language preference rather than where someone is.'}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             <ThemedText type="smallBold" themeColor="textSecondary">
