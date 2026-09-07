@@ -929,6 +929,106 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- user statistics (community stats screen)
+--
+-- Every number the stats screen shows is an aggregate over *all* users, which
+-- `profiles` RLS deliberately forbids reading row by row. `app_user_stats()`
+-- below is the one sanctioned way across that line: it is SECURITY DEFINER so
+-- it can count past RLS, but it only ever returns counts — no id, name, or
+-- timestamp belonging to another user leaves it.
+-- ---------------------------------------------------------------------------
+
+-- Presence heartbeat. Nullable, so every existing profile simply reads as
+-- "never seen" until that user's app next checks in.
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+
+-- Deliberately NOT indexed: the stats query below aggregates over every
+-- profile row (it needs the total anyway), so an index on last_seen_at would
+-- go unused while making each 60s heartbeat write more expensive.
+
+-- Counting a user's groups keys on user_id alone, which the
+-- (family_id, user_id) primary key can't serve — its leading column is
+-- family_id. Also speeds up the existing "my memberships" lookup in
+-- src/lib/queries/group.ts.
+create index if not exists family_members_user_id_idx on public.family_members (user_id);
+
+-- Presence heartbeat, called every 60s while the app is foregrounded.
+-- SECURITY INVOKER (the default) on purpose: the caller already owns this row
+-- under "Users can update their own profile", so no elevated privilege is
+-- needed. The point of the RPC is that `now()` is the *server's* clock — a
+-- client-supplied timestamp could fake being live.
+create or replace function public.touch_last_seen()
+returns void
+language sql
+set search_path = public
+as $$
+  update public.profiles set last_seen_at = now() where id = auth.uid();
+$$;
+
+-- Community-wide counts for the stats screen, as a single row.
+--
+-- `live_window_seconds` is returned rather than hardcoded in the client so the
+-- screen's "active in the last N minutes" caption can never drift out of sync
+-- with the window actually used here.
+create or replace function public.app_user_stats()
+returns table (
+  total_users int,
+  live_users int,
+  solo_users int,
+  one_group_users int,
+  two_group_users int,
+  live_window_seconds int
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  -- Twice the client's 60s heartbeat, so a single dropped beat (a flaky
+  -- connection, a slow request) doesn't blink a user out of the live count.
+  v_window constant interval := interval '2 minutes';
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in to view user statistics.';
+  end if;
+
+  -- Aggregate the memberships once and join, rather than a correlated
+  -- count(*) per profile: one pass over each table instead of one index
+  -- lookup per registered user.
+  return query
+  with group_counts as (
+    select fm.user_id, count(*) as group_count
+    from public.family_members fm
+    group by fm.user_id
+  ),
+  per_user as (
+    select p.last_seen_at, coalesce(g.group_count, 0) as group_count
+    from public.profiles p
+    left join group_counts g on g.user_id = p.id
+  )
+  select
+    count(*)::int,
+    count(*) filter (where per_user.last_seen_at > now() - v_window)::int,
+    count(*) filter (where per_user.group_count = 0)::int,
+    count(*) filter (where per_user.group_count = 1)::int,
+    -- A user can hold at most 2 memberships (create_household/join_household
+    -- enforce the cap), but count >= 2 rather than = 2 so a future cap raise
+    -- can't silently drop users out of every bucket.
+    count(*) filter (where per_user.group_count >= 2)::int,
+    (extract(epoch from v_window))::int
+  from per_user;
+end;
+$$;
+
+-- Postgres grants EXECUTE on a new function to PUBLIC by default, which would
+-- expose both of these to the anon key. Signed-in users only.
+revoke execute on function public.touch_last_seen() from public;
+revoke execute on function public.app_user_stats() from public;
+grant execute on function public.touch_last_seen() to authenticated;
+grant execute on function public.app_user_stats() to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Coarse locale telemetry + the "User distribution" admin report
 --
 -- Source of the data: expo-localization on the client. Two values only —

@@ -150,19 +150,6 @@ export default function SettingsScreen() {
           </ThemedView>
         </ThemedView>
 
-        {isAdmin ? (
-          <ThemedView style={styles.insights}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              Insights
-            </ThemedText>
-            <Pressable onPress={() => router.push('/distribution')}>
-              <ThemedText type="link" themeColor="textSecondary">
-                User distribution
-              </ThemedText>
-            </Pressable>
-          </ThemedView>
-        ) : null}
-
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
 
         <ThemedView style={styles.dangerZone}>
@@ -202,7 +189,27 @@ export default function SettingsScreen() {
           )}
         </ThemedView>
 
-        <ThemedView style={styles.legal}>
+        <ThemedView style={styles.linkGroup}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Community
+          </ThemedText>
+          <Pressable onPress={() => router.push('/stats')}>
+            <ThemedText type="link" themeColor="textSecondary">
+              User statistics
+            </ThemedText>
+          </Pressable>
+          {/* Admin-only, so it sits alongside the public stats rather than in a
+              second heading of its own. The RPC is the real gate. */}
+          {isAdmin ? (
+            <Pressable onPress={() => router.push('/distribution')}>
+              <ThemedText type="link" themeColor="textSecondary">
+                User distribution
+              </ThemedText>
+            </Pressable>
+          ) : null}
+        </ThemedView>
+
+        <ThemedView style={styles.linkGroup}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Legal
           </ThemedText>
@@ -260,13 +267,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
   },
-  insights: {
-    gap: Spacing.two,
-  },
   dangerZone: {
     gap: Spacing.two,
   },
-  legal: {
+  linkGroup: {
     gap: Spacing.two,
   },
 });

@@ -24,6 +24,13 @@ export default function PrivacyScreen() {
           roles. This is the content the app exists to store.
         </Para>
         <Para>
+          <Bold>Activity timestamp.</Bold> While the app is open, it records a single
+          &quot;last seen&quot; time on your profile, roughly once a minute. It is one timestamp,
+          overwritten each time — not a history of when or how you use the app — and it exists only
+          so the app can show how many people are using Goodlist right now. Other users see that
+          count, never your timestamp, your name, or anything you do.
+        </Para>
+        <Para>
           <Bold>Country &amp; time zone.</Bold> Your device&apos;s Region setting (a country, like
           &quot;Philippines&quot;) and its time zone (like &quot;Asia/Manila&quot;). These are read
           from your device&apos;s own language and region settings — <Bold>not</Bold> from GPS, and
@@ -45,6 +52,7 @@ export default function PrivacyScreen() {
             'To sync your Personal tasks across your own devices.',
             "To share Requested tasks and Household task lists with the members you've chosen to invite.",
             'To send in-app notifications — for example, when someone requests a task from you.',
+            'To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.',
             'To count, in aggregate, how many people use Goodlist in each country — never to locate an individual.',
           ]}
         />
