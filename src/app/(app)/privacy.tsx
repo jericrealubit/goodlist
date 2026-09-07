@@ -23,6 +23,13 @@ export default function PrivacyScreen() {
           notes, due dates, completion status, household or group names, invite codes, and member
           roles. This is the content the app exists to store.
         </Para>
+        <Para>
+          <Bold>Activity timestamp.</Bold> While the app is open, it records a single
+          &quot;last seen&quot; time on your profile, roughly once a minute. It is one timestamp,
+          overwritten each time — not a history of when or how you use the app — and it exists only
+          so the app can show how many people are using Goodlist right now. Other users see that
+          count, never your timestamp, your name, or anything you do.
+        </Para>
         <LeadPara>
           We don&apos;t collect device analytics, location, contacts, or advertising identifiers.
           There&apos;s nothing being collected in the background beyond what&apos;s listed above.
@@ -36,6 +43,7 @@ export default function PrivacyScreen() {
             'To sync your Personal tasks across your own devices.',
             "To share Requested tasks and Household task lists with the members you've chosen to invite.",
             'To send in-app notifications — for example, when someone requests a task from you.',
+            'To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.',
           ]}
         />
         <Para>We don&apos;t use your data to train models, sell it, or use it for advertising.</Para>

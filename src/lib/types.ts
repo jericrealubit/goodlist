@@ -5,6 +5,9 @@ export type Profile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  // Presence heartbeat, written server-side by the `touch_last_seen` RPC.
+  // Null until that user's app has checked in at least once.
+  last_seen_at: string | null;
   created_at: string;
 };
 
@@ -82,4 +85,17 @@ export type GroupMember = {
 export type GroupSummary = Group & {
   role: GroupPermission;
   members: GroupMember[];
+};
+
+// One row from the `app_user_stats` RPC. Counts cover every registered user,
+// not just the caller. `two_group_users` is "2 or more" — today's cap is 2.
+export type UserStats = {
+  total_users: number;
+  live_users: number;
+  solo_users: number;
+  one_group_users: number;
+  two_group_users: number;
+  /** The window `live_users` was counted over; returned by the server so the
+   *  screen's caption can't drift from the query. */
+  live_window_seconds: number;
 };

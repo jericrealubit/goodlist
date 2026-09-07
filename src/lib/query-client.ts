@@ -18,6 +18,10 @@ export const profileKeys = {
   mine: ['profile', 'me'] as const,
 };
 
+export const statsKeys = {
+  users: ['stats', 'users'] as const,
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
