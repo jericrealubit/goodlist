@@ -22,6 +22,11 @@ export const statsKeys = {
   users: ['stats', 'users'] as const,
 };
 
+export const distributionKeys = {
+  report: ['distribution', 'report'] as const,
+  isAdmin: ['distribution', 'isAdmin'] as const,
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

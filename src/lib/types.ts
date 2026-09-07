@@ -9,6 +9,26 @@ export type Profile = {
   // Null until that user's app has checked in at least once.
   last_seen_at: string | null;
   created_at: string;
+  /** ISO 3166-1 alpha-2, from the device's Region setting. Exact. */
+  region_code: string | null;
+  /** IANA zone, from the device's calendar settings. A coarse proxy only. */
+  time_zone: string | null;
+  locale_updated_at: string | null;
+  /** User's opt-out. When false the two fields above are cleared. */
+  locale_sharing: boolean;
+};
+
+/**
+ * One aggregated row from the `user_distribution_report` RPC. Counts only —
+ * the RPC never returns anything that identifies a user. A row with every
+ * field null is the "not shared" bucket (opted out, or not yet reported).
+ */
+export type DistributionRow = {
+  region_code: string | null;
+  region: string | null;
+  city: string | null;
+  time_zone: string | null;
+  user_count: number;
 };
 
 export type Task = {

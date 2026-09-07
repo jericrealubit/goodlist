@@ -55,3 +55,6 @@ example
 
 # local git worktrees
 .worktrees/
+
+# Generated usage reports (real user data, regenerate with `npm run report:distribution`)
+reports/

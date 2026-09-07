@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
@@ -11,10 +11,12 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { useIsAdminQuery } from '@/hooks/use-distribution-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useProfileQuery } from '@/hooks/use-profile-query';
-import { useUpdateDisplayNameMutation } from '@/hooks/use-profile-mutations';
+import { useUpdateDisplayNameMutation, useUpdateLocaleSharingMutation } from '@/hooks/use-profile-mutations';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
+import { useTheme } from '@/hooks/use-theme';
 import { getErrorMessage } from '@/lib/errors';
 import { deleteMyAccount } from '@/lib/mutations/account';
 import { supabase } from '@/lib/supabase';
@@ -24,8 +26,11 @@ export default function SettingsScreen() {
   const queryClient = useQueryClient();
   const { topInset, bottomInset } = useTabScreenInsets();
   const { user, signOut } = useSession();
+  const theme = useTheme();
   const { data: profile, isLoading: profileLoading } = useProfileQuery();
+  const { data: isAdmin } = useIsAdminQuery();
   const updateDisplayNameMutation = useUpdateDisplayNameMutation();
+  const updateLocaleSharingMutation = useUpdateLocaleSharingMutation();
   const isOnline = useOnlineStatus();
   const [displayName, setDisplayName] = useState('');
   const [loadedProfileId, setLoadedProfileId] = useState<string | null>(null);
@@ -121,6 +126,30 @@ export default function SettingsScreen() {
           <ThemeSwitcher />
         </ThemedView>
 
+        <ThemedView style={styles.privacyBlock}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Privacy
+          </ThemedText>
+          <ThemedView style={styles.switchRow}>
+            <ThemedView style={styles.switchLabel}>
+              <ThemedText type="small">Share my country and time zone</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Helps us see which countries Goodlist is used in. Taken from your device&apos;s
+                language settings — never GPS, and never your precise location.
+              </ThemedText>
+            </ThemedView>
+            <Switch
+              value={profile?.locale_sharing ?? true}
+              onValueChange={(enabled) => {
+                if (!user) return;
+                updateLocaleSharingMutation.mutate({ userId: user.id, enabled });
+              }}
+              trackColor={{ true: theme.primary, false: theme.border }}
+              accessibilityLabel="Share my country and time zone"
+            />
+          </ThemedView>
+        </ThemedView>
+
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
 
         <ThemedView style={styles.dangerZone}>
@@ -169,6 +198,15 @@ export default function SettingsScreen() {
               User statistics
             </ThemedText>
           </Pressable>
+          {/* Admin-only, so it sits alongside the public stats rather than in a
+              second heading of its own. The RPC is the real gate. */}
+          {isAdmin ? (
+            <Pressable onPress={() => router.push('/distribution')}>
+              <ThemedText type="link" themeColor="textSecondary">
+                User distribution
+              </ThemedText>
+            </Pressable>
+          ) : null}
         </ThemedView>
 
         <ThemedView style={styles.linkGroup}>
@@ -215,6 +253,19 @@ const styles = StyleSheet.create({
   },
   appearance: {
     gap: Spacing.two,
+  },
+  privacyBlock: {
+    gap: Spacing.two,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  switchLabel: {
+    flex: 1,
+    gap: Spacing.half,
   },
   dangerZone: {
     gap: Spacing.two,

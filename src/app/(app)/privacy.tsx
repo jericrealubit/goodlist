@@ -30,9 +30,18 @@ export default function PrivacyScreen() {
           so the app can show how many people are using Goodlist right now. Other users see that
           count, never your timestamp, your name, or anything you do.
         </Para>
+        <Para>
+          <Bold>Country &amp; time zone.</Bold> Your device&apos;s Region setting (a country, like
+          &quot;Philippines&quot;) and its time zone (like &quot;Asia/Manila&quot;). These are read
+          from your device&apos;s own language and region settings — <Bold>not</Bold> from GPS, and
+          not from your IP address. We use them only to count how many people use Goodlist in each
+          country. You can turn this off at any time in Settings, which also clears the two values
+          we&apos;ve stored.
+        </Para>
         <LeadPara>
-          We don&apos;t collect device analytics, location, contacts, or advertising identifiers.
-          There&apos;s nothing being collected in the background beyond what&apos;s listed above.
+          We don&apos;t collect your precise location, contacts, or advertising identifiers, and we
+          don&apos;t track you across other apps or websites. There&apos;s nothing being collected
+          in the background beyond what&apos;s listed above.
         </LeadPara>
       </Clause>
 
@@ -44,6 +53,7 @@ export default function PrivacyScreen() {
             "To share Requested tasks and Household task lists with the members you've chosen to invite.",
             'To send in-app notifications — for example, when someone requests a task from you.',
             'To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.',
+            'To count, in aggregate, how many people use Goodlist in each country — never to locate an individual.',
           ]}
         />
         <Para>We don&apos;t use your data to train models, sell it, or use it for advertising.</Para>

@@ -1027,3 +1027,271 @@ revoke execute on function public.touch_last_seen() from public;
 revoke execute on function public.app_user_stats() from public;
 grant execute on function public.touch_last_seen() to authenticated;
 grant execute on function public.app_user_stats() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Coarse locale telemetry + the "User distribution" admin report
+--
+-- Source of the data: expo-localization on the client. Two values only —
+-- `Localization.getLocales()[0].regionCode` (the device's Region setting) and
+-- `Localization.getCalendars()[0].timeZone` (IANA). No GPS, no permission
+-- prompt, no IP lookup, no third-party geo service.
+--
+-- PRECISION, stated once and honoured everywhere below:
+--   * country  — EXACT. It is the device's own Region setting.
+--   * region   — APPROXIMATE. Derived from the time zone, and only for
+--                countries that HAVE more than one zone. A zone like
+--                'America/Los_Angeles' spans several states, so the label is
+--                the zone's span, not an administrative subdivision.
+--   * city     — Only ever set where the zone genuinely IS a single city
+--                (Singapore, Hong Kong, Monaco…). Everywhere else it stays
+--                null rather than pretending the zone's label city is where
+--                the user lives.
+-- A country with exactly one time zone carries NO sub-national signal at all,
+-- so it deliberately gets no row in timezone_locations — the report shows such
+-- users under the country with "not available" beneath it. Inventing a city
+-- for them would be worse than admitting we don't know.
+-- ---------------------------------------------------------------------------
+
+alter table public.profiles add column if not exists region_code text;
+alter table public.profiles add column if not exists time_zone text;
+alter table public.profiles add column if not exists locale_updated_at timestamptz;
+alter table public.profiles add column if not exists locale_sharing boolean not null default true;
+
+alter table public.profiles drop constraint if exists profiles_region_code_check;
+alter table public.profiles add constraint profiles_region_code_check
+  check (region_code is null or region_code ~ '^[A-Z]{2}$');
+
+create index if not exists profiles_region_code_idx on public.profiles (region_code);
+
+-- No new RLS policy: "Users can update their own profile" (defined at the top
+-- of this file) already covers the client writing these columns on its own row.
+
+-- ---------------------------------------------------------------------------
+-- timezone_locations — IANA zone to a sub-national label, where one exists.
+-- Rows are only present for zones that actually narrow a user's location down
+-- within their country. See the precision note above.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.timezone_locations (
+  time_zone text primary key,
+  region text,
+  city text,
+  constraint timezone_locations_has_signal check (region is not null or city is not null)
+);
+
+insert into public.timezone_locations (time_zone, region, city) values
+  -- United States
+  ('America/New_York',       'Eastern Time',                 null),
+  ('America/Detroit',        'Michigan',                     null),
+  ('America/Indiana/Indianapolis', 'Indiana',                null),
+  ('America/Kentucky/Louisville',  'Kentucky',               null),
+  ('America/Chicago',        'Central Time',                 null),
+  ('America/Denver',         'Mountain Time',                null),
+  ('America/Phoenix',        'Arizona',                      null),
+  ('America/Boise',          'Idaho / Oregon (Mountain)',    null),
+  ('America/Los_Angeles',    'Pacific Time',                 null),
+  ('America/Anchorage',      'Alaska',                       null),
+  ('America/Juneau',         'Alaska',                       null),
+  ('America/Nome',           'Alaska',                       null),
+  ('Pacific/Honolulu',       'Hawaii',                       null),
+  ('America/Puerto_Rico',    'Puerto Rico',                  null),
+  ('Pacific/Guam',           'Guam',                         null),
+  -- Canada
+  ('America/St_Johns',       'Newfoundland and Labrador',    null),
+  ('America/Halifax',        'Atlantic Canada',              null),
+  ('America/Moncton',        'New Brunswick',                null),
+  ('America/Toronto',        'Ontario / Quebec',             null),
+  ('America/Winnipeg',       'Manitoba',                     null),
+  ('America/Regina',         'Saskatchewan',                 null),
+  ('America/Edmonton',       'Alberta',                      null),
+  ('America/Vancouver',      'British Columbia',             null),
+  ('America/Whitehorse',     'Yukon',                        null),
+  ('America/Yellowknife',    'Northwest Territories',        null),
+  ('America/Iqaluit',        'Nunavut',                      null),
+  -- Mexico
+  ('America/Mexico_City',    'Central Mexico',               null),
+  ('America/Monterrey',      'Nuevo Leon / northeast',       null),
+  ('America/Chihuahua',      'Chihuahua',                    null),
+  ('America/Hermosillo',     'Sonora',                       null),
+  ('America/Tijuana',        'Baja California',              null),
+  ('America/Cancun',         'Quintana Roo',                 null),
+  ('America/Merida',         'Yucatan / Campeche',           null),
+  -- Brazil
+  ('America/Sao_Paulo',      'Southeast / South Brazil',     null),
+  ('America/Bahia',          'Bahia',                        null),
+  ('America/Fortaleza',      'Northeast Brazil',             null),
+  ('America/Recife',         'Pernambuco',                   null),
+  ('America/Belem',          'Para',                         null),
+  ('America/Manaus',         'Amazonas',                     null),
+  ('America/Cuiaba',         'Mato Grosso',                  null),
+  ('America/Campo_Grande',   'Mato Grosso do Sul',           null),
+  ('America/Porto_Velho',    'Rondonia',                     null),
+  ('America/Boa_Vista',      'Roraima',                      null),
+  ('America/Rio_Branco',     'Acre',                         null),
+  ('America/Noronha',        'Fernando de Noronha',          null),
+  -- Australia
+  ('Australia/Sydney',       'New South Wales',              null),
+  ('Australia/Melbourne',    'Victoria',                     null),
+  ('Australia/Brisbane',     'Queensland',                   null),
+  ('Australia/Adelaide',     'South Australia',              null),
+  ('Australia/Perth',        'Western Australia',            null),
+  ('Australia/Hobart',       'Tasmania',                     null),
+  ('Australia/Darwin',       'Northern Territory',           null),
+  ('Australia/Broken_Hill',  'New South Wales (far west)',   null),
+  -- Indonesia
+  ('Asia/Jakarta',           'Western Indonesia',            null),
+  ('Asia/Pontianak',         'West Kalimantan',              null),
+  ('Asia/Makassar',          'Central Indonesia',            null),
+  ('Asia/Jayapura',          'Eastern Indonesia',            null),
+  -- Malaysia
+  ('Asia/Kuala_Lumpur',      'Peninsular Malaysia',          null),
+  ('Asia/Kuching',           'Sabah and Sarawak',            null),
+  -- Russia
+  ('Europe/Kaliningrad',     'Kaliningrad',                  null),
+  ('Europe/Moscow',          'Western Russia',               null),
+  ('Europe/Samara',          'Samara',                       null),
+  ('Asia/Yekaterinburg',     'Urals',                        null),
+  ('Asia/Omsk',              'Omsk',                         null),
+  ('Asia/Novosibirsk',       'Novosibirsk',                  null),
+  ('Asia/Krasnoyarsk',       'Krasnoyarsk',                  null),
+  ('Asia/Irkutsk',           'Irkutsk',                      null),
+  ('Asia/Yakutsk',           'Yakutia',                      null),
+  ('Asia/Vladivostok',       'Primorsky',                    null),
+  ('Asia/Magadan',           'Magadan',                      null),
+  ('Asia/Kamchatka',         'Kamchatka',                    null),
+  -- China
+  ('Asia/Shanghai',          'Eastern China',                null),
+  ('Asia/Urumqi',            'Xinjiang',                     null),
+  -- Other multi-zone countries
+  ('Asia/Almaty',            'Southeastern Kazakhstan',      null),
+  ('Asia/Aqtobe',            'Western Kazakhstan',           null),
+  ('Pacific/Auckland',       'New Zealand (main islands)',   null),
+  ('Pacific/Chatham',        'Chatham Islands',              null),
+  ('Atlantic/Canary',        'Canary Islands',               null),
+  ('Europe/Madrid',          'Mainland Spain',               null),
+  ('Atlantic/Azores',        'Azores',                       null),
+  ('Europe/Lisbon',          'Mainland Portugal',            null),
+  ('America/Argentina/Buenos_Aires', 'Buenos Aires',         null),
+  ('America/Argentina/Cordoba',      'Cordoba',              null),
+  ('America/Argentina/Mendoza',      'Mendoza',              null),
+  ('Pacific/Galapagos',      'Galapagos',                    null),
+  ('America/Guayaquil',      'Mainland Ecuador',             null),
+  ('Asia/Nicosia',           'Cyprus (south)',               null),
+  ('Africa/Lagos',           'Southern Nigeria',             null),
+  ('America/Santiago',       'Mainland Chile',               null),
+  ('Pacific/Easter',         'Easter Island',                null),
+  ('America/Nuuk',           'Greenland (west)',             null),
+  ('Asia/Kathmandu',         'Nepal',                        null),
+  -- Zones that genuinely ARE a single city or city-state: city is EXACT here.
+  ('Asia/Singapore',         null,                           'Singapore'),
+  ('Asia/Hong_Kong',         null,                           'Hong Kong'),
+  ('Asia/Macau',             null,                           'Macau'),
+  ('Europe/Monaco',          null,                           'Monaco'),
+  ('Europe/Vatican',         null,                           'Vatican City'),
+  ('Europe/San_Marino',      null,                           'San Marino'),
+  ('Europe/Gibraltar',       null,                           'Gibraltar'),
+  ('Europe/Andorra',         null,                           'Andorra la Vella'),
+  ('Europe/Vaduz',           null,                           'Vaduz'),
+  ('Europe/Luxembourg',      null,                           'Luxembourg City'),
+  ('Europe/Malta',           null,                           'Valletta'),
+  ('Asia/Bahrain',           null,                           'Manama'),
+  ('Asia/Qatar',             null,                           'Doha'),
+  ('Asia/Kuwait',            null,                           'Kuwait City'),
+  ('Indian/Maldives',        null,                           'Male'),
+  ('Atlantic/Bermuda',       null,                           'Hamilton')
+on conflict (time_zone) do update
+  set region = excluded.region, city = excluded.city;
+
+alter table public.timezone_locations enable row level security;
+-- Deliberately no policies: this reference table is read only by the
+-- SECURITY DEFINER report function below, never directly by a client.
+
+-- ---------------------------------------------------------------------------
+-- app_admins — allowlist gating the distribution report.
+--
+-- Seed it by hand, once, in the SQL editor:
+--   insert into public.app_admins (user_id)
+--   select id from auth.users where email = 'you@example.com'
+--   on conflict do nothing;
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.app_admins (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  added_at timestamptz not null default now()
+);
+
+alter table public.app_admins enable row level security;
+-- Deliberately no policies: unreadable and unwritable from any client, so
+-- nobody can discover who the admins are or add themselves. Only the
+-- SECURITY DEFINER helper below reads it.
+
+-- Reports only on the caller, so it is safe to expose to any signed-in user —
+-- the app calls it to decide whether to show the Settings entry.
+create or replace function public.is_app_admin()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (select 1 from public.app_admins where user_id = auth.uid());
+$$;
+
+-- ---------------------------------------------------------------------------
+-- user_distribution_stats — the single source of truth for the report.
+-- Aggregate counts only: never a user id, display name, or email. Users who
+-- opted out of locale sharing, or who haven't reported yet, collapse into one
+-- all-null bucket, which is what makes the coverage figure honest without
+-- exposing anyone.
+--
+-- Deliberately NOT security_invoker: the view runs as its owner so it can
+-- aggregate across all profiles despite RLS. That is exactly why the grants
+-- below matter — they, not RLS, are what keep it out of clients' hands.
+-- Two consumers read it, and both must see identical numbers:
+--   * the in-app screen, via user_distribution_report() (admin-gated), and
+--   * scripts/user-distribution-report.mjs, which connects as service_role
+--     and selects from it directly. service_role has no auth.uid(), so it
+--     could never pass the admin check — it needs this direct path.
+-- ---------------------------------------------------------------------------
+
+create or replace view public.user_distribution_stats as
+  select
+    case when p.locale_sharing then p.region_code end as region_code,
+    case when p.locale_sharing then tl.region end     as region,
+    case when p.locale_sharing then tl.city end       as city,
+    case when p.locale_sharing then p.time_zone end   as time_zone,
+    count(*)::int                                     as user_count
+  from public.profiles p
+  left join public.timezone_locations tl on tl.time_zone = p.time_zone
+  group by 1, 2, 3, 4;
+
+revoke all on public.user_distribution_stats from public, anon, authenticated;
+grant select on public.user_distribution_stats to service_role;
+
+create or replace function public.user_distribution_report()
+returns table (region_code text, region text, city text, time_zone text, user_count int)
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+begin
+  if not public.is_app_admin() then
+    raise exception 'Not authorized.';
+  end if;
+
+  return query select s.region_code, s.region, s.city, s.time_zone, s.user_count
+               from public.user_distribution_stats s;
+end;
+$$;
+
+-- EXECUTE on a new function is granted to PUBLIC by default, and `anon`
+-- inherits that — so revoking from `anon` alone would be a no-op. Revoke from
+-- PUBLIC, then grant back only to the roles that should have it.
+revoke all on function public.user_distribution_report() from public, anon;
+grant execute on function public.user_distribution_report() to authenticated;
+
+-- is_app_admin() only ever reports on the caller, so authenticated may call
+-- it; anon has no use for it.
+revoke all on function public.is_app_admin() from public, anon;
+grant execute on function public.is_app_admin() to authenticated;

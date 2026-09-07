@@ -71,13 +71,28 @@ all ages (e.g. "Everyone" / PEGI 3 equivalent).
 | Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | Yes |
-| Data collected | Email address (account), User-generated content (task titles/notes/due dates, display name, household name) |
+| Data collected | Email address (account), User-generated content (task titles/notes/due dates, display name, household name), Approximate location (country + time zone — see note below) |
 | Is data encrypted in transit? | Yes |
-| Can users request data deletion? | Yes — in-app (Settings → Delete account), immediate and permanent |
+| Can users request data deletion? | Yes — in-app (Settings → Delete account), immediate and permanent. The country/time zone alone can also be cleared on its own via Settings → Privacy |
 | Is data shared with third parties? | No |
 | Is data sold? | No |
 | Is data used for advertising or marketing? | No |
-| Is collection required or optional? | Email required for account creation; display name optional; task content is whatever the user chooses to enter |
+| Purpose of location collection | Analytics only — an aggregate count of users per country. Never used for advertising, personalisation, or locating an individual |
+| Is collection required or optional? | Email required for account creation; display name optional; task content is whatever the user chooses to enter; **country/time zone is optional** and can be switched off in Settings → Privacy |
+
+### Note on the "Approximate location" declaration
+
+Goodlist requests **no location permission** and calls **no location API**. The country comes
+from the device's own Region setting and the time zone from its calendar settings, both read via
+`expo-localization` — the same values any app gets for formatting dates and currency.
+
+Google's "Approximate location" category is written around location APIs (e.g.
+`ACCESS_COARSE_LOCATION`), which this does not use. It is declared anyway because the app
+*derives a geographic breakdown* from these values, and over-declaring is the safer side of that
+line. If a reviewer questions it, the accurate description is: *device locale settings, used to
+infer country for aggregate analytics; no location permission is requested.*
+
+Answer **No** to "Does your app use precise location?" — it does not, and cannot.
 
 ## App content declarations
 
