@@ -65,22 +65,28 @@ Play Console account, or a device — nothing in the codebase can supply them.
 
 `src/lib/supabase.ts:6` reads `process.env.EXPO_PUBLIC_SUPABASE_URL` and
 `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and throws at module load if either is missing. These live in
-`.env.local`, which is git-ignored, so an EAS cloud build has neither. `EXPO_PUBLIC_*` variables are
-inlined at build time, so the resulting AAB would install and then crash on launch.
+`.env.local`, which is git-ignored (correctly — never commit it), so an EAS cloud build has neither.
+`EXPO_PUBLIC_*` variables are inlined at build time, so the resulting AAB would install and then
+crash on launch.
+
+The values have to be uploaded to EAS once. With `.env.local` already in place locally, that is one
+command per environment — `env:push` reads `.env.local` by default:
 
 ```bash
-eas env:create --scope project --name EXPO_PUBLIC_SUPABASE_URL \
-  --value "https://<project>.supabase.co" --environment production --environment preview \
-  --visibility plaintext
-
-eas env:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY \
-  --value "<anon-key>" --environment production --environment preview \
-  --visibility sensitive
+npx eas-cli login
+npx eas-cli env:push production
+npx eas-cli env:push preview
+npx eas-cli env:list --environment production   # confirm both landed
 ```
 
-Verify with `eas env:list --environment production` before building. The anon key is a public
-client key by design (RLS is what protects the data), so `sensitive` rather than `secret` is correct —
-`secret` values can never be read back, including by you.
+It asks how to store each variable. `EXPO_PUBLIC_SUPABASE_URL` can be **plain text**;
+`EXPO_PUBLIC_SUPABASE_ANON_KEY` should be **sensitive**, not *secret* — secret values can never be
+read back, including by you, and `eas env:pull` would then no longer be able to rebuild a working
+`.env.local`. The anon key is a publishable client key that ships inside every copy of the app
+anyway; row-level security is what actually protects the data, so it does not need secret handling.
+
+Each build profile in `eas.json` names the environment it draws from (`production` → `production`),
+so once these are pushed the builds pick them up with no further configuration.
 
 ### B2. ~~`eas.json` `submit.production` is empty~~ — **fixed**
 
@@ -185,12 +191,8 @@ applies operations in a fixed pipeline order rather than call order.
    ```bash
    npm install
    npx eas-cli login
-   npx eas-cli env:create --scope project --name EXPO_PUBLIC_SUPABASE_URL \
-     --value "https://<project>.supabase.co" --environment production --environment preview \
-     --visibility plaintext
-   npx eas-cli env:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY \
-     --value "<anon-key>" --environment production --environment preview --visibility sensitive
-   npx eas-cli env:list --environment production          # confirm both are there
+   npx eas-cli env:push production                        # reads .env.local
+   npx eas-cli env:push preview
    npx eas-cli build --platform android --profile preview  # APK — install directly, sanity-check it
    ```
 
