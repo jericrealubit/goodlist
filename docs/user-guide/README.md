@@ -2,6 +2,10 @@
 
 This guide shows you how to use Goodlist, one small step at a time.
 
+**Prefer a web page?** The same guide is published at
+<https://jericrealubit.github.io/goodlist/guide/> — easier to send to someone who
+doesn't use GitHub.
+
 You do **not** need to know anything about phones or apps. Every step has a picture.
 The **red dotted box** in each picture shows you exactly where to tap.
 

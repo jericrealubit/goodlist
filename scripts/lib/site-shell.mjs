@@ -1,12 +1,37 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Delete your Goodlist account · Goodlist</title>
-<meta name="description" content="How to permanently delete your Goodlist account and all of your data, in the app or by request.">
-<meta name="robots" content="index, follow">
-<style>
+// The shared chrome for the published Goodlist site: header, nav, palette and
+// typography. Both site builders render through this so the guide and the
+// legal pages are one site rather than two that merely look alike.
+//
+//   scripts/build-legal-site.mjs  ->  docs/legal/...   (npm run legal:site)
+//   scripts/build-guide-site.mjs  ->  docs/guide/      (npm run guide:site)
+//
+// Served by GitHub Pages (Settings -> Pages -> main /docs) under
+// https://jericrealubit.github.io/goodlist/
+import { CONTACT_EMAIL } from '../../src/content/legal.ts';
+
+export const SITE_NAME = 'Goodlist';
+/** Repository-name path prefix GitHub Pages serves the site under. */
+export const SITE_BASE = '/goodlist';
+
+/** Site-wide header nav, in order. */
+export const SITE_NAV = [
+  { href: `${SITE_BASE}/guide/`, label: 'Guide' },
+  { href: `${SITE_BASE}/legal/privacy/`, label: 'Privacy' },
+  { href: `${SITE_BASE}/legal/terms/`, label: 'Terms' },
+  { href: `${SITE_BASE}/legal/delete-account/`, label: 'Delete account' },
+];
+
+export const escape = (text) =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+export const mailto = () =>
+  `<a href="mailto:${escape(CONTACT_EMAIL)}">${escape(CONTACT_EMAIL)}</a>`;
+
+export const STYLES = `
   :root {
     color-scheme: light dark;
     --bg: #fbfbfa;
@@ -193,79 +218,51 @@
     color: var(--muted);
     font-size: 14px;
   }
-</style>
+`;
+
+const MARK = `<span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" fill-opacity=".14"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+
+/**
+ * Wraps a rendered <main> in the site chrome.
+ *
+ * `activeHref` marks the current SITE_NAV entry; `brandHref` is where the
+ * wordmark links (each section points at its own landing page). `extraStyles`
+ * appends rules a single builder needs — the guide's screenshots, say —
+ * without pushing them into every page.
+ */
+export function shell({ title, description, activeHref, brandHref, body, extraStyles = '' }) {
+  const nav = SITE_NAV.map(
+    ({ href, label }) =>
+      `<a href="${href}"${href === activeHref ? ' aria-current="page"' : ''}>${escape(label)}</a>`,
+  ).join('\n        ');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escape(title)} · ${SITE_NAME}</title>
+<meta name="description" content="${escape(description)}">
+<meta name="robots" content="index, follow">
+<style>${STYLES}${extraStyles}</style>
 </head>
 <body>
 <header class="top">
   <div class="top-inner">
-    <a class="brand" href="/goodlist/legal/">
-      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" fill-opacity=".14"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      <b>Goodlist</b>
+    <a class="brand" href="${brandHref}">
+      ${MARK}
+      <b>${SITE_NAME}</b>
     </a>
     <nav class="docs" aria-label="Main">
-        <a href="/goodlist/guide/">Guide</a>
-        <a href="/goodlist/legal/privacy/">Privacy</a>
-        <a href="/goodlist/legal/terms/">Terms</a>
-        <a href="/goodlist/legal/delete-account/" aria-current="page">Delete account</a>
+        ${nav}
     </nav>
   </div>
 </header>
-<main>
-  <div class="hero">
-    <h1>Delete your Goodlist account</h1>
-    <p>How to permanently delete your Goodlist account and all of your data, in the app or by request.</p>
-    <span class="stamp">Effective <b>September 7, 2026</b></span>
-  </div>
-  <div class="layout">
-    <nav class="toc" aria-label="On this page">
-      <span class="toc-label">On this page</span>
-      <a href="#in-the-app">In the app (immediate)</a>
-      <a href="#by-request">By request (if you can’t use the app)</a>
-      <a href="#what-is-deleted">What gets deleted</a>
-      <a href="#partial">Deleting only some data</a>
-    </nav>
-    <article>
-      <section id="in-the-app">
-        <h2><span class="num">1.</span>In the app (immediate)</h2>
-          <p>Deleting from inside Goodlist is immediate and permanent — there is no queue and no waiting period:</p>
-          <ul>
-            <li>Open Goodlist and sign in.</li>
-            <li><strong>Settings</strong> tab → scroll to the bottom.</li>
-            <li><strong>Delete account</strong> → confirm.</li>
-          </ul>
-          <aside class="callout warn"><strong>If you own a group</strong> that still has other members in it, deletion is blocked until you transfer ownership or remove those members — otherwise deleting your account would destroy a group other people are still using. Transfer or remove first, then delete.</aside>
-      </section>
-      <section id="by-request">
-        <h2><span class="num">2.</span>By request (if you can’t use the app)</h2>
-          <p>Lost your device, or can’t sign in? Email <a href="mailto:jericrealubit@gmail.com">jericrealubit@gmail.com</a> from the address on the account, with the subject “Delete my Goodlist account”. We verify that the request came from the account’s own email address and then delete it for you, normally within 30 days and usually much sooner.</p>
-      </section>
-      <section id="what-is-deleted">
-        <h2><span class="num">3.</span>What gets deleted</h2>
-          <p>Everything tied to your account is removed permanently and is not recoverable:</p>
-          <ul>
-            <li>Your account and sign-in credentials.</li>
-            <li>Your display name and profile.</li>
-            <li>All of your personal tasks, notes, and due dates.</li>
-            <li>Your completion and cancellation history.</li>
-            <li>Your notifications.</li>
-            <li>Your group memberships, and any country/time-zone value stored for community stats.</li>
-          </ul>
-          <p class="lead">Tasks you requested from someone else remain on their list as tasks they were asked to do, with your name no longer attached. Groups you were a member of but did not own continue to exist for their remaining members.</p>
-          <p>We keep no backup copy of a deleted account beyond our infrastructure provider’s routine encrypted database backups, which age out on their own schedule and are never used to restore an individual deleted account.</p>
-      </section>
-      <section id="partial">
-        <h2><span class="num">4.</span>Deleting only some data</h2>
-          <ul>
-            <li><strong>History</strong> — clear completed and cancelled tasks individually, or all at once, from the History tab.</li>
-            <li><strong>Country &amp; time zone</strong> — turn off the community-stats toggle in Settings → Privacy. That clears the two stored values without touching anything else.</li>
-            <li><strong>Individual tasks</strong> — delete any task from the task list or its detail screen.</li>
-          </ul>
-      </section>
-    </article>
-  </div>
-</main>
+${body}
 <footer>
-  Goodlist — questions? <a href="mailto:jericrealubit@gmail.com">jericrealubit@gmail.com</a>
+  ${SITE_NAME} — questions? ${mailto()}
 </footer>
 </body>
 </html>
+`;
+}
