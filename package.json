@@ -57,7 +57,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "report:distribution": "node ./scripts/user-distribution-report.mjs",
-    "guide:screens": "node ./scripts/generate-guide-screens.mjs"
+    "guide:screens": "node ./scripts/generate-guide-screens.mjs",
+    "legal:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-legal-site.mjs"
   },
   "private": true
 }

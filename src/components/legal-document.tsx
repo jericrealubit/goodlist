@@ -1,9 +1,16 @@
-import { type ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import {
+  CONTACT_EMAIL,
+  EFFECTIVE_DATE,
+  type Block,
+  type LegalDoc,
+  type Span,
+} from '@/content/legal';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
@@ -18,7 +25,7 @@ export function LegalScreen({ title, children }: { title: string; children: Reac
         <ThemedView style={styles.header}>
           <ThemedText type="title">{title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Effective September 7, 2026
+            Effective {EFFECTIVE_DATE}
           </ThemedText>
         </ThemedView>
         {children}
@@ -95,10 +102,51 @@ export function ContactEmail() {
     <ThemedText
       type="link"
       themeColor="primary"
-      onPress={() => Linking.openURL('mailto:jericrealubit@gmail.com')}>
-      jericrealubit@gmail.com
+      onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}>
+      {CONTACT_EMAIL}
     </ThemedText>
   );
+}
+
+/**
+ * Renders a document from src/content/legal.ts. That module is shared with
+ * `npm run legal:site`, which renders the same content as the public web
+ * pages Google Play links to — so the policy a reviewer reads and the policy
+ * in the app are the same text by construction.
+ */
+export function LegalDocument({ doc }: { doc: LegalDoc }) {
+  return (
+    <LegalScreen title={doc.title}>
+      {doc.clauses.map((clause, index) => (
+        <Clause key={clause.id} number={index + 1} title={clause.title}>
+          {clause.blocks.map((block, blockIndex) => (
+            <LegalBlock key={blockIndex} block={block} />
+          ))}
+        </Clause>
+      ))}
+    </LegalScreen>
+  );
+}
+
+function LegalBlock({ block }: { block: Block }) {
+  switch (block.kind) {
+    case 'para':
+      return <Para>{renderSpans(block.spans)}</Para>;
+    case 'lead':
+      return <LeadPara>{renderSpans(block.spans)}</LeadPara>;
+    case 'bullets':
+      return <Bullets items={block.items.map((item) => renderSpans(item))} />;
+    case 'callout':
+      return <Callout variant={block.variant}>{renderSpans(block.spans)}</Callout>;
+  }
+}
+
+function renderSpans(spans: Span[]) {
+  return spans.map((span, index) => (
+    <Fragment key={index}>
+      {typeof span === 'string' ? span : 'bold' in span ? <Bold>{span.bold}</Bold> : <ContactEmail />}
+    </Fragment>
+  ));
 }
 
 const styles = StyleSheet.create({

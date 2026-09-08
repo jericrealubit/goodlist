@@ -37,7 +37,9 @@ going from solo to a shared family or team group. No technical knowledge assumed
   counted in community stats, and permanently delete your account (blocked while you still own a group
   with other members in it, to protect them).
 - **Legal** — in-app About, Privacy Policy, and Terms of Service screens (`src/app/(app)/about.tsx`,
-  `privacy.tsx`, `terms.tsx`).
+  `privacy.tsx`, `terms.tsx`). The policy text lives once in `src/content/legal.ts`; the in-app
+  screens and the public pages Google Play links to (`npm run legal:site` → `docs/legal/`) both
+  render from it, so they can't drift apart.
 
 ## Tech stack
 
@@ -60,6 +62,7 @@ src/
   hooks/          Data-fetching and mutation hooks (React Query)
   lib/            Supabase client, queries, mutations, types, validation
   constants/      Theme definitions, group role/mode options
+  content/        legal.ts — Privacy Policy + Terms copy, shared by the app and the web pages
 supabase/
   schema.sql      Full database schema, RLS policies, and RPC functions —
                   hand-applied via the Supabase SQL editor (no migrations/CLI linkage in this repo)
@@ -102,6 +105,7 @@ supabase/
 | `npm run reset-project` | Move the starter code aside and scaffold a blank `app/` directory |
 | `npm run report:distribution` | Generate a user-distribution report from Supabase data (admin tooling) |
 | `npm run guide:screens` | Re-render the illustrated phone screens in `docs/user-guide/images/` |
+| `npm run legal:site` | Re-render the public Privacy/Terms/account-deletion pages into `docs/legal/` |
 
 ## Deployment
 
@@ -115,3 +119,9 @@ npx eas-cli build --platform android --profile preview
 `preview` produces a directly installable APK; `production` produces a Play Store-ready `.aab` with an
 auto-incrementing version code. There is no OTA/EAS Update channel configured yet — JS changes require a
 new build to reach devices outside of Expo Go.
+
+For Google Play specifically, **[docs/play-store-deployment.md](docs/play-store-deployment.md)** is the
+step-by-step runbook — the account and closed-testing gates that set the timeline, the repo changes
+needed before the first build, and the order to do everything in.
+[docs/play-store-listing.md](docs/play-store-listing.md) holds the listing copy and the Data Safety
+answers.
