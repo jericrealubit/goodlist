@@ -164,7 +164,6 @@ ${extras}
     title: doc.title,
     description: `${doc.subtitle} A step-by-step guide to ${SITE_NAME}, from your first task on your own to sharing with a family or team.`,
     activeHref: HREF,
-    brandHref: HREF,
     body,
     extraStyles: EXTRA_STYLES,
   });

@@ -60,7 +60,8 @@
     "guide:screens": "node ./scripts/generate-guide-screens.mjs",
     "legal:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-legal-site.mjs",
     "guide:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-guide-site.mjs",
-    "site": "npm run legal:site && npm run guide:site"
+    "index:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-site-index.mjs",
+    "site": "npm run index:site && npm run legal:site && npm run guide:site"
   },
   "private": true
 }

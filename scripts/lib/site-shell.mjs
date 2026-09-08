@@ -225,12 +225,19 @@ const MARK = `<span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fil
 /**
  * Wraps a rendered <main> in the site chrome.
  *
- * `activeHref` marks the current SITE_NAV entry; `brandHref` is where the
- * wordmark links (each section points at its own landing page). `extraStyles`
- * appends rules a single builder needs — the guide's screenshots, say —
- * without pushing them into every page.
+ * `activeHref` marks the current SITE_NAV entry; the wordmark links to the
+ * site index unless `brandHref` overrides it. `extraStyles` appends rules a
+ * single builder needs — the guide's screenshots, say — without pushing them
+ * into every page.
  */
-export function shell({ title, description, activeHref, brandHref, body, extraStyles = '' }) {
+export function shell({
+  title,
+  description,
+  activeHref,
+  brandHref = `${SITE_BASE}/`,
+  body,
+  extraStyles = '',
+}) {
   const nav = SITE_NAV.map(
     ({ href, label }) =>
       `<a href="${href}"${href === activeHref ? ' aria-current="page"' : ''}>${escape(label)}</a>`,

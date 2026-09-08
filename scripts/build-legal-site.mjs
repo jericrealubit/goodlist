@@ -105,7 +105,6 @@ ${sections}
     title: doc.title,
     description: doc.summary,
     activeHref: `${BASE}/${slug}/`,
-    brandHref: `${BASE}/`,
     body,
   });
 }
@@ -133,7 +132,6 @@ ${cards}
     title: 'Legal & privacy',
     description: `${SITE_NAME} privacy policy, terms of service, and account deletion.`,
     activeHref: null,
-    brandHref: `${BASE}/`,
     body,
   });
 }
