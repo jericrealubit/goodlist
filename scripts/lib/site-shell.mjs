@@ -1,12 +1,37 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Legal &amp; privacy · Goodlist</title>
-<meta name="description" content="Goodlist privacy policy, terms of service, and account deletion.">
-<meta name="robots" content="index, follow">
-<style>
+// The shared chrome for the published Goodlist site: header, nav, palette and
+// typography. Both site builders render through this so the guide and the
+// legal pages are one site rather than two that merely look alike.
+//
+//   scripts/build-legal-site.mjs  ->  docs/legal/...   (npm run legal:site)
+//   scripts/build-guide-site.mjs  ->  docs/guide/      (npm run guide:site)
+//
+// Served by GitHub Pages (Settings -> Pages -> main /docs) under
+// https://jericrealubit.github.io/goodlist/
+import { CONTACT_EMAIL } from '../../src/content/legal.ts';
+
+export const SITE_NAME = 'Goodlist';
+/** Repository-name path prefix GitHub Pages serves the site under. */
+export const SITE_BASE = '/goodlist';
+
+/** Site-wide header nav, in order. */
+export const SITE_NAV = [
+  { href: `${SITE_BASE}/guide/`, label: 'Guide' },
+  { href: `${SITE_BASE}/legal/privacy/`, label: 'Privacy' },
+  { href: `${SITE_BASE}/legal/terms/`, label: 'Terms' },
+  { href: `${SITE_BASE}/legal/delete-account/`, label: 'Delete account' },
+];
+
+export const escape = (text) =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+export const mailto = () =>
+  `<a href="mailto:${escape(CONTACT_EMAIL)}">${escape(CONTACT_EMAIL)}</a>`;
+
+export const STYLES = `
   :root {
     color-scheme: light dark;
     --bg: #fbfbfa;
@@ -193,37 +218,58 @@
     color: var(--muted);
     font-size: 14px;
   }
-</style>
+`;
+
+const MARK = `<span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" fill-opacity=".14"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+
+/**
+ * Wraps a rendered <main> in the site chrome.
+ *
+ * `activeHref` marks the current SITE_NAV entry; the wordmark links to the
+ * site index unless `brandHref` overrides it. `extraStyles` appends rules a
+ * single builder needs — the guide's screenshots, say — without pushing them
+ * into every page.
+ */
+export function shell({
+  title,
+  description,
+  activeHref,
+  brandHref = `${SITE_BASE}/`,
+  body,
+  extraStyles = '',
+}) {
+  const nav = SITE_NAV.map(
+    ({ href, label }) =>
+      `<a href="${href}"${href === activeHref ? ' aria-current="page"' : ''}>${escape(label)}</a>`,
+  ).join('\n        ');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escape(title)} · ${SITE_NAME}</title>
+<meta name="description" content="${escape(description)}">
+<meta name="robots" content="index, follow">
+<style>${STYLES}${extraStyles}</style>
 </head>
 <body>
 <header class="top">
   <div class="top-inner">
-    <a class="brand" href="/goodlist/">
-      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" fill-opacity=".14"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      <b>Goodlist</b>
+    <a class="brand" href="${brandHref}">
+      ${MARK}
+      <b>${SITE_NAME}</b>
     </a>
     <nav class="docs" aria-label="Main">
-        <a href="/goodlist/guide/">Guide</a>
-        <a href="/goodlist/legal/privacy/">Privacy</a>
-        <a href="/goodlist/legal/terms/">Terms</a>
-        <a href="/goodlist/legal/delete-account/">Delete account</a>
+        ${nav}
     </nav>
   </div>
 </header>
-<main>
-  <div class="hero">
-    <h1>Legal &amp; privacy</h1>
-    <p>Goodlist is a task app for your own to-dos and for sharing tasks with a small family or team group. These pages are the same text shown inside the app.</p>
-    <span class="stamp">Effective <b>September 7, 2026</b></span>
-  </div>
-  <div class="cards">
-    <a class="card" href="/goodlist/legal/privacy/"><b>Privacy Policy</b><span>What Goodlist collects, why, who can see it, and how to get it deleted.</span></a>
-    <a class="card" href="/goodlist/legal/terms/"><b>Terms of Service</b><span>The terms that govern using Goodlist.</span></a>
-    <a class="card" href="/goodlist/legal/delete-account/"><b>Delete your Goodlist account</b><span>How to permanently delete your Goodlist account and all of your data, in the app or by request.</span></a>
-  </div>
-</main>
+${body}
 <footer>
-  Goodlist — questions? <a href="mailto:jericrealubit@gmail.com">jericrealubit@gmail.com</a>
+  ${SITE_NAME} — questions? ${mailto()}
 </footer>
 </body>
 </html>
+`;
+}

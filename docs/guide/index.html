@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to use Goodlist · Goodlist</title>
+<meta name="description" content="Every step has a picture. No experience needed. A step-by-step guide to Goodlist, from your first task on your own to sharing with a family or team.">
+<meta name="robots" content="index, follow">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --sunk: #f1f3f6;
+    --text: #14181f;
+    --muted: #5b6472;
+    --border: #e2e5ea;
+    --brand: #072655;
+    --brand-ink: #072655;
+    --accent: #2e9e4f;
+    --danger: #b23a2c;
+    --danger-bg: #fdf3f1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0f17;
+      --surface: #111826;
+      --sunk: #0e1420;
+      --text: #e7e9ed;
+      --muted: #9aa3b2;
+      --border: #262b36;
+      --brand: #5c8ae6;
+      --brand-ink: #e7e9ed;
+      --accent: #4cb86b;
+      --danger: #e4685d;
+      --danger-bg: #21150f;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--brand); }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .top-inner {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
+    text-decoration: none;
+    color: inherit;
+  }
+  .mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #072655;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .mark svg { width: 17px; height: 17px; }
+  .brand b { font-size: 15px; letter-spacing: -0.01em; }
+  nav.docs { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav.docs a {
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  nav.docs a:hover { color: var(--text); background: var(--sunk); }
+  nav.docs a[aria-current="page"] { color: var(--brand-ink); background: var(--sunk); }
+
+  main { max-width: 940px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  .hero { margin-bottom: 36px; }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 36px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .hero p { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
+  .stamp {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--sunk);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+  .stamp b { color: var(--text); }
+
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px; align-items: start; }
+
+  .toc { position: sticky; top: 76px; display: flex; flex-direction: column; }
+  .toc-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .toc a {
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 5px 0 5px 12px;
+    border-left: 2px solid var(--border);
+  }
+  .toc a:hover { color: var(--text); border-left-color: var(--accent); }
+  /* After the .toc rules above, not before them: at equal specificity the
+     later declaration wins, so hoisting this to the .layout block left the
+     sidebar visible on phones. */
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .toc { display: none; }
+  }
+
+  article { max-width: 68ch; }
+  section { scroll-margin-top: 84px; }
+  section + section { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+  h2 { font-size: 20px; letter-spacing: -0.01em; margin: 0 0 10px; }
+  h2 .num { color: var(--muted); font-weight: 500; margin-right: 8px; }
+  p { margin: 12px 0; }
+  p.lead { color: var(--muted); font-size: 15px; }
+  ul { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  strong { font-weight: 650; }
+
+  .callout {
+    margin: 16px 0;
+    padding: 14px 16px;
+    font-size: 15px;
+    background: var(--sunk);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: 10px;
+  }
+  .callout.warn { background: var(--danger-bg); border-left-color: var(--danger); }
+
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 28px; }
+  .card {
+    display: block;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card b { display: block; font-size: 16px; margin-bottom: 6px; }
+  .card span { color: var(--muted); font-size: 14px; }
+
+  footer {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .part {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  /* Matches the separation the section + section rule gives the numbered
+     steps, so the first part heading isn't crowded against the intro. */
+  .intro {
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  figure.shot {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  figure.shot img {
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    /* The screenshots share the page's background, so without an edge they
+       bleed into it instead of reading as a picture of a phone. */
+    border: 1px solid var(--border);
+    border-radius: 22px;
+  }
+  figure.shot figcaption {
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--muted);
+    text-align: center;
+    max-width: 34ch;
+  }
+  .toc a.toc-extra { border-left-style: dashed; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="/goodlist/">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" fill-opacity=".14"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <b>Goodlist</b>
+    </a>
+    <nav class="docs" aria-label="Main">
+        <a href="/goodlist/guide/" aria-current="page">Guide</a>
+        <a href="/goodlist/legal/privacy/">Privacy</a>
+        <a href="/goodlist/legal/terms/">Terms</a>
+        <a href="/goodlist/legal/delete-account/">Delete account</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <h1>How to use Goodlist</h1>
+    <p>Every step has a picture. No experience needed.</p>
+    <span class="stamp">15 steps · <b>a picture for each</b></span>
+  </div>
+  <div class="layout">
+    <nav class="toc" aria-label="On this page">
+      <span class="toc-label">On this page</span>
+      <a href="#create-account">1. Make your account</a>
+      <a href="#log-in">2. Log in</a>
+      <a href="#first-task">3. Add your first thing to do</a>
+      <a href="#your-list">4. Look at your list</a>
+      <a href="#tick-off">5. Tick something off</a>
+      <a href="#change-task">6. Change a task</a>
+      <a href="#history">7. Find things you finished</a>
+      <a href="#group-page">8. Open the Group page</a>
+      <a href="#make-group">9. Make your group</a>
+      <a href="#invite-code">10. Give out your code</a>
+      <a href="#join-code">11. They type in the code</a>
+      <a href="#join-role">12. They pick who they are</a>
+      <a href="#two-tabs">13. Your list now has two parts</a>
+      <a href="#ask-someone">14. Ask someone to do something</a>
+      <a href="#what-they-see">15. What they see</a>
+      <a class="toc-extra" href="#nice-to-know">Nice to know</a>
+      <a class="toc-extra" href="#something-wrong">If something goes wrong</a>
+    </nav>
+    <article>
+      <div class="intro">
+          <aside class="callout">In every picture, the <strong>red dotted box</strong> shows you exactly where to tap, and the red number tells you the order. That is the whole trick — find the red box, tap it.</aside>
+          <p><strong>The four buttons at the bottom.</strong> They never change. Tap one and the page changes — that is all they do, and you cannot break anything by tapping them.</p>
+          <ul>
+            <li><strong>Tasks</strong> — your list of things to do. This is the main page.</li>
+            <li><strong>Group</strong> — the people you share with. Empty at first, and that is fine.</li>
+            <li><strong>History</strong> — everything you have already finished.</li>
+            <li><strong>Settings</strong> — your name, the colours, and signing out.</li>
+          </ul>
+      </div>
+      <section id="create-account">
+        <p class="part">Part 1 — Just you</p>
+        <h2><span class="num">1.</span>Make your account</h2>
+          <p class="lead">You do not need anybody else to use Goodlist. It works perfectly well on your own.</p>
+          <p>Open Goodlist. The first thing it asks is who you are.</p>
+          <ul>
+            <li>Type your <strong>name</strong> in the first box. You can skip this one.</li>
+            <li>Type your <strong>email</strong> in the second box.</li>
+            <li>Make up a <strong>password</strong> and type it twice, so the app knows you did not mistype it. It has to be 6 letters or numbers or more.</li>
+            <li>Tap <strong>Create account</strong>.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/01-create-account.png" alt="Tap the green button once the boxes are filled in." width="390" height="844" loading="eager" decoding="async">
+            <figcaption>Tap the green button once the boxes are filled in.</figcaption>
+          </figure>
+          <aside class="callout">If it says <strong>Check your email</strong> — go to your email, open the message from Goodlist, and tap the link inside. Then come back to the app.</aside>
+      </section>
+      <section id="log-in">
+        <h2><span class="num">2.</span>Log in</h2>
+          <p>Already made an account? Type your email and password, then tap <strong>Log in</strong>. You only have to do this once — the app remembers you afterwards.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/02-log-in.png" alt="The screen you see when you come back." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>The screen you see when you come back.</figcaption>
+          </figure>
+          <aside class="callout"><strong>Forgot your password?</strong> Tap Forgot password? just under the button. Goodlist emails you a link to make a new one.</aside>
+      </section>
+      <section id="first-task">
+        <h2><span class="num">3.</span>Add your first thing to do</h2>
+          <p>The page says <strong>Solo mode</strong> at the top. Solo just means on your own. The list is empty because you have not put anything in it yet.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/03-solo-empty.png" alt="An empty list. Nothing is wrong." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>An empty list. Nothing is wrong.</figcaption>
+          </figure>
+          <p>At the bottom there is a long white box that says I want to...</p>
+          <ul>
+            <li>Tap that box. The keyboard comes up.</li>
+            <li>Type the thing you want to do. Anything at all.</li>
+            <li>Tap the <strong>round green arrow</strong> next to the box.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/04-first-task.png" alt="Type, then tap the arrow." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Type, then tap the arrow.</figcaption>
+          </figure>
+          <p>That is it. The box empties itself so you can type the next one straight away. Add as many as you like.</p>
+      </section>
+      <section id="your-list">
+        <h2><span class="num">4.</span>Look at your list</h2>
+          <p>Every task sits on its own little white card.</p>
+          <ul>
+            <li>The <strong>empty circle</strong> on the left means not done yet.</li>
+            <li>Small grey writing underneath tells you extra things, like a due date.</li>
+            <li>A task with a line through it is one you already finished.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/05-my-list.png" alt="Four tasks. The bottom one is done." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Four tasks. The bottom one is done.</figcaption>
+          </figure>
+          <aside class="callout"><strong>To move a task up or down:</strong> press your finger on it, hold, and slide it where you want. Let go. Put the important ones at the top.</aside>
+      </section>
+      <section id="tick-off">
+        <h2><span class="num">5.</span>Tick something off</h2>
+          <p>There are two ways to finish a task, and both do exactly the same thing:</p>
+          <ul>
+            <li><strong>Tap the circle</strong> on the left of the task, or</li>
+            <li><strong>slide the task to the right</strong> with your finger. A green ✓ Done appears behind it.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/06-swipe-done.png" alt="Sliding right reveals ✓ Done." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Sliding right reveals ✓ Done.</figcaption>
+          </figure>
+          <aside class="callout"><strong>Ticked the wrong one?</strong> Tap the circle again. It comes straight back.</aside>
+      </section>
+      <section id="change-task">
+        <h2><span class="num">6.</span>Change a task</h2>
+          <p>Tap the <strong>words</strong> of a task — not the circle — to open it. Here you can add a note, add a due date, and tap Save changes.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/07-task-details.png" alt="Notes and due dates are optional." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Notes and due dates are optional.</figcaption>
+          </figure>
+          <p><strong>Mark complete</strong> is the same as ticking the circle. <strong>Delete task</strong> throws it away completely.</p>
+          <aside class="callout warn"><strong>Deleting cannot be undone</strong> — that is why the button is red. To leave without changing anything, tap the arrow at the top left.</aside>
+      </section>
+      <section id="history">
+        <h2><span class="num">7.</span>Find things you finished</h2>
+          <p>Tap <strong>History</strong> at the bottom. Everything you have finished lives here, newest first, with the day and time you did it.</p>
+          <ul>
+            <li>↺ puts a task back on your to-do list.</li>
+            <li>🗑 removes it forever.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/08-history.png" alt="Finished tasks, newest at the top." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Finished tasks, newest at the top.</figcaption>
+          </figure>
+          <aside class="callout warn"><strong>Delete all</strong> empties the whole history in one go. It asks you first, because this cannot be undone.</aside>
+      </section>
+      <section id="group-page">
+        <p class="part">Part 2 — You and other people</p>
+        <h2><span class="num">8.</span>Open the Group page</h2>
+          <p class="lead">Everything above still works the same. This part only adds to it. A group is a small set of people — your family, or a small team — who can ask each other to do things.</p>
+          <aside class="callout"><strong>Your own list stays private.</strong> Nobody else in the group can ever see it. The only things anybody else sees are the ones you specifically ask them to do.</aside>
+          <p>Tap <strong>Group</strong> at the bottom. You only need one of the two buttons:</p>
+          <ul>
+            <li><strong>Create a group</strong> — you are the first one. Pick this if you are setting it up.</li>
+            <li><strong>Join a group</strong> — somebody already made one and gave you a code.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/09-group-solo.png" alt="Before you have a group." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Before you have a group.</figcaption>
+          </figure>
+      </section>
+      <section id="make-group">
+        <h2><span class="num">9.</span>Make your group</h2>
+          <ul>
+            <li><strong>Give it a name.</strong> Anything you will recognise.</li>
+            <li><strong>Family or Team?</strong> Pick one. It only changes the words in the next list.</li>
+            <li><strong>Your role.</strong> A Family offers Father, Mother, Guardian, Child, Other. A Team offers Leader and Member.</li>
+            <li>Tap <strong>Create group</strong>.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/10-create-group.png" alt="Four things, top to bottom." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Four things, top to bottom.</figcaption>
+          </figure>
+          <p>The group exists, and right now you are the only one in it.</p>
+      </section>
+      <section id="invite-code">
+        <h2><span class="num">10.</span>Give out your code</h2>
+          <p>Your group now has a <strong>code</strong> — eight letters and numbers. This is how somebody joins, and nobody can get in without it.</p>
+          <p>Tap <strong>Share</strong> to send it by message or email. Reading it out loud works just as well.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/11-invite-code.png" alt="Your group’s invite code." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Your group’s invite code.</figcaption>
+          </figure>
+          <aside class="callout">A code never uses a zero, a letter O, a one, or a letter I. That is on purpose, so nobody mixes them up.</aside>
+      </section>
+      <section id="join-code">
+        <h2><span class="num">11.</span>They type in the code</h2>
+          <p class="lead">The next two steps happen on the other person’s phone, not yours.</p>
+          <p>They install Goodlist, make their own account, then tap <strong>Group</strong>, then <strong>Join a group</strong>. They type the code you gave them and tap Continue.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/12-join-code.png" alt="On their phone, not yours." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>On their phone, not yours.</figcaption>
+          </figure>
+      </section>
+      <section id="join-role">
+        <h2><span class="num">12.</span>They pick who they are</h2>
+          <p>The app shows them the group name so they know it is the right one. They pick their own role and tap <strong>Join group</strong>.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/13-join-role.png" alt="Everybody picks their own role." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Everybody picks their own role.</figcaption>
+          </figure>
+          <p>You are now in a group together, and both of you will see the other person’s name on the Group page.</p>
+      </section>
+      <section id="two-tabs">
+        <h2><span class="num">13.</span>Your list now has two parts</h2>
+          <p>Go back to <strong>Tasks</strong>. There are two words at the top now.</p>
+          <ul>
+            <li><strong>Personal</strong> — your own list, exactly as before. Still private, still only yours.</li>
+            <li><strong>Requested</strong> — things you and your group have asked each other to do.</li>
+          </ul>
+          <p>The name at the very top changed too: instead of Solo mode it now shows your group’s name.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/14-requested-tab.png" alt="The same typing box, new wording." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>The same typing box, new wording.</figcaption>
+          </figure>
+      </section>
+      <section id="ask-someone">
+        <h2><span class="num">14.</span>Ask someone to do something</h2>
+          <p>Tap <strong>Requested</strong>, type what you would like them to do, and tap the green arrow.</p>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/15-request-sent.png" alt="“To Alex” means you asked Alex." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>“To Alex” means you asked Alex.</figcaption>
+          </figure>
+          <p>Tap it to add a note or a due date, just like before. Changed your mind? Open it and tap <strong>Cancel request</strong>.</p>
+          <aside class="callout"><strong>More than one other person in your group?</strong> A row of names appears above the typing box. Tap a name first, then type — that is how the app knows who you mean.</aside>
+      </section>
+      <section id="what-they-see">
+        <h2><span class="num">15.</span>What they see</h2>
+          <p>On the other person’s phone, the same task looks like this:</p>
+          <ul>
+            <li>A <strong>red number</strong> appears on the Tasks button — how many new requests they have. It disappears once they look.</li>
+            <li>The task says <strong>From</strong> and your name, so they know who asked.</li>
+            <li>They tick the circle when it is done.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/16-their-inbox.png" alt="A red 2, and who it came from." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>A red 2, and who it came from.</figcaption>
+          </figure>
+          <p>The moment they tick it, it leaves your Requested list and lands in History for both of you. You do not have to refresh anything.</p>
+      </section>
+      <section id="nice-to-know">
+        <h2>Nice to know</h2>
+          <p>None of this is essential. It is here when you want it.</p>
+          <ul>
+            <li><strong>Display name</strong> is what other people in your group see. Change it in Settings and tap Save.</li>
+            <li><strong>Theme</strong> changes all the colours — there are nine. Nothing else changes, so pick whichever you like looking at.</li>
+            <li><strong>The privacy switch</strong> decides whether your country counts towards the “where is Goodlist used” numbers. It uses your phone’s time zone, never your actual location.</li>
+          </ul>
+          <figure class="shot">
+            <img src="/goodlist/user-guide/images/17-settings.png" alt="Settings: your name, colours, privacy." width="390" height="844" loading="lazy" decoding="async">
+            <figcaption>Settings: your name, colours, privacy.</figcaption>
+          </figure>
+          <ul>
+            <li><strong>No internet? Keep going.</strong> Add tasks and tick them off as normal. A small message says you are offline, and everything saves once your signal is back.</li>
+            <li><strong>Two groups, no more.</strong> A family group and a work team, but that is the limit.</li>
+            <li><strong>Who can delete what.</strong> Only the person who made a task can delete it. If somebody asked you to do something you can finish it or un-finish it, but not throw it away — it is theirs.</li>
+            <li><strong>Who is in charge of a group.</strong> Whoever made it. That person can rename it, remove somebody, or hand the job over with Make owner. Everybody else can simply leave.</li>
+          </ul>
+      </section>
+      <section id="something-wrong">
+        <h2>If something goes wrong</h2>
+          <p><strong>It says the invite code is invalid.</strong> Check every character and type it again slowly. There is never a zero or a letter O in a code. If it still will not work, ask for a fresh copy.</p>
+          <p><strong>You tapped a circle by accident.</strong> Tap it again and it comes back. If you already left the page, go to History and tap ↺.</p>
+          <p><strong>You cannot see a friend’s tasks.</strong> That is correct — you are not meant to. You only ever see the things somebody has specifically asked you to do.</p>
+          <p><strong>The Requested tab is missing.</strong> It only appears once you are in a group. Go to Group and create or join one.</p>
+          <p><strong>You cannot delete your account.</strong> If you own a group that still has other people in it, Goodlist stops you — otherwise you would take their group away. Hand it over with Make owner, or remove the other members first.</p>
+          <aside class="callout">Almost nothing in Goodlist is permanent. Anything you tick can be un-ticked, and anything you delete asks you first.</aside>
+      </section>
+    </article>
+  </div>
+</main>
+<footer>
+  Goodlist — questions? <a href="mailto:jericrealubit@gmail.com">jericrealubit@gmail.com</a>
+</footer>
+</body>
+</html>

@@ -25,6 +25,7 @@ export default function AppLayout() {
       <Stack.Screen name="task/[id]" options={{ title: 'Edit task', presentation: 'modal' }} />
       <Stack.Screen name="group/create" options={{ title: 'Create group', presentation: 'modal' }} />
       <Stack.Screen name="group/join" options={{ title: 'Join group', presentation: 'modal' }} />
+      <Stack.Screen name="guide" options={{ title: 'How to use Goodlist' }} />
       <Stack.Screen name="stats" options={{ title: 'User statistics' }} />
       <Stack.Screen name="distribution" options={{ title: 'User distribution' }} />
       <Stack.Screen name="about" options={{ title: 'About' }} />
