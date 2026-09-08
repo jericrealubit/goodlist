@@ -4,6 +4,12 @@ A cross-platform task app for your own to-dos and for sharing tasks with a small
 team. Built with [Expo](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction)
 and a realtime [Supabase](https://supabase.com) backend.
 
+## Using the app
+
+New to Goodlist, or handing it to someone who is? **[docs/user-guide](docs/user-guide/)** is a
+plain-language, picture-by-picture walkthrough — making an account, adding your first task, and
+going from solo to a shared family or team group. No technical knowledge assumed.
+
 ## Features
 
 - **Personal tasks** — a to-do list that's yours alone: add, edit, complete, reopen, delete, add notes
@@ -95,6 +101,7 @@ supabase/
 | `npm run lint` | Run `expo lint` |
 | `npm run reset-project` | Move the starter code aside and scaffold a blank `app/` directory |
 | `npm run report:distribution` | Generate a user-distribution report from Supabase data (admin tooling) |
+| `npm run guide:screens` | Re-render the illustrated phone screens in `docs/user-guide/images/` |
 
 ## Deployment
 

@@ -56,7 +56,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "report:distribution": "node ./scripts/user-distribution-report.mjs"
+    "report:distribution": "node ./scripts/user-distribution-report.mjs",
+    "guide:screens": "node ./scripts/generate-guide-screens.mjs"
   },
   "private": true
 }
