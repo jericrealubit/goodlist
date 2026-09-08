@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Share, StyleSheet } from 'react-native';
+import { Share, StyleSheet, View } from 'react-native';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { useSurfaceStyle } from '@/components/surface';
@@ -81,8 +81,8 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
 
   return (
     <ThemedView style={[cardStyle, styles.card]}>
-      <ThemedView style={styles.header}>
-        <ThemedView style={styles.titleRow}>
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
           <ThemedText type="subtitle" numberOfLines={1} style={styles.groupName}>
             {group.name}
           </ThemedText>
@@ -91,34 +91,34 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
               {modeLabel(group.mode)}
             </ThemedText>
           </ThemedView>
-        </ThemedView>
+        </View>
         <ThemedText themeColor="textSecondary">
           {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
         </ThemedText>
-      </ThemedView>
+      </View>
 
-      <ThemedView style={styles.inviteRow}>
-        <ThemedView style={styles.inviteText}>
+      <View style={styles.inviteRow}>
+        <View style={styles.inviteText}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Invite code
           </ThemedText>
           <ThemedText type="title" style={styles.inviteCode}>
             {group.invite_code}
           </ThemedText>
-        </ThemedView>
+        </View>
         <PrimaryButton
           title="Share"
           variant="secondary"
           onPress={() => Share.share({ message: `Join my group on Goodlist: ${group.invite_code}` })}
         />
-      </ThemedView>
+      </View>
 
       {isOwner ? (
-        <ThemedView style={styles.section}>
+        <View style={styles.section}>
           {renaming ? (
-            <ThemedView style={styles.renameRow}>
+            <View style={styles.renameRow}>
               <TextField label="Group name" value={renameValue} onChangeText={setRenameValue} placeholder="Group name" />
-              <ThemedView style={styles.inlineButtons}>
+              <View style={styles.inlineButtons}>
                 <PrimaryButton
                   title="Save"
                   onPress={handleRename}
@@ -133,15 +133,15 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
                   disabled={actionLoading}
                   style={styles.inlineButton}
                 />
-              </ThemedView>
-            </ThemedView>
+              </View>
+            </View>
           ) : (
             <PrimaryButton title="Rename Group" variant="secondary" onPress={startRenaming} disabled={!isOnline} />
           )}
-        </ThemedView>
+        </View>
       ) : null}
 
-      <ThemedView style={styles.section}>
+      <View style={styles.section}>
         <ThemedText type="smallBold" themeColor="textSecondary">
           Members
         </ThemedText>
@@ -154,7 +154,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
 
           return (
             <ThemedView key={member.user_id} style={[cardStyle, styles.memberCard]}>
-              <ThemedView style={styles.memberRow}>
+              <View style={styles.memberRow}>
                 <ThemedText>
                   {name}
                   {isSelf ? ' (You)' : ''}
@@ -164,10 +164,10 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
                     {tags}
                   </ThemedText>
                 ) : null}
-              </ThemedView>
+              </View>
 
               {isOwner && !isSelf ? (
-                <ThemedView style={styles.memberActions}>
+                <View style={styles.memberActions}>
                   <PrimaryButton
                     title="Make owner"
                     variant="secondary"
@@ -188,12 +188,12 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
                     disabled={!isOnline}
                     style={styles.inlineButton}
                   />
-                </ThemedView>
+                </View>
               ) : null}
             </ThemedView>
           );
         })}
-      </ThemedView>
+      </View>
 
       {pending ? (
         <ThemedView style={[cardStyle, styles.confirmCard]}>
@@ -209,7 +209,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
               {actionError}
             </ThemedText>
           ) : null}
-          <ThemedView style={styles.inlineButtons}>
+          <View style={styles.inlineButtons}>
             <PrimaryButton
               title="Confirm"
               variant={pending.type === 'transfer' ? 'primary' : 'danger'}
@@ -228,10 +228,10 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
               disabled={actionLoading}
               style={styles.inlineButton}
             />
-          </ThemedView>
+          </View>
         </ThemedView>
       ) : (
-        <ThemedView style={styles.section}>
+        <View style={styles.section}>
           {actionError ? (
             <ThemedText type="small" themeColor="danger">
               {actionError}
@@ -246,12 +246,15 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
             }}
             disabled={!isOnline}
           />
-        </ThemedView>
+        </View>
       )}
     </ThemedView>
   );
 }
 
+// These wrappers are layout only, so they are plain <View>. As <ThemedView>
+// they each applied backgroundColor: theme[type ?? 'background'], which
+// repainted the beige screen background over the white card in bands.
 const styles = StyleSheet.create({
   card: {
     padding: Spacing.four,

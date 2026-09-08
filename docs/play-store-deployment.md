@@ -238,22 +238,26 @@ A phone screenshot at 1080x2400 or taller is past the 2:1 cap, so crop to 1080x2
 uploading. The `docs/user-guide/images/*.png` are illustrations at 780x1688 (1:2.16, also past the
 cap) and are not a substitute.
 
-#### Two styling bugs found while doing this — not fixed, your call
+#### Two styling bugs found while doing this — now fixed
 
-Both are real and visible on Android, not web artifacts. They are coupled, so fixing one alone makes
-things worse:
+Both were real and visible on Android, not web artifacts, and they were coupled: fixing either alone
+made things worse.
 
-1. **`src/components/group-card.tsx` bands the card.** Its layout wrappers are `ThemedView`, which
-   always applies `backgroundColor: theme[type ?? 'background']`. Inside the white card that repaints
-   the beige screen background (`#F5F1E6`) over it, in horizontal bands. `docs/user-guide/images/11-invite-code.png`
-   shows the intended look — an unbanded white card. The fix is to make those wrappers plain `View`.
-2. **Secondary buttons are invisible on a white surface.** `PrimaryButton` with `variant="secondary"`
-   fills with `theme.backgroundElement` (`#FFFFFF`) and sets no border and no shadow. On the white
-   group card, Share / Rename Group / Make owner / Remove have no edge at all — they only read as
-   buttons today *because* of the banding in (1). Fixing (1) without giving the secondary variant a
-   border or elevation turns every one of those buttons into plain text.
+1. **`src/components/group-card.tsx` banded the card.** Its layout wrappers were `ThemedView`, which
+   always applies `backgroundColor: theme[type ?? 'background']`. Inside the white card that
+   repainted the beige screen background (`#F5F1E6`) over it in horizontal bands. They are plain
+   `View` now — `ThemedView` is kept only where a surface is actually wanted (the card itself, the
+   mode pill, member and confirm cards).
+2. **Secondary buttons had no edge on a white surface.** `PrimaryButton` with `variant="secondary"`
+   fills with `theme.backgroundElement` (`#FFFFFF`) and set no border and no shadow, so on the white
+   group card Share / Rename Group / Make owner / Remove had no boundary at all — they only read as
+   buttons *because* of the banding in (1). The variant now takes `useSurfaceStyle('sm')`, the same
+   treatment cards use, so it picks up a border on the bordered design styles and elevation on the
+   elevated ones. That also fixes it on Swiss Monochrome and Brutalist, where `tokens.borderWidth` is
+   1 and 3 but the button never applied it.
 
-The screenshot ships with the banding, because that is what the app currently looks like.
+The result matches `docs/user-guide/images/11-invite-code.png`, which is what the screen was always
+meant to look like. Re-measured afterwards, the Share button still fits at 360, 393 and 412dp.
 
 ### B7. ~~The feature graphic has an alpha channel~~ — **fixed**
 
