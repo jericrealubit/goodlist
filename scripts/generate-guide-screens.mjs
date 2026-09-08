@@ -24,13 +24,19 @@
  * searched otherwise.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(ROOT, 'docs', 'user-guide', 'images');
+// The same screens, palette-quantized, for the in-app guide at
+// src/app/(app)/guide.tsx. Same width, so they stay crisp at the ~260pt the
+// screen renders them at even on a 3x display; the quantization is what keeps
+// the bundle cost down (flat UI colors, so it's visually lossless here).
+const APP_DIR = join(ROOT, 'assets', 'images', 'guide');
+const APP_PALETTE_COLORS = 256;
 
 // ---------------------------------------------------------------------------
 // Design tokens — mirrored from src/constants/themes.ts (minimalSage) and
@@ -605,3 +611,19 @@ for (const screen of SCREENS) {
 
 rmSync(work, { recursive: true, force: true });
 console.log(`\n${SCREENS.length} screens written to docs/user-guide/images/`);
+
+// --- bundled copies for the in-app guide -----------------------------------
+const { default: sharp } = await import('sharp');
+mkdirSync(APP_DIR, { recursive: true });
+let bundled = 0;
+for (const screen of SCREENS) {
+  const out = join(APP_DIR, `${screen.name}.png`);
+  const buf = await sharp(readFileSync(join(OUT_DIR, `${screen.name}.png`)))
+    .png({ palette: true, colours: APP_PALETTE_COLORS, compressionLevel: 9, effort: 10 })
+    .toBuffer();
+  writeFileSync(out, buf);
+  bundled += buf.length;
+}
+console.log(
+  `${SCREENS.length} screens written to assets/images/guide/ (${(bundled / 1024).toFixed(0)} KB bundled)`,
+);

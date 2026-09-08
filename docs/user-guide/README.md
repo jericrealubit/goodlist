@@ -374,7 +374,8 @@ and cannot be undone.
 ---
 
 <sub>The pictures in this guide are drawn from the app's real screens, colours, and wording,
-and are rebuilt with `npm run guide:screens`. If a screen changes in the code, update
+and are rebuilt with `npm run guide:screens` — which also writes the copies bundled into the
+in-app guide (Settings → Help → How to use Goodlist), so the two never drift. If a screen changes in the code, update
 `scripts/generate-guide-screens.mjs` and re-run it so the pictures keep telling the truth.
 They show the phone app deliberately — the web build has a different navigation bar, so
 screenshots taken there would contradict the steps above.</sub>

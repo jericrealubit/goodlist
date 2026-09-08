@@ -150,6 +150,17 @@ export default function SettingsScreen() {
           </ThemedView>
         </ThemedView>
 
+        <ThemedView style={styles.linkGroup}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Help
+          </ThemedText>
+          <Pressable onPress={() => router.push('/guide')}>
+            <ThemedText type="link" themeColor="textSecondary">
+              How to use Goodlist
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
+
         <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
 
         <ThemedView style={styles.dangerZone}>

@@ -15,7 +15,19 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 
-export function LegalScreen({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Document shell shared by the legal screens and the user guide. `subtitle`
+ * defaults to the legal effective date; the guide passes its own.
+ */
+export function LegalScreen({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -25,7 +37,7 @@ export function LegalScreen({ title, children }: { title: string; children: Reac
         <ThemedView style={styles.header}>
           <ThemedText type="title">{title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Effective {EFFECTIVE_DATE}
+            {subtitle ?? `Effective ${EFFECTIVE_DATE}`}
           </ThemedText>
         </ThemedView>
         {children}
@@ -34,11 +46,20 @@ export function LegalScreen({ title, children }: { title: string; children: Reac
   );
 }
 
-export function Clause({ number, title, children }: { number: number; title: string; children: ReactNode }) {
+export function Clause({
+  number,
+  title,
+  children,
+}: {
+  /** Omitted for the guide's unnumbered trailing sections. */
+  number?: number;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <ThemedView style={styles.clause}>
       <ThemedText type="header">
-        {number}. {title}
+        {number === undefined ? title : `${number}. ${title}`}
       </ThemedText>
       {children}
     </ThemedView>
@@ -128,7 +149,7 @@ export function LegalDocument({ doc }: { doc: LegalDoc }) {
   );
 }
 
-function LegalBlock({ block }: { block: Block }) {
+export function LegalBlock({ block }: { block: Block }) {
   switch (block.kind) {
     case 'para':
       return <Para>{renderSpans(block.spans)}</Para>;
