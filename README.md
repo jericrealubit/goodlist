@@ -106,6 +106,7 @@ supabase/
 | `npm run report:distribution` | Generate a user-distribution report from Supabase data (admin tooling) |
 | `npm run guide:screens` | Re-render the illustrated phone screens in `docs/user-guide/images/` |
 | `npm run legal:site` | Re-render the public Privacy/Terms/account-deletion pages into `docs/legal/` |
+| `npm run store:screenshots` | Capture the Play Store phone screenshots into `docs/store/screenshots/` |
 
 ## Deployment
 

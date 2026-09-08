@@ -29,6 +29,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { findChrome } from './lib/find-chrome.mjs';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(ROOT, 'docs', 'user-guide', 'images');
 
@@ -549,36 +551,6 @@ const SCREENS = [
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
-function findChrome() {
-  const explicit = process.env.GOODLIST_CHROME || process.env.CHROME_PATH;
-  if (explicit && existsSync(explicit)) return explicit;
-
-  const base = process.env.PLAYWRIGHT_BROWSERS_PATH;
-  if (base && existsSync(base)) {
-    const dirs = readdirSync(base);
-    // headless_shell first — see the note at the top of this file.
-    for (const [prefix, binary] of [
-      ['chromium_headless_shell', 'headless_shell'],
-      ['chromium', 'chrome'],
-    ]) {
-      for (const entry of dirs) {
-        const candidate = join(base, entry, 'chrome-linux', binary);
-        if (entry.startsWith(prefix) && existsSync(candidate)) return candidate;
-      }
-    }
-  }
-
-  for (const name of ['headless_shell', 'chromium', 'chromium-browser', 'google-chrome', 'google-chrome-stable']) {
-    try {
-      const found = execFileSync('which', [name], { encoding: 'utf8' }).trim();
-      if (found) return found;
-    } catch {
-      /* keep looking */
-    }
-  }
-  throw new Error('No Chromium found. Set $GOODLIST_CHROME to a Chrome/Chromium binary.');
-}
-
 const chrome = findChrome();
 const work = mkdtempSync(join(tmpdir(), 'goodlist-guide-'));
 mkdirSync(OUT_DIR, { recursive: true });

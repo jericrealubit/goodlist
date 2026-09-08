@@ -193,15 +193,42 @@ account (email + password) on your Supabase project, seeded with a few tasks and
 Reviewers who cannot get past a login screen reject the submission. Create this account now and do
 not delete it.
 
-### B6. Screenshots — the existing images cannot be used as-is
+### B6. Screenshots — **four generated, two still need a device**
 
-Play needs 2–8 phone screenshots (aim for 4–6), JPEG or **24-bit PNG with no alpha**, min dimension
-320px, max 3840px, and **no side more than twice the other (2:1 max)**.
+`npm run store:screenshots` captures the phone screenshots from the real app and writes them to
+`docs/store/screenshots/` at 1080x2160, 24-bit, no alpha — exactly Play's phone spec (320–3840px per
+side, long side at most twice the short side; 1080x2160 sits on that 2:1 cap).
 
-`docs/user-guide/images/*.png` are 780×1688 — that is 1:2.16, past the 2:1 cap, so Play Console will
-reject them on upload. They are also illustrations rather than captures of the running app. Take real
-screenshots from a device or emulator at 1080×2160 or 1080×1920 (both exactly ≤ 2:1). Good candidates:
-the task list with a few tasks, task detail, a group screen, history, and appearance/themes.
+They are genuine renders of the shipped screens, not mockups: the script serves the web export of
+the same Expo Router code the Android app runs, seeds a session, and answers every Supabase call
+from fixtures, so it needs no demo account and no network. Each shot asserts a string it expects to
+find before it is written — an early version silently produced five copies of the Tasks screen
+because a hard URL load re-ran the auth guard, and the assertion is what catches that.
+
+| File | Screen |
+|---|---|
+| `01-my-tasks.png` | Personal task list with notes and due dates |
+| `02-requested.png` | Requested tab — tasks another member asked for, with their name |
+| `03-history.png` | Completed and cancelled tasks with undo |
+| `04-settings.png` | Profile and the theme picker |
+
+**Two screens are deliberately excluded**, because react-native-web renders them differently from
+Android and a screenshot that misrepresents the app is worse than one fewer screenshot:
+
+- **Group** — the header title truncates and the Share button overflows its row.
+- **Task edit** — the due-date field falls back to an HTML `<input type="date">` with a browser date
+  picker; Android uses the native `@react-native-community/datetimepicker`.
+
+Four satisfies Play (minimum 2, up to 8) and covers the whole story. If you want Group in the
+listing, capture it on a device — the release APK is already installed. Volume down + power, or:
+
+```bash
+adb exec-out screencap -p > group.png
+```
+
+A phone screenshot at 1080x2400 or taller is past the 2:1 cap, so crop it to 1080x2160 before
+uploading. The old `docs/user-guide/images/*.png` are illustrations at 780x1688 (1:2.16, also past
+the cap) and are not a substitute.
 
 ### B7. ~~The feature graphic has an alpha channel~~ — **fixed**
 
