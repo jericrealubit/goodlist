@@ -24,9 +24,46 @@ Realistic outcomes from a standing start:
 - **App public on production: ~3 weeks minimum** (verification, then the 14-day closed test, then a production review of a few hours to ~7 days).
 
 An **organization** account registered to a legal business entity is exempt from the 12-tester rule
-entirely. If you have (or can register) a business entity, that is the single biggest available
-shortcut — it removes 14 days from the critical path. It requires a D-U-N-S number, which itself
-takes time to obtain, so it is only a win if you already have one.
+entirely — that is the single biggest available shortcut, removing 14 days from the critical path.
+It requires a D-U-N-S number, which normally takes up to 30 business days to obtain (expedited: 8
+business days, ~US$229), so for most people it is *slower* than simply running the closed test.
+
+### The organization route for this account
+
+This account has an Australian ABN, and D&B already holds a record for it — created automatically
+from the public registry, so no application was ever made. That removes the two slow steps (entity
+registration, and waiting on a new D-U-N-S) and makes the organization route genuinely competitive:
+
+| | Personal | Organization |
+|---|---|---|
+| Identity/org verification | 2–5 business days | 2–4 weeks |
+| 12 testers × 14 days | required | **exempt** |
+| **Total** | ~3 weeks | ~2–4 weeks |
+
+Close enough that it comes down to two risks, both worth knowing before committing:
+
+- **The record looks like a sole trader** — its legal name is a person's name with a separate trading
+  name, not a `Pty Ltd`. Google's Australian document list asks for a *Certificate of Incorporation
+  or Registration*, which a sole trader does not have (an ABN registration confirmation may or may
+  not satisfy it). Organization acceptance is therefore not guaranteed.
+- **No privacy gain here.** Organization accounts can normally publish a business address instead of
+  a home one, but a sole trader's registered business address *is* the home address, so the same
+  address is displayed either way. Choose the account type on the testing exemption alone.
+
+**Getting the number.** The public D&B directory masks it behind a paid credit report — **do not buy
+one**, and do not use a third-party "DUNS registration service". D&B runs a free request flow
+specifically for app-store developers at
+<https://www.dnb.com/en-us/smb/duns/google-developers.html>; when a record already exists it returns
+that existing number rather than creating a new one. While waiting, claim the record and correct it:
+Google cross-checks the legal name and address against D&B, and an auto-generated record is often
+thin (unclassified industry, missing year started). Any mismatch with the ABR is a delay.
+
+**Time-box it.** Request the number today and keep lining up testers in parallel — they cost nothing
+and you need them the moment the organization route stalls. If the number has not arrived within
+about five business days, register as **personal** and start the 14-day clock; the account type can
+still be changed later under Developer account → About you → Change account type. What is *not*
+established is whether converting mid-flight retroactively waives a closed test already under way,
+so do not plan around that.
 
 > **The one thing that matters most:** the 14-day clock does not start until 12 testers are opted
 > into a closed test. Everything else — polished screenshots, listing copy, a nicer feature graphic —
