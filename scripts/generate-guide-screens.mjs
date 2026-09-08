@@ -6,7 +6,16 @@
  * from the matching screen in src/app, then shot with headless Chromium at a
  * 390x844 viewport and 2x scale.
  *
- * Usage:  node ./scripts/generate-guide-screens.mjs
+ * Usage:  node ./scripts/generate-guide-screens.mjs  (npm run guide:screens)
+ *
+ * Why illustrations and not captures of the running app: the guide documents
+ * the phone app, and `expo start --web` renders src/components/app-tabs.web.tsx
+ * — a floating pill nav pinned to the top, text labels, a dot for the unread
+ * badge — instead of the bottom tab bar with icons and a numbered badge that
+ * the guide walks readers through. Web captures would contradict the text they
+ * sit next to, so don't swap these out for them. Real device captures are
+ * welcome; keep the numbered red callouts, which are what make the steps
+ * followable.
  *
  * Prefers Playwright's `headless_shell`, which honours --window-size exactly.
  * Full Chrome/Chromium clamps its headless viewport to a 500px minimum width

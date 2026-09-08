@@ -374,5 +374,7 @@ and cannot be undone.
 ---
 
 <sub>The pictures in this guide are drawn from the app's real screens, colours, and wording,
-and are rebuilt with `node ./scripts/generate-guide-screens.mjs`. If a screen changes in the
-code, update that script and re-run it so the pictures keep telling the truth.</sub>
+and are rebuilt with `npm run guide:screens`. If a screen changes in the code, update
+`scripts/generate-guide-screens.mjs` and re-run it so the pictures keep telling the truth.
+They show the phone app deliberately — the web build has a different navigation bar, so
+screenshots taken there would contradict the steps above.</sub>
