@@ -37,6 +37,10 @@ const OUT_DIR = join(ROOT, 'docs', 'user-guide', 'images');
 // the bundle cost down (flat UI colors, so it's visually lossless here).
 const APP_DIR = join(ROOT, 'assets', 'images', 'guide');
 const APP_PALETTE_COLORS = 256;
+// Product shots for README.md: the same screens re-rendered with the teaching
+// callouts suppressed, so they read as the app rather than as a tutorial.
+const SHOWCASE_DIR = join(ROOT, 'docs', 'screenshots');
+const SHOWCASE = ['05-my-list', '16-their-inbox', '11-invite-code', '17-settings'];
 
 // ---------------------------------------------------------------------------
 // Design tokens — mirrored from src/constants/themes.ts (minimalSage) and
@@ -194,6 +198,14 @@ body {
 .note { position: absolute; left: ${S.four}px; right: ${S.four}px; background: ${C.text};
   color: ${C.background}; border-radius: ${R.sm}px; padding: 10px 14px; font-size: 13px;
   line-height: 18px; font-weight: 700; }
+`;
+
+// Suppresses the teaching callouts for the README product shots. Appended
+// after the rules it overrides, so it wins without !important.
+const CLEAN_CSS = `
+.hi { outline: none; }
+.hi::after { content: none; }
+.note { display: none; }
 `;
 
 // --- tiny inline icons (stroke-only, matched to the tab bar's SF/Material set)
@@ -589,9 +601,9 @@ const chrome = findChrome();
 const work = mkdtempSync(join(tmpdir(), 'goodlist-guide-'));
 mkdirSync(OUT_DIR, { recursive: true });
 
-for (const screen of SCREENS) {
-  const page = join(work, `${screen.name}.html`);
-  writeFileSync(page, `<meta charset="utf-8"><style>${CSS}</style>${screen.html}`);
+function shoot(screen, outPath, extraCss = '') {
+  const page = join(work, `${screen.name}${extraCss ? '-clean' : ''}.html`);
+  writeFileSync(page, `<meta charset="utf-8"><style>${CSS}${extraCss}</style>${screen.html}`);
   execFileSync(
     chrome,
     [
@@ -601,15 +613,18 @@ for (const screen of SCREENS) {
       '--hide-scrollbars',
       '--force-device-scale-factor=2',
       '--window-size=390,844',
-      `--screenshot=${join(OUT_DIR, `${screen.name}.png`)}`,
+      `--screenshot=${outPath}`,
       page,
     ],
     { stdio: ['ignore', 'ignore', 'ignore'] },
   );
+}
+
+for (const screen of SCREENS) {
+  shoot(screen, join(OUT_DIR, `${screen.name}.png`));
   console.log(`✓ ${screen.name}.png`);
 }
 
-rmSync(work, { recursive: true, force: true });
 console.log(`\n${SCREENS.length} screens written to docs/user-guide/images/`);
 
 // --- bundled copies for the in-app guide -----------------------------------
@@ -627,3 +642,19 @@ for (const screen of SCREENS) {
 console.log(
   `${SCREENS.length} screens written to assets/images/guide/ (${(bundled / 1024).toFixed(0)} KB bundled)`,
 );
+
+// --- callout-free product shots for README.md ------------------------------
+mkdirSync(SHOWCASE_DIR, { recursive: true });
+for (const name of SHOWCASE) {
+  const screen = SCREENS.find((s) => s.name === name);
+  if (!screen) throw new Error(`SHOWCASE names a screen that doesn't exist: ${name}`);
+  const raw = join(work, `${name}-showcase.png`);
+  shoot(screen, raw, CLEAN_CSS);
+  const buf = await sharp(readFileSync(raw))
+    .png({ palette: true, colours: APP_PALETTE_COLORS, compressionLevel: 9, effort: 10 })
+    .toBuffer();
+  writeFileSync(join(SHOWCASE_DIR, `${name}.png`), buf);
+}
+console.log(`${SHOWCASE.length} product shots written to docs/screenshots/`);
+
+rmSync(work, { recursive: true, force: true });

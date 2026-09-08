@@ -1,8 +1,10 @@
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DevSignatureBadge } from '@/components/dev-signature-badge';
+import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -19,6 +21,8 @@ const FEATURES = [
   'Works offline: changes queue up and sync automatically once you’re back online.',
   'Pick from nine built-in color themes, light or dark.',
   'See anonymous community stats — how many people use Goodlist, and how many share a group.',
+  'Control your own data: edit your display name, choose whether your country counts towards those stats, and delete your account for good.',
+  'Follow a step-by-step guide with a picture for every screen — built in, so it works offline too.',
 ];
 
 const TECH_STACK = [
@@ -33,6 +37,7 @@ const TECH_STACK = [
 ];
 
 export default function AboutScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const tokens = useTokens();
   const insets = useSafeAreaInsets();
@@ -49,6 +54,16 @@ export default function AboutScreen() {
           <ThemedText type="default" themeColor="textSecondary">
             A better place for your everyday tasks.
           </ThemedText>
+        </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            New here?
+          </ThemedText>
+          <ThemedText type="default" themeColor="textSecondary">
+            The guide walks you through every screen, one step at a time, with a picture for each.
+          </ThemedText>
+          <PrimaryButton title="How to use Goodlist" onPress={() => router.push('/guide')} />
         </ThemedView>
 
         <ThemedView style={styles.section}>
