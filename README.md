@@ -115,3 +115,9 @@ npx eas-cli build --platform android --profile preview
 `preview` produces a directly installable APK; `production` produces a Play Store-ready `.aab` with an
 auto-incrementing version code. There is no OTA/EAS Update channel configured yet — JS changes require a
 new build to reach devices outside of Expo Go.
+
+For Google Play specifically, **[docs/play-store-deployment.md](docs/play-store-deployment.md)** is the
+step-by-step runbook — the account and closed-testing gates that set the timeline, the repo changes
+needed before the first build, and the order to do everything in.
+[docs/play-store-listing.md](docs/play-store-listing.md) holds the listing copy and the Data Safety
+answers.
