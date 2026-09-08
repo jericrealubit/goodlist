@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · Goodlist</title>
+<meta name="description" content="What Goodlist collects, why, who can see it, and how to get it deleted.">
+<meta name="robots" content="index, follow">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --sunk: #f1f3f6;
+    --text: #14181f;
+    --muted: #5b6472;
+    --border: #e2e5ea;
+    --brand: #072655;
+    --brand-ink: #072655;
+    --accent: #2e9e4f;
+    --danger: #b23a2c;
+    --danger-bg: #fdf3f1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0f17;
+      --surface: #111826;
+      --sunk: #0e1420;
+      --text: #e7e9ed;
+      --muted: #9aa3b2;
+      --border: #262b36;
+      --brand: #5c8ae6;
+      --brand-ink: #e7e9ed;
+      --accent: #4cb86b;
+      --danger: #e4685d;
+      --danger-bg: #21150f;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--brand); }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .top-inner {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
+    text-decoration: none;
+    color: inherit;
+  }
+  .mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #072655;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .mark svg { width: 17px; height: 17px; }
+  .brand b { font-size: 15px; letter-spacing: -0.01em; }
+  nav.docs { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav.docs a {
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  nav.docs a:hover { color: var(--text); background: var(--sunk); }
+  nav.docs a[aria-current="page"] { color: var(--brand-ink); background: var(--sunk); }
+
+  main { max-width: 940px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  .hero { margin-bottom: 36px; }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 36px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .hero p { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
+  .stamp {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--sunk);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+  .stamp b { color: var(--text); }
+
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; gap: 0; } .toc { display: none; } }
+
+  .toc { position: sticky; top: 76px; display: flex; flex-direction: column; }
+  .toc-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .toc a {
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 5px 0 5px 12px;
+    border-left: 2px solid var(--border);
+  }
+  .toc a:hover { color: var(--text); border-left-color: var(--accent); }
+
+  article { max-width: 68ch; }
+  section { scroll-margin-top: 84px; }
+  section + section { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+  h2 { font-size: 20px; letter-spacing: -0.01em; margin: 0 0 10px; }
+  h2 .num { color: var(--muted); font-weight: 500; margin-right: 8px; }
+  p { margin: 12px 0; }
+  p.lead { color: var(--muted); font-size: 15px; }
+  ul { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  strong { font-weight: 650; }
+
+  .callout {
+    margin: 16px 0;
+    padding: 14px 16px;
+    font-size: 15px;
+    background: var(--sunk);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: 10px;
+  }
+  .callout.warn { background: var(--danger-bg); border-left-color: var(--danger); }
+
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 28px; }
+  .card {
+    display: block;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card b { display: block; font-size: 16px; margin-bottom: 6px; }
+  .card span { color: var(--muted); font-size: 14px; }
+
+  footer {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="/goodlist/legal/">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" fill-opacity=".14"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <b>Goodlist</b>
+    </a>
+    <nav class="docs" aria-label="Legal documents">
+        <a href="/goodlist/legal/privacy/" aria-current="page">Privacy</a>
+        <a href="/goodlist/legal/terms/">Terms</a>
+        <a href="/goodlist/legal/delete-account/">Delete account</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <h1>Privacy Policy</h1>
+    <p>What Goodlist collects, why, who can see it, and how to get it deleted.</p>
+    <span class="stamp">Effective <b>September 7, 2026</b></span>
+  </div>
+  <div class="layout">
+    <nav class="toc" aria-label="On this page">
+      <span class="toc-label">On this page</span>
+      <a href="#who-this-covers">Who this covers</a>
+      <a href="#what-we-collect">What we collect</a>
+      <a href="#how-we-use-it">How we use it</a>
+      <a href="#sharing">Sharing within your group</a>
+      <a href="#retention-deletion">Retention &amp; deletion</a>
+      <a href="#childrens-privacy">Children’s privacy</a>
+      <a href="#security">Security</a>
+      <a href="#your-choices">Your choices</a>
+      <a href="#changes">Changes to this policy</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <article>
+      <section id="who-this-covers">
+        <h2><span class="num">1.</span>Who this covers</h2>
+          <p>This policy applies to everyone who uses Goodlist — the task and group-sharing app built by an independent developer, Jeric Realubit. Goodlist runs on Supabase (Postgres + authentication) as its backend infrastructure. We don’t run ads, and we don’t use analytics or tracking SDKs of any kind in the app today.</p>
+      </section>
+      <section id="what-we-collect">
+        <h2><span class="num">2.</span>What we collect</h2>
+          <p><strong>Account information.</strong> Your email address and password (stored securely and hashed by our authentication provider — we never see it in plain text), and an optional display name.</p>
+          <p><strong>Task &amp; group content.</strong> Anything you enter to use the app: task titles, notes, due dates, completion status, group names, invite codes, and member roles. This is the content the app exists to store.</p>
+          <p><strong>Activity timestamp.</strong> While the app is open, it records a single “last seen” time on your profile, roughly once a minute. It is one timestamp, overwritten each time — not a history of when or how you use the app — and it exists only so the app can show how many people are using Goodlist right now. Other users see that count, never your timestamp, your name, or anything you do.</p>
+          <p><strong>Country &amp; time zone.</strong> Your device’s Region setting (a country, like “Philippines”) and its time zone (like “Asia/Manila”). These are read from your device’s own language and region settings — <strong>not</strong> from GPS, and not from your IP address. We use them only to count how many people use Goodlist in each country. You can turn this off at any time in Settings, which also clears the two values we’ve stored.</p>
+          <p class="lead">We don’t collect your precise location, contacts, or advertising identifiers, and we don’t track you across other apps or websites. There’s nothing being collected in the background beyond what’s listed above.</p>
+      </section>
+      <section id="how-we-use-it">
+        <h2><span class="num">3.</span>How we use it</h2>
+          <ul>
+            <li>To create and authenticate your account, and keep you signed in.</li>
+            <li>To sync your Personal tasks across your own devices.</li>
+            <li>To share Requested tasks and group task lists with the members you’ve chosen to invite.</li>
+            <li>To send in-app notifications — for example, when someone requests a task from you.</li>
+            <li>To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.</li>
+            <li>To count, in aggregate, how many people use Goodlist in each country — never to locate an individual.</li>
+          </ul>
+          <p>We don’t use your data to train models, sell it, or use it for advertising.</p>
+      </section>
+      <section id="sharing">
+        <h2><span class="num">4.</span>Sharing within your group</h2>
+          <p>Goodlist is built around small, invite-only groups — Family or Team mode, up to two per account. If you join or create one, your display name and any tasks marked as shared or requested within that group become visible to the other members — that visibility is the point of the feature, and it’s limited to people who joined using your group’s invite code.</p>
+          <p>Outside of your own group, we don’t share your personal data with other users, and we don’t share it with third parties for marketing or advertising purposes. Our infrastructure provider, Supabase, Inc., processes and stores data on our behalf as part of running the service — it doesn’t use your data for its own purposes.</p>
+      </section>
+      <section id="retention-deletion">
+        <h2><span class="num">5.</span>Retention &amp; deletion</h2>
+          <p>Your data is kept for as long as your account exists. You can permanently delete your account at any time from Settings — this immediately and permanently removes your profile and tasks.</p>
+          <aside class="callout warn"><strong>If you own a group</strong> (you created it) and other members still belong to it, we block account deletion until you transfer ownership to someone else or remove the other members first — so a deletion can’t destroy a group out from under the people in it.</aside>
+          <p>You can also clear your completed/cancelled task history from the History screen at any time, independent of deleting your account.</p>
+      </section>
+      <section id="childrens-privacy">
+        <h2><span class="num">6.</span>Children’s privacy</h2>
+          <p>Goodlist is not directed at children under 13, and we do not knowingly collect personal information from children under 13. Family-group member roles like “child” are currently descriptive labels only — Goodlist does not yet offer separate child accounts, logins, or parental-control features.</p>
+      </section>
+      <section id="security">
+        <h2><span class="num">7.</span>Security</h2>
+          <p>Your data is protected with row-level database security, meaning the database itself enforces who can read or write each piece of data — a group’s tasks are only reachable by that group’s members, and personal tasks only by you. Passwords are hashed, never stored or transmitted in plain text. No method of storage or transmission is 100% secure, but we take reasonable, industry-standard steps to protect your information.</p>
+      </section>
+      <section id="your-choices">
+        <h2><span class="num">8.</span>Your choices</h2>
+          <ul>
+            <li><strong>Access &amp; correction</strong> — everything you’ve entered is visible and editable directly in the app.</li>
+            <li><strong>Deletion</strong> — delete your account anytime from Settings, or email us to request it.</li>
+            <li><strong>Questions or data requests</strong> — contact us using the email below.</li>
+          </ul>
+      </section>
+      <section id="changes">
+        <h2><span class="num">9.</span>Changes to this policy</h2>
+          <p>If this policy changes in a meaningful way, we’ll update the effective date above. Continuing to use Goodlist after a change means you accept the updated policy.</p>
+      </section>
+      <section id="contact">
+        <h2><span class="num">10.</span>Contact</h2>
+          <p>Questions about this policy or your data? Reach out at <a href="mailto:jericrealubit@gmail.com">jericrealubit@gmail.com</a>.</p>
+      </section>
+    </article>
+  </div>
+</main>
+<footer>
+  Goodlist — questions? <a href="mailto:jericrealubit@gmail.com">jericrealubit@gmail.com</a>
+</footer>
+</body>
+</html>

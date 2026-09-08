@@ -44,10 +44,14 @@ async function main() {
   await glyph.clone().resize(1024, 1024).toFile(path.join(imagesDir, 'android-icon-foreground.png'));
 
   // Play Store listing icon: same opaque square as icon.png, just 512x512.
+  // Play Console specifies a *32-bit* PNG for the listing icon, so keep an
+  // alpha channel on this one — flatten first so it is fully opaque, then
+  // add the channel back rather than leaving the corners transparent.
   await sharp(source)
     .extract(crop)
     .flatten({ background: BRAND_NAVY })
     .resize(512, 512)
+    .ensureAlpha(1)
     .toFile(path.join(imagesDir, 'play-store-icon.png'));
 
   // Feature graphic (1024x500): icon glyph + wordmark side by side on cream,
@@ -65,13 +69,24 @@ async function main() {
     .resize(wordmarkWidth, wordmarkHeight)
     .toBuffer();
 
-  await sharp({
+  const lockup = await sharp({
     create: { width: 1024, height: 500, channels: 3, background: BRAND_CREAM },
   })
     .composite([
       { input: iconBuf, left: leftMargin, top: Math.round((500 - iconSize) / 2) },
       { input: wordmarkBuf, left: leftMargin + iconSize + gap, top: Math.round((500 - wordmarkHeight) / 2) },
     ])
+    .png()
+    .toBuffer();
+
+  // Compositing RGBA sources promotes the result back to RGBA even though the
+  // canvas was created with 3 channels, and Play Console rejects a feature
+  // graphic that carries an alpha channel. This has to be a second pass:
+  // sharp applies operations in a fixed pipeline order, so a .flatten() call
+  // chained onto the composite above would run *before* the composite and do
+  // nothing.
+  await sharp(lockup)
+    .flatten({ background: BRAND_CREAM })
     .png()
     .toFile(path.join(imagesDir, 'feature-graphic.png'));
 

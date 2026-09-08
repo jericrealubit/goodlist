@@ -50,11 +50,16 @@ takes time to obtain, so it is only a win if you already have one.
 - `assets/images/play-store-icon.png` — 512×512, correct.
 - In-app account deletion exists (Settings → Delete account), which Play's User Data policy requires.
 - `docs/play-store-listing.md` already has the short/full description, category, content-rating
-  answers, and a drafted Data Safety form.
+  answers, and a drafted Data Safety form — now including the App access and Data deletion sections.
+- `src/content/legal.ts` is the single source for the Privacy Policy and Terms; `npm run legal:site`
+  renders the public pages from the same text the app shows.
 
 ---
 
-## 3. Blockers — fix these before or during the first build
+## 3. Blockers
+
+Four of the seven are fixed in the repo. The three that remain need your Supabase project, your
+Play Console account, or a device — nothing in the codebase can supply them.
 
 ### B1. Supabase keys are not available to EAS Build — **the build will produce a crashing app**
 
@@ -77,51 +82,66 @@ Verify with `eas env:list --environment production` before building. The anon ke
 client key by design (RLS is what protects the data), so `sensitive` rather than `secret` is correct —
 `secret` values can never be read back, including by you.
 
-### B2. `eas.json` `submit.production` is empty
+### B2. ~~`eas.json` `submit.production` is empty~~ — **fixed**
 
-It is `{}`. For `eas submit` to work unattended it needs the Google service-account key and a target
-track:
+`eas.json` now carries the submit block, plus an explicit `environment` on each build profile so the
+EAS environment variables from B1 actually resolve, and an explicit Android `buildType` on each:
 
 ```jsonc
 "submit": {
   "production": {
     "android": {
-      "serviceAccountKeyPath": "../credentials/play-service-account.json",
-      "track": "internal",          // then "beta" for closed testing, "production" at the end
-      "releaseStatus": "draft"      // "draft" is required for the very first upload
+      "serviceAccountKeyPath": "./credentials/play-service-account.json",
+      "track": "internal",
+      "releaseStatus": "draft"
     }
   }
 }
 ```
 
-`.gitignore` already excludes `*service-account*.json` and `credentials/`. Keep the key outside the
-repo entirely if you can, and reference it by absolute path.
+You still have to **put the key file there**: create a Google Cloud service account with the
+*Service Account User* role, grant it access in Play Console under Users and permissions, download
+its JSON key, and save it as `credentials/play-service-account.json`. `.gitignore` already excludes
+`*service-account*.json` and `credentials/`, so it will not be committed — but keeping it outside
+the repo and using an absolute path is safer still.
 
-### B3. The privacy policy URL is stale and inconsistent with the Data Safety form
+`track` is `internal` and `releaseStatus` is `draft` because that is what the *first* submission
+needs. Move `track` to `beta` for the closed test and `production` at the end, and drop
+`releaseStatus` once the app has a live release.
 
-`play-store-listing.md` points at a `claude.ai/code/artifact/...` URL. Two problems:
+### B3. ~~The privacy policy URL is stale and inconsistent~~ — **fixed, one manual step left**
 
-1. **It is out of date.** The published version's "What we collect" section lists only account info
-   and task content. The in-app policy (`src/app/(app)/privacy.tsx:26-49`) additionally discloses the
-   **activity timestamp** and the **country + time zone**. Meanwhile the drafted Data Safety form
-   declares *Approximate location*. Google requires the Data Safety declaration and the privacy
-   policy to agree — a mismatch is one of the most common rejection reasons, and here the public
-   policy fails to disclose a category you are declaring.
-2. **The host is a poor choice.** Play requires the policy at a secure, publicly accessible,
-   non-geofenced URL. A `claude.ai` share link is a JavaScript app behind a share token; a reviewer's
-   automated fetch may see nothing.
+The old `claude.ai/code/artifact/...` URL was both a bad host for a policy Google must fetch, and
+out of date: it disclosed neither the activity timestamp nor the country/time zone that
+`privacy.tsx` discloses and that the Data Safety form declares as *Approximate location*.
 
-**Fix:** this repo is public, so publish the policy on GitHub Pages
-(`https://jericrealubit.github.io/goodlist/privacy`), generated from the same source of truth as
-`privacy.tsx`/`terms.tsx` so the two cannot drift again.
+The copy now lives in **`src/content/legal.ts`**, and two things render from it:
 
-### B4. No account-deletion web URL
+- the in-app screens (`src/app/(app)/privacy.tsx`, `terms.tsx`, via `LegalDocument`), and
+- the public website, built by `npm run legal:site` into `docs/legal/`.
 
-Play's User Data policy requires apps that let users create an account to provide **both** in-app
-deletion (present) **and** a web URL where deletion can be requested without installing the app.
-The Data Safety form has a required field for it. There is currently no such page — ship it on the
-same GitHub Pages site as B3 (`/delete-account`), explaining the in-app path and giving
-`jericrealubit@gmail.com` as the request address.
+They cannot drift, because there is only one copy of the text. Re-run `npm run legal:site` after any
+edit to `legal.ts` and commit the regenerated HTML.
+
+**Manual step — turn GitHub Pages on:** repo Settings → Pages → Source *Deploy from a branch*,
+branch `main`, folder `/docs`. That publishes:
+
+| Page | URL |
+|---|---|
+| Privacy Policy | `https://jericrealubit.github.io/goodlist/legal/privacy/` |
+| Terms of Service | `https://jericrealubit.github.io/goodlist/legal/terms/` |
+| Delete your account | `https://jericrealubit.github.io/goodlist/legal/delete-account/` |
+
+A `docs/.nojekyll` file is included so Pages serves the generated HTML verbatim instead of running
+the Markdown in `docs/` through Jekyll. Load each URL in a private window before submitting.
+
+### B4. ~~No account-deletion web URL~~ — **fixed, same manual step**
+
+`https://jericrealubit.github.io/goodlist/legal/delete-account/` is generated alongside the other
+two. It documents the in-app path (Settings → Delete account), the email fallback for someone who
+has lost their device, exactly what is deleted, the group-ownership block, and the partial-deletion
+options. It goes in the required **Data deletion URL** field of the Data Safety form — see
+`play-store-listing.md`, which now has that section filled in.
 
 ### B5. No reviewer credentials for a login-gated app
 
@@ -140,17 +160,14 @@ reject them on upload. They are also illustrations rather than captures of the r
 screenshots from a device or emulator at 1080×2160 or 1080×1920 (both exactly ≤ 2:1). Good candidates:
 the task list with a few tasks, task detail, a group screen, history, and appearance/themes.
 
-### B7. The feature graphic has an alpha channel
+### B7. ~~The feature graphic has an alpha channel~~ — **fixed**
 
-`assets/images/feature-graphic.png` is 1024×500 (correct) but RGBA. Play requires a 24-bit PNG or
-JPEG with **no transparency**. Flatten it onto the brand background before upload:
-
-```bash
-npx sharp-cli -i assets/images/feature-graphic.png -o feature-graphic-flat.png \
-  flatten --background "#072655"
-```
-
-or re-export from `scripts/generate-app-icons.mjs` with the alpha channel removed.
+`assets/images/feature-graphic.png` is now a 24-bit RGB PNG with no alpha, and
+`assets/images/play-store-icon.png` is now 32-bit RGBA, which is what Play Console specifies for the
+listing icon. Both were regenerated by `node scripts/generate-app-icons.mjs`, which was the actual
+bug: it created the feature-graphic canvas with three channels but the composited overlays promoted
+the result back to RGBA, and the `.flatten()` guard had to become a second pass because sharp
+applies operations in a fixed pipeline order rather than call order.
 
 ---
 
@@ -163,12 +180,18 @@ or re-export from `scripts/generate-app-icons.mjs` with the alpha channel remove
    *nothing else can be published until it clears*, so this must not wait on the code. During
    verification the account is limited: you can create the app and set up the listing, but not publish
    to any track.
-2. **Fix B1 and B2**, then produce a real build:
+2. **Do B1** (the only repo blocker left before a build), then produce a real build:
 
    ```bash
    npm install
    npx eas-cli login
-   npx eas-cli build --platform android --profile preview   # APK — install directly, sanity-check it
+   npx eas-cli env:create --scope project --name EXPO_PUBLIC_SUPABASE_URL \
+     --value "https://<project>.supabase.co" --environment production --environment preview \
+     --visibility plaintext
+   npx eas-cli env:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY \
+     --value "<anon-key>" --environment production --environment preview --visibility sensitive
+   npx eas-cli env:list --environment production          # confirm both are there
+   npx eas-cli build --platform android --profile preview  # APK — install directly, sanity-check it
    ```
 
    Install that APK on a physical device and confirm sign-in, task creation, and group flows work
@@ -200,10 +223,10 @@ or re-export from `scripts/generate-app-icons.mjs` with the alpha channel remove
 
 **During the 14 days — complete everything else**
 
-7. Ship the GitHub Pages privacy policy + account-deletion page (B3, B4), regenerated to match
-   `privacy.tsx`.
-8. Fill the **Store listing**: copy from `play-store-listing.md`, the 512×512 icon, the flattened
-   feature graphic (B7), and the new screenshots (B6).
+7. Turn on GitHub Pages (Settings → Pages → `main` / `/docs`) so the privacy, terms, and
+   account-deletion pages go live (B3, B4), and check all three load in a private window.
+8. Fill the **Store listing**: copy from `play-store-listing.md`, `assets/images/play-store-icon.png`,
+   `assets/images/feature-graphic.png`, and the new screenshots (B6).
 9. Complete **App content** end to end — it all must be green before production:
    privacy policy URL · App access (B5 demo credentials) · Ads: No · Content rating questionnaire ·
    Target audience: 13+, not designed for children · Data safety (matching the policy, including the
