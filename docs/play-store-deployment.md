@@ -193,42 +193,67 @@ account (email + password) on your Supabase project, seeded with a few tasks and
 Reviewers who cannot get past a login screen reject the submission. Create this account now and do
 not delete it.
 
-### B6. Screenshots — **four generated, two still need a device**
+### B6. Screenshots — **five generated**, one screen still needs a device
 
-`npm run store:screenshots` captures the phone screenshots from the real app and writes them to
-`docs/store/screenshots/` at 1080x2160, 24-bit, no alpha — exactly Play's phone spec (320–3840px per
-side, long side at most twice the short side; 1080x2160 sits on that 2:1 cap).
+`npm run store:screenshots` captures them from the real app into `docs/store/screenshots/` at
+1080x2160, 24-bit, no alpha — Play's phone spec exactly (320–3840px per side, long side at most twice
+the short side; 1080x2160 sits on that 2:1 cap).
 
-They are genuine renders of the shipped screens, not mockups: the script serves the web export of
-the same Expo Router code the Android app runs, seeds a session, and answers every Supabase call
-from fixtures, so it needs no demo account and no network. Each shot asserts a string it expects to
-find before it is written — an early version silently produced five copies of the Tasks screen
-because a hard URL load re-ran the auth guard, and the assertion is what catches that.
+They are genuine renders of the shipped screens: the script serves the web export of the same Expo
+Router code the Android app runs, seeds a session, and answers every Supabase call from fixtures, so
+it needs no demo account and no network. Each shot asserts a string it expects on screen before it
+is written.
 
 | File | Screen |
 |---|---|
 | `01-my-tasks.png` | Personal task list with notes and due dates |
 | `02-requested.png` | Requested tab — tasks another member asked for, with their name |
-| `03-history.png` | Completed and cancelled tasks with undo |
-| `04-settings.png` | Profile and the theme picker |
+| `03-group.png` | Group card: invite code, members and roles |
+| `04-history.png` | Completed and cancelled tasks with undo |
+| `05-settings.png` | Profile and the theme picker |
 
-**Two screens are deliberately excluded**, because react-native-web renders them differently from
-Android and a screenshot that misrepresents the app is worse than one fewer screenshot:
+Two platform gaps are handled so the capture matches a phone rather than a Linux browser:
 
-- **Group** — the header title truncates and the Share button overflows its row.
-- **Task edit** — the due-date field falls back to an HTML `<input type="date">` with a browser date
-  picker; Android uses the native `@react-native-community/datetimepicker`.
+- **Font.** Android resolves the app's font to `'normal'` — the system sans, Roboto. The web branch
+  asks for `var(--font-rounded)`, which lists SF Pro Rounded / Hiragino / Meiryo, none of which exist
+  on Linux, so Chromium substituted DejaVu Sans. DejaVu is far wider: it rendered the 48px invite
+  code at 240px where Roboto gives 217px, pushing the Share button off the card and ellipsising a
+  group name that fits fine on a phone. The script serves real Roboto (`@fontsource/roboto`) and
+  points the custom properties at it, then refuses to run if it did not load. **There was never a
+  responsive bug here** — measured under Roboto, the Share button fits at 360, 393 and 412dp.
+- **Tab bar.** The web build renders its own top tab strip where Android renders a native bottom bar.
+  It is measured on the signed-in Tasks screen, the viewport grown by exactly that much, then cropped
+  back off — so nothing is painted in to fill the gap.
 
-Four satisfies Play (minimum 2, up to 8) and covers the whole story. If you want Group in the
-listing, capture it on a device — the release APK is already installed. Volume down + power, or:
+**The task edit form is still not captured.** Its due-date field is a real platform split
+(`src/components/due-date-picker.web.tsx`): web renders an HTML `<input type="date">` with a browser
+date picker where Android uses `@react-native-community/datetimepicker`. No font fixes that. Capture
+it on a device if you want it — the release APK is already installed:
 
 ```bash
-adb exec-out screencap -p > group.png
+adb exec-out screencap -p > task-detail.png
 ```
 
-A phone screenshot at 1080x2400 or taller is past the 2:1 cap, so crop it to 1080x2160 before
-uploading. The old `docs/user-guide/images/*.png` are illustrations at 780x1688 (1:2.16, also past
-the cap) and are not a substitute.
+A phone screenshot at 1080x2400 or taller is past the 2:1 cap, so crop to 1080x2160 before
+uploading. The `docs/user-guide/images/*.png` are illustrations at 780x1688 (1:2.16, also past the
+cap) and are not a substitute.
+
+#### Two styling bugs found while doing this — not fixed, your call
+
+Both are real and visible on Android, not web artifacts. They are coupled, so fixing one alone makes
+things worse:
+
+1. **`src/components/group-card.tsx` bands the card.** Its layout wrappers are `ThemedView`, which
+   always applies `backgroundColor: theme[type ?? 'background']`. Inside the white card that repaints
+   the beige screen background (`#F5F1E6`) over it, in horizontal bands. `docs/user-guide/images/11-invite-code.png`
+   shows the intended look — an unbanded white card. The fix is to make those wrappers plain `View`.
+2. **Secondary buttons are invisible on a white surface.** `PrimaryButton` with `variant="secondary"`
+   fills with `theme.backgroundElement` (`#FFFFFF`) and sets no border and no shadow. On the white
+   group card, Share / Rename Group / Make owner / Remove have no edge at all — they only read as
+   buttons today *because* of the banding in (1). Fixing (1) without giving the secondary variant a
+   border or elevation turns every one of those buttons into plain text.
+
+The screenshot ships with the banding, because that is what the app currently looks like.
 
 ### B7. ~~The feature graphic has an alpha channel~~ — **fixed**
 

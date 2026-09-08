@@ -31,6 +31,35 @@ import { findChrome } from './lib/find-chrome.mjs';
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const distDir = path.join(rootDir, 'dist');
 const outDir = path.join(rootDir, 'docs', 'store', 'screenshots');
+const fontDir = path.join(rootDir, 'node_modules', '@fontsource', 'roboto', 'files');
+const FONT_ROUTE = '/__fonts/';
+
+// Android resolves the app's font to 'normal' — the system sans, i.e. Roboto
+// (src/constants/theme.ts, Platform.select default branch). The web branch
+// asks for var(--font-rounded), which lists SF Pro Rounded / Hiragino / Meiryo
+// — none of which exist on a Linux box, so Chromium substitutes DejaVu Sans.
+// DejaVu is far wider: it rendered the 48px invite code at 240px where Roboto
+// gives ~180px, which pushed the Share button off the card and ellipsised a
+// group name that fits fine on a phone. Serving real Roboto and pointing the
+// custom properties at it makes the capture match the device instead of
+// inventing a layout bug that does not exist on Android.
+const ROBOTO_CSS = `
+${[400, 500, 700, 800]
+  .map(
+    (weight) => `@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: ${weight};
+  font-display: block;
+  src: url('${FONT_ROUTE}roboto-latin-${weight}-normal.woff2') format('woff2');
+}`,
+  )
+  .join('\n')}
+:root {
+  --font-display: Roboto, sans-serif;
+  --font-rounded: Roboto, sans-serif;
+}
+`;
 
 const PORT = 8099;
 // Play's phone screenshot rules: 320-3840px per side, and the long side may
@@ -231,6 +260,12 @@ function startServer() {
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.otf': 'font/otf' };
   const server = http.createServer(async (req, res) => {
     const rel = decodeURIComponent(req.url.split('?')[0]);
+    if (rel.startsWith(FONT_ROUTE)) {
+      const data = await readFile(path.join(fontDir, path.basename(rel)));
+      res.writeHead(200, { 'content-type': 'font/woff2' });
+      res.end(data);
+      return;
+    }
     try {
       const data = await readFile(path.join(distDir, rel));
       res.writeHead(200, { 'content-type': types[path.extname(rel)] ?? 'application/octet-stream' });
@@ -250,17 +285,11 @@ function startServer() {
 // five copies of the same screen. `expect` is asserted after each step so a
 // wrong screen fails the run instead of shipping.
 //
-// Two screens are deliberately NOT captured here, because react-native-web
-// renders them differently from Android and a screenshot that misrepresents
-// the app is worse than one fewer screenshot:
-//
-//   - Group      the header title truncates and the Share button overflows
-//                its row under the web layout engine.
-//   - Task edit  the due-date field falls back to an HTML <input type="date">
-//                with a browser date picker; Android uses the native
-//                @react-native-community/datetimepicker.
-//
-// Capture those two on a device if you want them in the listing.
+// One screen is deliberately NOT captured: the task edit form. Its due-date
+// field is a real platform split (src/components/due-date-picker.web.tsx) —
+// the web build renders an HTML <input type="date"> with a browser date
+// picker where Android uses @react-native-community/datetimepicker. No font
+// fixes that, so capture it on a device if you want it in the listing.
 const SHOTS = [
   { name: '01-my-tasks', expect: 'Book the campsite for Easter', go: async () => {} },
   {
@@ -271,8 +300,9 @@ const SHOTS = [
     go: (page) => tap(page, 'Requested'),
     then: (page) => tap(page, 'Personal'),
   },
-  { name: '03-history', expect: 'Pay the electricity bill', go: (page) => tap(page, 'History') },
-  { name: '04-settings', expect: 'Privacy Policy', go: (page) => tap(page, 'Settings') },
+  { name: '03-group', expect: 'GOODAU', go: (page) => tap(page, 'Group') },
+  { name: '04-history', expect: 'Pay the electricity bill', go: (page) => tap(page, 'History') },
+  { name: '05-settings', expect: 'Privacy Policy', go: (page) => tap(page, 'Settings') },
 ];
 
 const tap = (page, label) => page.getByText(label, { exact: true }).first().click();
@@ -338,7 +368,18 @@ async function main() {
   // crop it back off, so each shot is 1080x2160 of UI both platforms share
   // with nothing painted in to fill the gap.
   await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'networkidle', timeout: 60_000 });
+  // Swap in Roboto before anything is measured or captured. The app is a
+  // single-page app from here on — every later step is client-side routing,
+  // so this survives for the whole run.
+  await page.addStyleTag({ content: ROBOTO_CSS });
+  await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(2500);
+
+  const usingRoboto = await page.evaluate(() =>
+    document.fonts.check('700 32px Roboto'),
+  );
+  if (!usingRoboto) throw new Error('Roboto did not load — capture would use the wrong metrics');
+
   const tabBarCss = await page.evaluate(() => {
     const label = [...document.querySelectorAll('div')].find(
       (el) => el.childElementCount === 0 && el.textContent?.trim() === 'Tasks',
