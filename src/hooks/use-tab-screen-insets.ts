@@ -1,11 +1,22 @@
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabInset, WebTopNavInset } from '@/constants/theme';
+import { BottomTabInset, PinnedBottomClearance, WebTopNavInset } from '@/constants/theme';
 
 export function useTabScreenInsets() {
   const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom + BottomTabInset;
+
   return {
     topInset: insets.top + WebTopNavInset,
-    bottomInset: insets.bottom + BottomTabInset,
+    bottomInset,
+    // For content pinned to `bottom: 0` of a tab screen (the Tasks compose
+    // bar). Android tab screens are already padded above the tab bar by
+    // expo-router's native tabs — each one is wrapped in a bottom-edge
+    // SafeAreaView sized from the bar's measured height — so pinned content
+    // only needs clearance there. Everywhere else the screen runs the full
+    // height behind the bar, so pinned content clears the bar itself first.
+    pinnedBottomInset:
+      Platform.OS === 'android' ? PinnedBottomClearance : bottomInset + PinnedBottomClearance,
   };
 }

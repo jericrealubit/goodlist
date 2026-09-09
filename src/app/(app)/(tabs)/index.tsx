@@ -44,7 +44,7 @@ const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
 
 export default function TasksScreen() {
   const router = useRouter();
-  const { topInset, bottomInset } = useTabScreenInsets();
+  const { topInset, bottomInset, pinnedBottomInset } = useTabScreenInsets();
   const tokens = useTokens();
   const { data: groups } = useGroupsQuery();
   const { user } = useSession();
@@ -296,7 +296,15 @@ export default function TasksScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             contentContainerStyle={[
               styles.listContent,
-              { gap: tokens.spacing.two, paddingBottom: bottomInset + Spacing.six + (showAssigneePicker ? Spacing.six : 0) },
+              {
+                gap: tokens.spacing.two,
+                // The compose bar floats over the list, so the last task has to
+                // be able to scroll clear of it as well as of the tab bar.
+                paddingBottom:
+                  Math.max(bottomInset, pinnedBottomInset) +
+                  Spacing.six +
+                  (showAssigneePicker ? Spacing.six : 0),
+              },
             ]}>
             <Sortable.Grid
               columns={1}
@@ -317,7 +325,7 @@ export default function TasksScreen() {
           </Animated.ScrollView>
         )}
 
-        <ThemedView style={[styles.footer, { paddingBottom: Spacing.two }]}>
+        <ThemedView style={[styles.footer, { paddingBottom: pinnedBottomInset }]}>
           {showAssigneePicker ? (
             <OptionPicker
               layout="row"
