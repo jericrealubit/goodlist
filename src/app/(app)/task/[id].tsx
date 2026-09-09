@@ -62,6 +62,13 @@ export default function EditTaskScreen() {
     setDueAt(task.due_at ? new Date(task.due_at) : null);
   }, [task]);
 
+  // The title field wraps so a long title is fully readable while editing, but
+  // it is still one logical line: collapse the newlines a Return key or a
+  // pasted multi-line string would otherwise leave in it.
+  function handleTitleChange(next: string) {
+    setTitle(next.replace(/\r?\n/g, ' '));
+  }
+
   // Every action below is optimistic — the mutation's own onMutate already
   // updates the cache instantly, so the screen can dismiss right away rather
   // than waiting on a network round trip that may be paused for a long time
@@ -125,8 +132,12 @@ export default function EditTaskScreen() {
               <TextField
                 label="Title"
                 value={title}
-                onChangeText={setTitle}
+                onChangeText={handleTitleChange}
                 placeholder="Buy groceries"
+                multiline
+                returnKeyType="done"
+                submitBehavior="blurAndSubmit"
+                style={styles.titleInput}
                 editable={!isRequested || isOpen}
               />
               <TextField
@@ -203,6 +214,12 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.four,
     gap: Spacing.three,
+  },
+  titleInput: {
+    // Grows with the title so the whole value stays visible, then scrolls
+    // inside the field instead of pushing the buttons off screen.
+    maxHeight: 132,
+    textAlignVertical: 'top',
   },
   noteInput: {
     minHeight: 80,
