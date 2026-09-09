@@ -3,16 +3,19 @@ import { StyleSheet } from 'react-native';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons, type IconName } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 
 type EmptyStateProps = {
   title: string;
   message?: string;
   actionLabel?: string;
+  /** Defaults to the retry glyph, which is what every caller wants today. */
+  actionIcon?: IconName;
   onAction?: () => void;
 };
 
-export function EmptyState({ title, message, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({ title, message, actionLabel, actionIcon = ActionIcons.retry, onAction }: EmptyStateProps) {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="subtitle" style={styles.centerText}>
@@ -24,7 +27,13 @@ export function EmptyState({ title, message, actionLabel, onAction }: EmptyState
         </ThemedText>
       ) : null}
       {actionLabel && onAction ? (
-        <PrimaryButton title={actionLabel} onPress={onAction} variant="secondary" style={styles.action} />
+        <PrimaryButton
+          title={actionLabel}
+          icon={actionIcon}
+          onPress={onAction}
+          variant="secondary"
+          style={styles.action}
+        />
       ) : null}
     </ThemedView>
   );

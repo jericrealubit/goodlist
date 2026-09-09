@@ -3,12 +3,15 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
+import { FormHeader } from '@/components/form-header';
+import { HeaderAction } from '@/components/header-action';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useIsAdminQuery } from '@/hooks/use-distribution-query';
@@ -104,6 +107,16 @@ export default function SettingsScreen() {
         ]}
         keyboardShouldPersistTaps="handled">
         <ThemedView style={styles.form}>
+          {/* Save sits at the top right of the form, where the keyboard can
+              never cover it — the same place the modal screens put it. */}
+          <FormHeader title="Profile">
+            <HeaderAction
+              label="Save"
+              icon={ActionIcons.save}
+              onPress={handleSave}
+              loading={updateDisplayNameMutation.isPending}
+            />
+          </FormHeader>
           <TextField label="Display name" value={displayName} onChangeText={setDisplayName} placeholder="Your name" />
           <TextField label="Email" value={user?.email ?? ''} editable={false} />
           {error ? (
@@ -116,7 +129,6 @@ export default function SettingsScreen() {
               Saved.
             </ThemedText>
           ) : null}
-          <PrimaryButton title="Save" onPress={handleSave} />
         </ThemedView>
 
         <ThemedView style={styles.appearance}>
@@ -161,7 +173,7 @@ export default function SettingsScreen() {
           </Pressable>
         </ThemedView>
 
-        <PrimaryButton title="Sign out" onPress={signOut} variant="danger" />
+        <PrimaryButton title="Sign out" icon={ActionIcons.signOut} onPress={signOut} variant="danger" />
 
         <ThemedView style={styles.dangerZone}>
           {deleteError ? (
@@ -183,6 +195,7 @@ export default function SettingsScreen() {
               ) : null}
               <PrimaryButton
                 title="Yes, delete my account"
+                icon={ActionIcons.delete}
                 onPress={handleDeleteAccount}
                 loading={deleting}
                 disabled={!isOnline}
@@ -190,13 +203,19 @@ export default function SettingsScreen() {
               />
               <PrimaryButton
                 title="Cancel"
+                icon={ActionIcons.cancel}
                 onPress={() => setConfirmingDelete(false)}
                 disabled={deleting}
                 variant="secondary"
               />
             </>
           ) : (
-            <PrimaryButton title="Delete account" onPress={() => setConfirmingDelete(true)} variant="secondary" />
+            <PrimaryButton
+              title="Delete account"
+              icon={ActionIcons.delete}
+              onPress={() => setConfirmingDelete(true)}
+              variant="secondary"
+            />
           )}
         </ThemedView>
 

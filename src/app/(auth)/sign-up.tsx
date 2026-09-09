@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
@@ -107,7 +108,12 @@ export default function SignUpScreen() {
                   {info}
                 </ThemedText>
               ) : null}
-              <PrimaryButton title="Create account" onPress={handleSignUp} loading={loading} />
+              <PrimaryButton
+                title="Create account"
+                icon={ActionIcons.createAccount}
+                onPress={handleSignUp}
+                loading={loading}
+              />
             </ThemedView>
 
             <Link href="/sign-in" replace style={styles.link}>

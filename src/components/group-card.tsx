@@ -2,12 +2,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Share, StyleSheet } from 'react-native';
 
+import { FormHeader } from '@/components/form-header';
+import { HeaderAction } from '@/components/header-action';
 import { PrimaryButton } from '@/components/primary-button';
 import { useSurfaceStyle } from '@/components/surface';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleLabel } from '@/constants/group';
+import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useTokens } from '@/hooks/use-tokens';
 import { getErrorMessage } from '@/lib/errors';
@@ -108,6 +111,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
         </ThemedView>
         <PrimaryButton
           title="Share"
+          icon={ActionIcons.share}
           variant="secondary"
           onPress={() => Share.share({ message: `Join my group on Goodlist: ${group.invite_code}` })}
         />
@@ -117,26 +121,34 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
         <ThemedView style={styles.section}>
           {renaming ? (
             <ThemedView style={styles.renameRow}>
-              <TextField label="Group name" value={renameValue} onChangeText={setRenameValue} placeholder="Group name" />
-              <ThemedView style={styles.inlineButtons}>
-                <PrimaryButton
-                  title="Save"
-                  onPress={handleRename}
-                  loading={actionLoading}
-                  disabled={!renameValue.trim() || !isOnline}
-                  style={styles.inlineButton}
-                />
-                <PrimaryButton
-                  title="Cancel"
+              {/* Save above the field rather than below it: on a phone the
+                  keyboard covers everything under the input being edited. */}
+              <FormHeader title="Rename group">
+                <HeaderAction
+                  label="Cancel"
+                  icon={ActionIcons.cancel}
                   variant="secondary"
                   onPress={() => setRenaming(false)}
                   disabled={actionLoading}
-                  style={styles.inlineButton}
                 />
-              </ThemedView>
+                <HeaderAction
+                  label="Save"
+                  icon={ActionIcons.save}
+                  onPress={handleRename}
+                  loading={actionLoading}
+                  disabled={!renameValue.trim() || !isOnline}
+                />
+              </FormHeader>
+              <TextField label="Group name" value={renameValue} onChangeText={setRenameValue} placeholder="Group name" />
             </ThemedView>
           ) : (
-            <PrimaryButton title="Rename Group" variant="secondary" onPress={startRenaming} disabled={!isOnline} />
+            <PrimaryButton
+              title="Rename Group"
+              icon={ActionIcons.edit}
+              variant="secondary"
+              onPress={startRenaming}
+              disabled={!isOnline}
+            />
           )}
         </ThemedView>
       ) : null}
@@ -170,6 +182,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
                 <ThemedView style={styles.memberActions}>
                   <PrimaryButton
                     title="Make owner"
+                    icon={ActionIcons.makeOwner}
                     variant="secondary"
                     onPress={() => {
                       setActionError(null);
@@ -180,6 +193,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
                   />
                   <PrimaryButton
                     title="Remove"
+                    icon={ActionIcons.removeMember}
                     variant="secondary"
                     onPress={() => {
                       setActionError(null);
@@ -212,6 +226,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
           <ThemedView style={styles.inlineButtons}>
             <PrimaryButton
               title="Confirm"
+              icon={pending.type === 'transfer' ? ActionIcons.makeOwner : ActionIcons.confirm}
               variant={pending.type === 'transfer' ? 'primary' : 'danger'}
               onPress={handleConfirmPending}
               loading={actionLoading}
@@ -220,6 +235,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
             />
             <PrimaryButton
               title="Cancel"
+              icon={ActionIcons.cancel}
               variant="secondary"
               onPress={() => {
                 setPending(null);
@@ -239,6 +255,7 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
           ) : null}
           <PrimaryButton
             title="Leave household"
+            icon={ActionIcons.leaveGroup}
             variant="danger"
             onPress={() => {
               setActionError(null);
@@ -277,9 +294,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    // The invite code is deliberately huge, so on a narrow screen it and the
+    // Share button can't share a line — wrap rather than clip either one.
+    flexWrap: 'wrap',
     gap: Spacing.three,
   },
   inviteText: {
+    flexShrink: 1,
     gap: Spacing.half,
   },
   inviteCode: {

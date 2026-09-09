@@ -7,6 +7,7 @@ import { DevSignatureBadge } from '@/components/dev-signature-badge';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
@@ -63,7 +64,11 @@ export default function AboutScreen() {
           <ThemedText type="default" themeColor="textSecondary">
             The guide walks you through every screen, one step at a time, with a picture for each.
           </ThemedText>
-          <PrimaryButton title="How to use Goodlist" onPress={() => router.push('/guide')} />
+          <PrimaryButton
+            title="How to use Goodlist"
+            icon={ActionIcons.guide}
+            onPress={() => router.push('/guide')}
+          />
         </ThemedView>
 
         <ThemedView style={styles.section}>

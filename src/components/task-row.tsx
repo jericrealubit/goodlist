@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -6,6 +7,7 @@ import Sortable from 'react-native-sortables';
 import { Surface } from '@/components/surface';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 import type { Task } from '@/lib/types';
@@ -86,7 +88,7 @@ export function TaskRow({
         accessibilityState={{ checked: isCompleted }}
         accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
         style={checkboxStyle}>
-        {isCompleted && <ThemedText style={styles.checkmark}>✓</ThemedText>}
+        {isCompleted && <Ionicons name={ActionIcons.confirm} size={16} color="#ffffff" />}
       </Sortable.Touchable>
     ) : (
       <Pressable
@@ -96,7 +98,7 @@ export function TaskRow({
         accessibilityState={{ checked: isCompleted }}
         accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
         style={checkboxStyle}>
-        {isCompleted && <ThemedText style={styles.checkmark}>✓</ThemedText>}
+        {isCompleted && <Ionicons name={ActionIcons.confirm} size={16} color="#ffffff" />}
       </Pressable>
     )
   ) : null;
@@ -180,7 +182,8 @@ export function TaskRow({
         onSwipeableOpen={onToggleComplete}
         renderLeftActions={() => (
           <ThemedView style={[styles.doneAction, { backgroundColor: theme.accent }]}>
-            <ThemedText style={styles.doneLabel}>✓ Done</ThemedText>
+            <Ionicons name={ActionIcons.complete} size={18} color="#ffffff" />
+            <ThemedText style={styles.doneLabel}>Done</ThemedText>
           </ThemedView>
         )}>
         <ThemedView style={[styles.row, rowSpacing, { backgroundColor: theme.backgroundElement }]}>
@@ -209,8 +212,10 @@ const styles = StyleSheet.create({
   },
   doneAction: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
     paddingHorizontal: 24,
   },
   doneLabel: {
@@ -228,11 +233,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  checkmark: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '700',
   },
   textColumn: {
     flex: 1,
