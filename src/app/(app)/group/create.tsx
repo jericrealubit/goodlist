@@ -1,15 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
+import { HeaderAction, HeaderActionSlot } from '@/components/header-action';
 import { OptionPicker } from '@/components/option-picker';
-import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { GROUP_MODE_OPTIONS, roleOptionsForMode } from '@/constants/group';
+import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
@@ -61,6 +62,23 @@ export default function CreateGroupScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* The form's one action lives in the header, above the keyboard, so it
+          stays reachable while the group name is still being typed. */}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <HeaderActionSlot>
+              <HeaderAction
+                label="Create"
+                icon={ActionIcons.createGroup}
+                onPress={handleCreate}
+                loading={saving}
+                disabled={!isOnline || atCap}
+              />
+            </HeaderActionSlot>
+          ),
+        }}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedText themeColor="textSecondary">
@@ -96,7 +114,6 @@ export default function CreateGroupScreen() {
               Creating a group requires an internet connection.
             </ThemedText>
           ) : null}
-          <PrimaryButton title="Create group" onPress={handleCreate} loading={saving} disabled={!isOnline || atCap} />
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>

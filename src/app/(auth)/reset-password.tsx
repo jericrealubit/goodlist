@@ -10,6 +10,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
@@ -126,7 +127,12 @@ export default function ResetPasswordScreen() {
                     {formError}
                   </ThemedText>
                 ) : null}
-                <PrimaryButton title="Update password" onPress={handleSubmit} loading={loading} />
+                <PrimaryButton
+                  title="Update password"
+                  icon={ActionIcons.password}
+                  onPress={handleSubmit}
+                  loading={loading}
+                />
               </ThemedView>
             ) : (
               <ThemedText themeColor="textSecondary" style={styles.centerText}>

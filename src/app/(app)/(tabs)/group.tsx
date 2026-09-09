@@ -8,6 +8,7 @@ import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useGroupsQuery } from '@/hooks/use-group-query';
@@ -68,8 +69,17 @@ export default function GroupScreen() {
             exactly as they are when you do.
           </ThemedText>
           <ThemedView style={styles.buttonGroup}>
-            <PrimaryButton title="Create a group" onPress={() => router.push('/group/create')} />
-            <PrimaryButton title="Join a group" variant="secondary" onPress={() => router.push('/group/join')} />
+            <PrimaryButton
+              title="Create a group"
+              icon={ActionIcons.createGroup}
+              onPress={() => router.push('/group/create')}
+            />
+            <PrimaryButton
+              title="Join a group"
+              icon={ActionIcons.joinGroup}
+              variant="secondary"
+              onPress={() => router.push('/group/join')}
+            />
           </ThemedView>
         </ThemedView>
       </ThemedView>
@@ -102,8 +112,17 @@ export default function GroupScreen() {
           </ThemedText>
         ) : (
           <ThemedView style={styles.buttonGroup}>
-            <PrimaryButton title="Create a group" onPress={() => router.push('/group/create')} />
-            <PrimaryButton title="Join a group" variant="secondary" onPress={() => router.push('/group/join')} />
+            <PrimaryButton
+              title="Create a group"
+              icon={ActionIcons.createGroup}
+              onPress={() => router.push('/group/create')}
+            />
+            <PrimaryButton
+              title="Join a group"
+              icon={ActionIcons.joinGroup}
+              variant="secondary"
+              onPress={() => router.push('/group/join')}
+            />
           </ThemedView>
         )}
       </ScrollView>

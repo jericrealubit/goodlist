@@ -1,15 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
+import { HeaderAction, HeaderActionSlot } from '@/components/header-action';
 import { OptionPicker } from '@/components/option-picker';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleOptionsForMode } from '@/constants/group';
+import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
@@ -80,6 +82,33 @@ export default function JoinGroupScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* Each step's own action, in the header where the keyboard can't
+          cover it while the invite code is being typed. */}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <HeaderActionSlot>
+              {!preview ? (
+                <HeaderAction
+                  label="Continue"
+                  icon={ActionIcons.continue}
+                  onPress={handleContinue}
+                  loading={saving}
+                  disabled={!isOnline || atCap}
+                />
+              ) : (
+                <HeaderAction
+                  label="Join"
+                  icon={ActionIcons.joinGroup}
+                  onPress={handleJoin}
+                  loading={saving}
+                  disabled={!isOnline || atCap}
+                />
+              )}
+            </HeaderActionSlot>
+          ),
+        }}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {!preview ? (
@@ -110,7 +139,6 @@ export default function JoinGroupScreen() {
                   Looking up an invite code requires an internet connection.
                 </ThemedText>
               ) : null}
-              <PrimaryButton title="Continue" onPress={handleContinue} loading={saving} disabled={!isOnline || atCap} />
             </>
           ) : (
             <>
@@ -135,8 +163,13 @@ export default function JoinGroupScreen() {
                   Joining a group requires an internet connection.
                 </ThemedText>
               ) : null}
-              <PrimaryButton title="Join group" onPress={handleJoin} loading={saving} disabled={!isOnline || atCap} />
-              <PrimaryButton title="Back" variant="secondary" onPress={handleBack} disabled={saving} />
+              <PrimaryButton
+                title="Back"
+                icon={ActionIcons.back}
+                variant="secondary"
+                onPress={handleBack}
+                disabled={saving}
+              />
             </>
           )}
         </ScrollView>

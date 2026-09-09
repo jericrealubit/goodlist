@@ -9,6 +9,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
@@ -70,7 +71,13 @@ export default function ForgotPasswordScreen() {
                     {error}
                   </ThemedText>
                 ) : null}
-                <PrimaryButton title="Send reset link" onPress={handleSend} loading={loading} disabled={!email.trim()} />
+                <PrimaryButton
+                  title="Send reset link"
+                  icon={ActionIcons.email}
+                  onPress={handleSend}
+                  loading={loading}
+                  disabled={!email.trim()}
+                />
               </ThemedView>
             )}
 

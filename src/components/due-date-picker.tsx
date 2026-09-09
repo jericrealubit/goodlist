@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
@@ -34,10 +36,16 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
             borderRadius: tokens.radii.sm,
           },
         ]}>
+        <Ionicons name={ActionIcons.dueDate} size={18} color={theme.textSecondary} />
         <ThemedText>{value ? value.toLocaleDateString() : 'No due date'}</ThemedText>
       </Pressable>
       {value && !disabled ? (
-        <Pressable onPress={() => onChange(null)} accessibilityRole="button" accessibilityLabel="Clear due date">
+        <Pressable
+          onPress={() => onChange(null)}
+          accessibilityRole="button"
+          accessibilityLabel="Clear due date"
+          style={styles.clearRow}>
+          <Ionicons name={ActionIcons.clear} size={16} color={theme.danger} />
           <ThemedText type="link" themeColor="danger">
             Clear due date
           </ThemedText>
@@ -59,7 +67,15 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
 
 const styles = StyleSheet.create({
   button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
+  },
+  clearRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
 });

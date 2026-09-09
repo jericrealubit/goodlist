@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
@@ -8,6 +9,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons, type IconName } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
@@ -19,12 +21,12 @@ import { getErrorMessage } from '@/lib/errors';
 import type { Task } from '@/lib/types';
 
 function RowIconButton({
-  glyph,
+  icon,
   color,
   onPress,
   accessibilityLabel,
 }: {
-  glyph: string;
+  icon: IconName;
   color: string;
   onPress: () => void;
   accessibilityLabel: string;
@@ -40,7 +42,7 @@ function RowIconButton({
         styles.iconButton,
         { borderColor: theme.border, backgroundColor: theme.background, opacity: pressed ? 0.6 : 1 },
       ]}>
-      <ThemedText style={[styles.iconGlyph, { color }]}>{glyph}</ThemedText>
+      <Ionicons name={icon} size={16} color={color} />
     </Pressable>
   );
 }
@@ -111,12 +113,14 @@ export default function HistoryScreen() {
               <ThemedView style={styles.deleteAllButtons}>
                 <PrimaryButton
                   title="Yes, delete all"
+                  icon={ActionIcons.delete}
                   onPress={handleDeleteAll}
                   variant="danger"
                   style={styles.deleteAllButton}
                 />
                 <PrimaryButton
                   title="Cancel"
+                  icon={ActionIcons.cancel}
                   onPress={() => setConfirmingDeleteAll(false)}
                   variant="secondary"
                   style={styles.deleteAllButton}
@@ -124,7 +128,12 @@ export default function HistoryScreen() {
               </ThemedView>
             </ThemedView>
           ) : (
-            <PrimaryButton title="Delete all" onPress={() => setConfirmingDeleteAll(true)} variant="secondary" />
+            <PrimaryButton
+              title="Delete all"
+              icon={ActionIcons.delete}
+              onPress={() => setConfirmingDeleteAll(true)}
+              variant="secondary"
+            />
           )}
         </ThemedView>
       ) : null}
@@ -162,7 +171,7 @@ export default function HistoryScreen() {
                 trailingActions={
                   <ThemedView style={styles.trailingActions}>
                     <RowIconButton
-                      glyph="↺"
+                      icon={ActionIcons.undo}
                       color={theme.text}
                       onPress={() => handleUndo(item)}
                       accessibilityLabel={`Undo "${item.title}"`}
@@ -171,13 +180,13 @@ export default function HistoryScreen() {
                       confirmingDeleteId === item.id ? (
                         <>
                           <RowIconButton
-                            glyph="✓"
+                            icon={ActionIcons.confirm}
                             color={theme.danger}
                             onPress={() => handleDelete(item)}
                             accessibilityLabel={`Confirm delete "${item.title}"`}
                           />
                           <RowIconButton
-                            glyph="✕"
+                            icon={ActionIcons.cancel}
                             color={theme.textSecondary}
                             onPress={() => setConfirmingDeleteId(null)}
                             accessibilityLabel={`Cancel delete "${item.title}"`}
@@ -185,7 +194,7 @@ export default function HistoryScreen() {
                         </>
                       ) : (
                         <RowIconButton
-                          glyph="🗑"
+                          icon={ActionIcons.delete}
                           color={theme.danger}
                           onPress={() => setConfirmingDeleteId(item.id)}
                           accessibilityLabel={`Delete "${item.title}"`}
@@ -252,8 +261,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconGlyph: {
-    fontSize: 15,
   },
 });

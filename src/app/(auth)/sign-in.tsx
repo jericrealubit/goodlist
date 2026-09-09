@@ -9,6 +9,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
@@ -72,7 +73,7 @@ export default function SignInScreen() {
                   {error}
                 </ThemedText>
               ) : null}
-              <PrimaryButton title="Log in" onPress={handleSignIn} loading={loading} />
+              <PrimaryButton title="Log in" icon={ActionIcons.signIn} onPress={handleSignIn} loading={loading} />
               <Link href="/forgot-password" style={styles.link}>
                 <ThemedText type="link" themeColor="textSecondary">
                   Forgot password?

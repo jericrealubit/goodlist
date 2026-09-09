@@ -1,14 +1,16 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { DueDatePicker } from '@/components/due-date-picker';
+import { HeaderAction, HeaderActionSlot } from '@/components/header-action';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -115,9 +117,25 @@ export default function EditTaskScreen() {
   const isAssignee = isRequested && task.assignee_id === user?.id;
   const isCreator = isRequested && task.creator_id === user?.id;
   const isOpen = task.status === 'open';
+  // Exactly the cases the fields below are editable in: a personal task, or a
+  // request you made that nobody has acted on yet.
+  const canSave = !isAssignee && (!isRequested || (isCreator && isOpen));
 
   return (
     <ThemedView style={styles.container}>
+      {/* Save lives in the header, not at the foot of the form: the keyboard
+          covers the bottom of the screen for as long as you're typing, and
+          this is the one control you need while you are. */}
+      <Stack.Screen
+        options={{
+          headerRight: () =>
+            canSave ? (
+              <HeaderActionSlot>
+                <HeaderAction label="Save" icon={ActionIcons.save} onPress={handleSave} />
+              </HeaderActionSlot>
+            ) : null,
+        }}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {isAssignee ? (
@@ -170,31 +188,44 @@ export default function EditTaskScreen() {
           ) : null}
 
           {isRequested && task.family_id ? (
-            <PrimaryButton title="View group" onPress={() => router.push('/group')} variant="secondary" />
+            <PrimaryButton
+              title="View group"
+              icon={ActionIcons.group}
+              onPress={() => router.push('/group')}
+              variant="secondary"
+            />
           ) : null}
 
           {!isRequested && (
             <>
-              <PrimaryButton title="Save changes" onPress={handleSave} />
               <PrimaryButton
                 title={task.status === 'open' ? 'Mark complete' : 'Reopen task'}
+                icon={task.status === 'open' ? ActionIcons.complete : ActionIcons.reopen}
                 onPress={handleToggleComplete}
                 variant="secondary"
               />
-              <PrimaryButton title="Delete task" onPress={handleDelete} variant="danger" />
+              <PrimaryButton
+                title="Delete task"
+                icon={ActionIcons.delete}
+                onPress={handleDelete}
+                variant="danger"
+              />
             </>
           )}
 
           {isCreator && isOpen && (
-            <>
-              <PrimaryButton title="Save changes" onPress={handleSave} />
-              <PrimaryButton title="Cancel request" onPress={handleCancelRequest} variant="danger" />
-            </>
+            <PrimaryButton
+              title="Cancel request"
+              icon={ActionIcons.cancel}
+              onPress={handleCancelRequest}
+              variant="danger"
+            />
           )}
 
           {isAssignee && (
             <PrimaryButton
               title={task.status === 'open' ? 'Mark complete' : 'Reopen task'}
+              icon={task.status === 'open' ? ActionIcons.complete : ActionIcons.reopen}
               onPress={handleToggleComplete}
             />
           )}
