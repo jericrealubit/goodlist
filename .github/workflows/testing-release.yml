@@ -1,0 +1,157 @@
+# Build a release AAB on EAS and upload it to a Google Play testing track.
+#
+# Run it from the Actions tab (Run workflow) and pick a track:
+#   internal → Play "Internal testing". No review, installable in minutes.
+#              Use this to prove the signed build works.
+#   closed   → Play "Closed testing" (track `alpha`). This is the track that
+#              counts toward the 12-testers/14-days rule.
+#
+# The track names above are the `submit` profile names in eas.json, so the
+# choice below is passed straight through to --auto-submit-with-profile.
+#
+# The Supabase values are NOT GitHub secrets: the `production` build profile
+# declares `"environment": "production"`, so EAS resolves them server-side from
+# the variables pushed with `eas env:push production`. If that was never run the
+# build succeeds and the app crashes on launch — see docs/play-store-deployment.md B1.
+#
+# Full runbook: docs/play-store-testing.md
+name: Testing release
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Play track to upload to
+        type: choice
+        options:
+          - internal
+          - closed
+        default: internal
+      message:
+        description: Short build message, shown in the EAS dashboard
+        type: string
+        required: false
+      submit:
+        description: Upload to Play when the build finishes
+        type: boolean
+        default: true
+      wait:
+        description: Keep the job running until the build finishes (uncheck to queue and exit)
+        type: boolean
+        default: true
+      clear_cache:
+        description: Clear the EAS build cache first
+        type: boolean
+        default: false
+
+# One release at a time. Concurrent runs would race for the next versionCode.
+concurrency:
+  group: testing-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and upload to ${{ inputs.track }} testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check required secrets
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_KEY }}
+        run: |
+          set -euo pipefail
+          failed=false
+          if [ -z "${EXPO_TOKEN}" ]; then
+            echo "::error::EXPO_TOKEN is not set. Create one at https://expo.dev/settings/access-tokens and add it under Settings → Secrets and variables → Actions."
+            failed=true
+          fi
+          if [ "${{ inputs.submit }}" = "true" ] && [ -z "${PLAY_SERVICE_ACCOUNT_KEY}" ]; then
+            echo "::error::PLAY_SERVICE_ACCOUNT_KEY is not set, but this run was asked to submit. Paste the whole Google Play service-account JSON into that secret, or re-run with 'Upload to Play' unchecked to build only."
+            failed=true
+          fi
+          [ "${failed}" = "false" ]
+
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Write the Play service-account key
+        if: ${{ inputs.submit }}
+        env:
+          PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_KEY }}
+        run: |
+          set -euo pipefail
+          # eas.json points every submit profile at this path. `credentials/` is
+          # gitignored, so the key never lands in the tree, and the runner is
+          # destroyed with the job.
+          mkdir -p credentials
+          printf '%s' "${PLAY_SERVICE_ACCOUNT_KEY}" > credentials/play-service-account.json
+          chmod 600 credentials/play-service-account.json
+          node -e "JSON.parse(require('fs').readFileSync('credentials/play-service-account.json','utf8'))" \
+            || { echo "::error::PLAY_SERVICE_ACCOUNT_KEY is not valid JSON. Paste the downloaded key file whole, including the outer braces."; exit 1; }
+
+      - name: Build${{ inputs.submit && ' and upload' || '' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BUILD_MESSAGE: ${{ inputs.message }}
+        run: |
+          set -euo pipefail
+          args=(build --platform android --profile production --non-interactive)
+
+          if [ -n "${BUILD_MESSAGE}" ]; then
+            args+=(--message "${BUILD_MESSAGE}")
+          fi
+          if [ "${{ inputs.clear_cache }}" = "true" ]; then
+            args+=(--clear-cache)
+          fi
+          if [ "${{ inputs.submit }}" = "true" ]; then
+            # Submit profile names in eas.json match the track choice exactly.
+            args+=(--auto-submit-with-profile "${{ inputs.track }}")
+          fi
+          if [ "${{ inputs.wait }}" != "true" ]; then
+            # Auto-submit is queued on EAS, so it still runs after we exit.
+            args+=(--no-wait)
+          fi
+
+          echo "eas ${args[*]}"
+          eas "${args[@]}"
+
+      - name: Summary
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Testing release — ${{ inputs.track }}"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Track | \`${{ inputs.track }}\` |"
+            echo "| Build profile | \`production\` (AAB) |"
+            echo "| Submitted | ${{ inputs.submit }} |"
+            echo "| Waited for build | ${{ inputs.wait }} |"
+            echo "| Result | ${{ job.status }} |"
+            echo
+            echo "Builds: <https://expo.dev/accounts/jericrealubit/projects/goodlist/builds>"
+            if [ "${{ inputs.track }}" = "closed" ]; then
+              echo
+              echo "> The **first** release on the closed track waits on Play review before testers can install it. Later releases go out in minutes."
+            fi
+            echo
+            echo "Next steps and troubleshooting: \`docs/play-store-testing.md\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -150,7 +150,11 @@ npx eas-cli build --platform android --profile preview
 ```
 
 `preview` produces a directly installable APK; `production` produces a Play Store-ready `.aab` with an
-auto-incrementing version code. There is no OTA/EAS Update channel configured yet — JS changes require a
+auto-incrementing version code. For a testing release there is a workflow rather than a local build:
+Actions → **Testing release** → *Run workflow*, pick `internal` or `closed`, and
+[`.github/workflows/testing-release.yml`](.github/workflows/testing-release.yml) builds the AAB on
+EAS and uploads it to that Play track. It needs two repo secrets, `EXPO_TOKEN` and
+`PLAY_SERVICE_ACCOUNT_KEY` — see [docs/play-store-testing.md §6.1](docs/play-store-testing.md). There is no OTA/EAS Update channel configured yet — JS changes require a
 new build to reach devices outside of Expo Go.
 
 For Google Play specifically, three docs split the work:

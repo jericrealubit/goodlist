@@ -168,9 +168,47 @@ person confirms. §7 has a tracker.
 
 ## 6. Shipping updates to testers
 
-Add named submit profiles so the track is chosen by profile rather than by editing `eas.json`
-between runs — editing it by hand is how a build meant for 20 testers ends up on the open track.
-`eas.json` now carries:
+### 6.1 From GitHub Actions (the usual way)
+
+`.github/workflows/testing-release.yml` does the whole thing: Actions tab → **Testing release** →
+*Run workflow*, pick a track, go. It builds the AAB on EAS and uploads it to that track.
+
+| Input | Default | What it does |
+|---|---|---|
+| `track` | `internal` | `internal` for the smoke test, `closed` for the track that counts |
+| `message` | *(empty)* | Short label shown against the build in the EAS dashboard |
+| `submit` | on | Uncheck to build only and upload later by hand |
+| `wait` | on | Uncheck to queue the build and let the job exit — the upload still happens, EAS runs it server-side |
+| `clear_cache` | off | For when a build fails in a way that smells like stale cache |
+
+**Two repository secrets are required** — Settings → Secrets and variables → Actions:
+
+| Secret | Where it comes from |
+|---|---|
+| `EXPO_TOKEN` | expo.dev → Account settings → **Access tokens** → create a robot token |
+| `PLAY_SERVICE_ACCOUNT_KEY` | The **entire contents** of `credentials/play-service-account.json`, pasted in — the whole JSON object, braces included |
+
+The workflow checks both before doing anything and fails with a message naming the missing one, so a
+missing secret costs you seconds rather than a 30-minute build. It writes the key to
+`credentials/play-service-account.json` on the runner (gitignored, and the runner is destroyed with
+the job) because that is the path every submit profile in `eas.json` points at.
+
+Not required as secrets: the Supabase variables. The `production` build profile declares
+`"environment": "production"`, so EAS resolves them server-side from what `eas env:push production`
+uploaded. If that step was skipped the build still succeeds and the app crashes on launch — see
+deployment doc B1.
+
+> If you would rather not keep the Play key in GitHub at all, upload it to EAS once with
+> `eas credentials -p android` and delete `serviceAccountKeyPath` from the submit profiles; EAS then
+> falls back to the key it holds. The workflow's key-writing step becomes a no-op you can drop.
+
+A `concurrency` group serialises runs — two builds at once would race for the next `versionCode`.
+
+### 6.2 From your machine
+
+Same profiles the workflow uses. The track is chosen by profile name rather than by editing
+`eas.json` between runs — hand-editing it is how a build meant for 20 testers ends up on the open
+track. `eas.json` carries:
 
 ```jsonc
 "submit": {
@@ -304,6 +342,10 @@ production access is actually granted.
 | App installs, then crashes immediately on launch | `EXPO_PUBLIC_SUPABASE_*` were missing at build time | Deployment doc B1 — `eas env:push`, then rebuild. The variables are inlined at build time, so no rebuild means no fix |
 | Testers on the wrong track — the app is publicly listed | `track: "beta"` was used for the closed test | `beta` is *open* testing. Move to `alpha`, and halt the open-testing release |
 | 14 days elapsed but the Console task is still incomplete | Fewer than 12 *continuous* opt-ins on the day, or insufficient usage | Recruit replacements and restart their 14 days; check §7.2 before applying again |
+| Workflow fails immediately: "EXPO_TOKEN is not set" | The repo secret is missing | expo.dev → Account settings → Access tokens → create a robot token, add it as `EXPO_TOKEN` |
+| Workflow fails: "PLAY_SERVICE_ACCOUNT_KEY is not valid JSON" | The secret holds a path, a fragment, or the key with the outer braces stripped | Paste the downloaded key file whole, `{` to `}` |
+| Workflow run queued behind another | The `concurrency` group serialises runs on purpose | Let it finish — parallel runs would race for the next `versionCode` |
+| Build is green but testers see nothing new | The run had `submit` unchecked, or `releaseStatus` left it a draft | Re-run with *Upload to Play* ticked, or complete the release in the Console |
 
 ---
 
