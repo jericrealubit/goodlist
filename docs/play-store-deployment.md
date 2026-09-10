@@ -89,6 +89,15 @@ anyway; row-level security is what actually protects the data, so it does not ne
 Each build profile in `eas.json` names the environment it draws from (`production` → `production`),
 so once these are pushed the builds pick them up with no further configuration.
 
+**No CLI handy?** The same thing can be done entirely in a browser: expo.dev → your project →
+**Environment variables** → *Create variable*, once per environment (`production` and `preview`).
+Set `EXPO_PUBLIC_SUPABASE_URL` as plain text and `EXPO_PUBLIC_SUPABASE_ANON_KEY` as *sensitive*.
+This is the route to take if `eas-cli` cannot reach expo.dev from where you are.
+
+Either way the variables must live **on EAS**, not just in a local `.env.local` or a GitHub secret:
+`EXPO_PUBLIC_*` values are inlined into the bundle at build time, and the bundle is built on EAS's
+servers. A value that never reached EAS never reaches the app.
+
 ### B2. ~~`eas.json` `submit.production` is empty~~ — **fixed**
 
 `eas.json` now carries the submit block, plus an explicit `environment` on each build profile so the
