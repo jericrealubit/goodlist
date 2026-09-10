@@ -126,8 +126,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 260,
     borderWidth: 1,
-    // The screens are shot at 390x844 (see scripts/generate-guide-screens.mjs).
-    aspectRatio: 390 / 844,
+    // The screens are shot at 390x844 then upscaled and padded to a 2:1 ratio
+    // for Play Store's screenshot rules (see finishShot() in
+    // scripts/generate-guide-screens.mjs).
+    aspectRatio: 1 / 2,
   },
   shotCaption: {
     textAlign: 'center',

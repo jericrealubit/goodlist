@@ -22,12 +22,23 @@
  * and subtracts window chrome from the height, which crops the frame. Override
  * the binary with $GOODLIST_CHROME; $PLAYWRIGHT_BROWSERS_PATH and PATH are
  * searched otherwise.
+ *
+ * The 390x844 viewport at 2x scale rasters to 780x1688 — a 2.164:1 aspect
+ * ratio (too tall for Google Play's 2:1 phone-screenshot maximum) and below
+ * its 1080px-per-side threshold for promotion eligibility. finishShot() below
+ * upscales each capture ~1.5x (high-quality resampling — these are flat-color
+ * CSS mockups, not photos, so upscale softness is minimal) then widens the
+ * canvas to a 2:1 ratio with side bars in the mockup's own background color,
+ * which already fills 100% of every screen — so the padding is invisible as
+ * "padding" and no UI is ever clipped. Applies to all three output sets
+ * (docs/user-guide/images, assets/images/guide, docs/screenshots).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(ROOT, 'docs', 'user-guide', 'images');
@@ -601,6 +612,31 @@ const chrome = findChrome();
 const work = mkdtempSync(join(tmpdir(), 'goodlist-guide-'));
 mkdirSync(OUT_DIR, { recursive: true });
 
+// Google Play's phone-screenshot rules: max 2:1 longer:shorter side ratio,
+// and >=1080px on the shorter side to qualify for promotion eligibility.
+// UPSCALE clears the 1080px floor after MAX_ASPECT padding narrows the
+// margin; see the header comment above for why upscale + pad, not a reshoot.
+const MAX_ASPECT = 2;
+const UPSCALE = 1.5;
+
+async function finishShot(path) {
+  const buf = readFileSync(path);
+  const meta = await sharp(buf).metadata();
+  const upscaled = await sharp(buf)
+    .resize(Math.round(meta.width * UPSCALE), Math.round(meta.height * UPSCALE), { kernel: 'lanczos3' })
+    .toBuffer();
+  const { width, height } = await sharp(upscaled).metadata();
+  const targetWidth = Math.ceil(height / MAX_ASPECT);
+  const extra = Math.max(0, targetWidth - width);
+  const left = Math.floor(extra / 2);
+  const right = extra - left;
+  const out = await sharp(upscaled)
+    .extend({ left, right, top: 0, bottom: 0, background: C.background })
+    .png()
+    .toBuffer();
+  writeFileSync(path, out);
+}
+
 function shoot(screen, outPath, extraCss = '') {
   const page = join(work, `${screen.name}${extraCss ? '-clean' : ''}.html`);
   writeFileSync(page, `<meta charset="utf-8"><style>${CSS}${extraCss}</style>${screen.html}`);
@@ -621,14 +657,15 @@ function shoot(screen, outPath, extraCss = '') {
 }
 
 for (const screen of SCREENS) {
-  shoot(screen, join(OUT_DIR, `${screen.name}.png`));
+  const outPath = join(OUT_DIR, `${screen.name}.png`);
+  shoot(screen, outPath);
+  await finishShot(outPath);
   console.log(`✓ ${screen.name}.png`);
 }
 
 console.log(`\n${SCREENS.length} screens written to docs/user-guide/images/`);
 
 // --- bundled copies for the in-app guide -----------------------------------
-const { default: sharp } = await import('sharp');
 mkdirSync(APP_DIR, { recursive: true });
 let bundled = 0;
 for (const screen of SCREENS) {
@@ -650,6 +687,7 @@ for (const name of SHOWCASE) {
   if (!screen) throw new Error(`SHOWCASE names a screen that doesn't exist: ${name}`);
   const raw = join(work, `${name}-showcase.png`);
   shoot(screen, raw, CLEAN_CSS);
+  await finishShot(raw);
   const buf = await sharp(readFileSync(raw))
     .png({ palette: true, colours: APP_PALETTE_COLORS, compressionLevel: 9, effort: 10 })
     .toBuffer();
