@@ -1,8 +1,9 @@
 # Deploying Goodlist to Google Play — runbook
 
 Companion to [`play-store-listing.md`](./play-store-listing.md), which holds the *copy* for the
-listing. This file holds the *process*: what gates exist, what this repo still needs, and the exact
-order to do things in to reach production the fastest.
+listing, and [`play-store-testing.md`](./play-store-testing.md), which holds the internal- and
+closed-testing runbook in detail. This file holds the *process*: what gates exist, what this repo
+still needs, and the exact order to do things in to reach production the fastest.
 
 Researched 2026-09-08. Policy dates below are Google's; re-check them if you read this months later.
 
@@ -95,13 +96,9 @@ EAS environment variables from B1 actually resolve, and an explicit Android `bui
 
 ```jsonc
 "submit": {
-  "production": {
-    "android": {
-      "serviceAccountKeyPath": "./credentials/play-service-account.json",
-      "track": "internal",
-      "releaseStatus": "draft"
-    }
-  }
+  "internal":   { "android": { "serviceAccountKeyPath": "...", "track": "internal",   "releaseStatus": "completed" } },
+  "closed":     { "android": { "serviceAccountKeyPath": "...", "track": "alpha",      "releaseStatus": "completed" } },
+  "production": { "android": { "serviceAccountKeyPath": "...", "track": "internal",   "releaseStatus": "draft"     } }
 }
 ```
 
@@ -111,9 +108,16 @@ its JSON key, and save it as `credentials/play-service-account.json`. `.gitignor
 `*service-account*.json` and `credentials/`, so it will not be committed — but keeping it outside
 the repo and using an absolute path is safer still.
 
-`track` is `internal` and `releaseStatus` is `draft` because that is what the *first* submission
-needs. Move `track` to `beta` for the closed test and `production` at the end, and drop
-`releaseStatus` once the app has a live release.
+`track` is `internal` and `releaseStatus` is `draft` on the `production` profile because that is
+what the *first* submission needs. Change it to `track: "production"` and drop `releaseStatus` at
+the very end, once the app has a live release.
+
+Two more submit profiles sit alongside it — `internal` (track `internal`) and `closed` (track
+`alpha`) — so the track is chosen with `eas submit --profile <name>` rather than by hand-editing
+this file between runs. **Note that `alpha`, not `beta`, is closed testing:** Play renamed its
+tracks but the API kept the old ids, and `beta` is *open* testing — a public listing that does not
+satisfy the closed-testing requirement. See
+[`play-store-testing.md`](./play-store-testing.md) for the whole tester workflow.
 
 ### B3. ~~The privacy policy URL is stale and inconsistent~~ — **fixed, one manual step left**
 
@@ -213,15 +217,20 @@ applies operations in a fixed pipeline order rather than call order.
    For the *first* upload, either upload the `.aab` by hand in Play Console (simplest — it removes
    service-account setup from the critical path) or run `eas submit -p android` once the service
    account exists. Every submission after that can be `eas submit`.
-5. Push it to **Internal testing** and add yourself + a few people. Internal testing has no waiting
-   period and is the fastest way to confirm the signed release build actually works.
+5. Push it to **Internal testing** (`npx eas-cli submit -p android --profile internal --latest`) and
+   add yourself + a few people. Internal testing has no waiting period and is the fastest way to
+   confirm the signed release build actually works. Full checklist:
+   [`play-store-testing.md` §4](./play-store-testing.md#4-internal-testing--the-smoke-test).
 
 **Day 1–2 — start the 14-day clock**
 
-6. Create a **Closed testing** track, upload the same bundle, and get **12+ testers opted in**. Each
-   needs a Google account on the tester email list, and each must accept the opt-in link and actually
-   open the app. Recruit more than 12 — if anyone opts out mid-window, the clock resets for them.
-   *This is the step to reach first.* Everything below can happen while the 14 days run.
+6. Create a **Closed testing** track (`--profile closed`), upload the same bundle, and get
+   **12+ testers opted in**. Each needs a Google account on the tester email list, and each must
+   accept the opt-in link and actually open the app. Recruit more than 12 — if anyone opts out
+   mid-window, the clock resets for them. *This is the step to reach first.* Everything below can
+   happen while the 14 days run. The tester-recruitment message, the opt-in mechanics people get
+   wrong, a progress tracker and a "did they actually use it" query are all in
+   [`play-store-testing.md` §5–§7](./play-store-testing.md#5-closed-testing--starting-the-clock).
 
 **During the 14 days — complete everything else**
 
