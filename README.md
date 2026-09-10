@@ -153,11 +153,13 @@ npx eas-cli build --platform android --profile preview
 auto-incrementing version code. There is no OTA/EAS Update channel configured yet — JS changes require a
 new build to reach devices outside of Expo Go.
 
-For Google Play specifically, **[docs/play-store-deployment.md](docs/play-store-deployment.md)** is the
-step-by-step runbook — the account and closed-testing gates that set the timeline, the repo changes
-needed before the first build, and the order to do everything in.
-[docs/play-store-listing.md](docs/play-store-listing.md) holds the listing copy and the Data Safety
-answers.
+For Google Play specifically, three docs split the work:
+
+| Doc | Holds |
+| --- | --- |
+| [docs/play-store-deployment.md](docs/play-store-deployment.md) | The step-by-step runbook — the account and closed-testing gates that set the timeline, the repo changes needed before the first build, and the order to do everything in |
+| [docs/play-store-testing.md](docs/play-store-testing.md) | The internal- and closed-testing tracks in detail — which track counts toward the 12-testers/14-days rule, the tester opt-in mechanics, shipping updates to each track, and troubleshooting |
+| [docs/play-store-listing.md](docs/play-store-listing.md) | The listing copy and the Data Safety answers |
 
 ### The published site
 

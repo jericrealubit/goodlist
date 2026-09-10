@@ -25,6 +25,20 @@
     }
   },
   "submit": {
+    "internal": {
+      "android": {
+        "serviceAccountKeyPath": "./credentials/play-service-account.json",
+        "track": "internal",
+        "releaseStatus": "completed"
+      }
+    },
+    "closed": {
+      "android": {
+        "serviceAccountKeyPath": "./credentials/play-service-account.json",
+        "track": "alpha",
+        "releaseStatus": "completed"
+      }
+    },
     "production": {
       "android": {
         "serviceAccountKeyPath": "./credentials/play-service-account.json",
