@@ -158,7 +158,8 @@ supabase/
 | `npm start` | Start the Metro/Expo dev server |
 | `npm run android` / `ios` / `web` | Start the dev server targeting a specific platform |
 | `npm run build:web` | Export the web version into `dist/` |
-| `npm run deploy:web` | Export the web version and publish it to production on EAS Hosting (<https://goodlist.expo.app>) |
+| `npm run deploy:web` | Publish the web version to production (<https://goodlist.expo.app>). Builds with the EAS `production` environment's variables, ignores `.env.local`, and refuses to deploy if a RevenueCat Test Store key ends up in the bundle |
+| `npm run deploy:web:preview` | Publish a one-off preview URL built from `.env.local`, e.g. to try the RevenueCat Test Store |
 | `npm run lint` | Run `expo lint` |
 | `npm run reset-project` | Move the starter code aside and scaffold a blank `app/` directory |
 | `npm run report:distribution` | Generate a user-distribution report from Supabase data (admin tooling) |
@@ -195,7 +196,7 @@ For Google Play specifically, three docs split the work:
 `app.json` sets `web.output: "single"`, so `npm run build:web` produces a single-page app in
 `dist/`. `npm run deploy:web` publishes it to [EAS Hosting](https://docs.expo.dev/eas/hosting/get-started/)
 at <https://goodlist.expo.app>, which serves `index.html` for every route, so direct links like
-`/premium` work. Plain `eas deploy` (no `--prod`) gives a one-off preview URL to check first.
+`/premium` work. `npm run deploy:web:preview` gives a one-off preview URL to check first.
 
 Password reset on the web sends users back to `https://goodlist.expo.app/reset-password`, so that
 address must stay listed under Supabase → Auth → Redirect URLs.
