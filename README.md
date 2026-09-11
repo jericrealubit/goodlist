@@ -2,7 +2,8 @@
 
 A cross-platform task app for your own to-dos and for sharing tasks with a small group — family or
 team. Built with [Expo](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction)
-and a realtime [Supabase](https://supabase.com) backend.
+and a realtime [Supabase](https://supabase.com) backend. It runs on Android and on the web at
+<https://goodlist.expo.app>.
 
 <p align="center">
   <img src="docs/screenshots/05-my-list.png" width="195" alt="The Tasks screen in Solo mode, showing four task cards">
@@ -34,6 +35,15 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 - **Groups** — create or join up to two groups per account, in Family mode (roles: father, mother,
   guardian, child, other) or Team mode (roles: leader, member). Join with an invite code; the owner can
   rename the group, remove members, or transfer ownership.
+- **Premium** — owning one group is free; owning a second one needs Premium ($1.99/month or
+  $14.99/year). Creating that second group starts a 90-day free trial with no card needed. When the
+  trial or subscription lapses, the owner's oldest group stays fully usable and any other group they
+  own goes read-only (visible, not editable) until they subscribe again. These rules are enforced in
+  the database (`supabase/schema.sql`, "Premium" section), not just in the UI. Purchases run through
+  [RevenueCat](https://www.revenuecat.com): Google Play Billing on Android, RevenueCat Web Billing
+  (Stripe) on the web.
+- **Web version** — the same app, exported as a single-page web app and hosted on EAS Hosting at
+  <https://goodlist.expo.app>. Same account, same data.
 - **Requested tasks** — ask a group member to do something and track it until it's done. The requester
   can cancel an open request; the assignee can mark it complete or reopen it. Either side can jump
   straight from the task to its group.
@@ -63,9 +73,11 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 
 ## Tech stack
 
-React Native · Expo · Expo Router · TypeScript · Supabase (Postgres, Auth, Realtime, RLS) ·
-TanStack Query (with an AsyncStorage persister for offline/local-first caching) · Reanimated ·
-`react-native-sortables` (drag-to-reorder) · `react-native-gesture-handler` (swipe actions).
+React Native · Expo · Expo Router · TypeScript · Supabase (Postgres, Auth, Realtime, RLS, Edge
+Functions) · TanStack Query (with an AsyncStorage persister for offline/local-first caching) ·
+Reanimated · `react-native-sortables` (drag-to-reorder) · `react-native-gesture-handler` (swipe
+actions) · RevenueCat (`react-native-purchases` on Android, `@revenuecat/purchases-js` on the web) ·
+EAS Build and EAS Hosting.
 
 ## Project structure
 
@@ -77,12 +89,14 @@ src/
       (tabs)/       Tasks, Group, History, Settings
       group/        Create / join a group
       task/[id]     Task detail / edit
-      about, guide, privacy, terms, stats, distribution
+      about, guide, premium, privacy, terms, stats, distribution
   components/     Shared UI (TaskRow, ComposeBar, GroupCard, legal-document,
                   guide-document, ...)
   hooks/          Data-fetching and mutation hooks (React Query)
-  lib/            Supabase client, queries, mutations, types, validation
-  constants/      Theme definitions, group role/mode options
+  lib/            Supabase client, queries, mutations, types, validation;
+                  purchases.ts / purchases.web.ts — RevenueCat on Android / web,
+                  same exports, picked by Metro's platform extensions
+  constants/      Theme definitions, group role/mode options, Premium prices
   content/        legal.ts, guide.ts — copy shared by the in-app screens and the
                   published web pages, as plain data with no React imports
 assets/
@@ -97,7 +111,10 @@ scripts/
   lib/            site-shell.mjs (shared site chrome), distribution-report.mjs
 supabase/
   schema.sql      Full database schema, RLS policies, and RPC functions —
-                  hand-applied via the Supabase SQL editor (no migrations/CLI linkage in this repo)
+                  hand-applied via the Supabase SQL editor (no migrations in this repo)
+  functions/
+    revenuecat-sync/  Edge function: copies RevenueCat subscription status into
+                      `entitlements` (from webhooks, and from the app after a purchase)
 ```
 
 ## Get started
@@ -113,9 +130,16 @@ supabase/
    ```
    EXPO_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+
+   # Optional. RevenueCat *public* SDK keys. Without them the app runs normally and the
+   # Premium screen's Subscribe button just says "coming soon".
+   EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_...
+   EXPO_PUBLIC_REVENUECAT_WEB_KEY=rcb_...
    ```
 
    Then set up the database by running `supabase/schema.sql` once in that project's SQL editor.
+   EAS builds don't read `.env.local`: the same variables live in the EAS `production` environment
+   (`eas env:list`).
 
 3. Start the app:
 
@@ -133,6 +157,8 @@ supabase/
 | --- | --- |
 | `npm start` | Start the Metro/Expo dev server |
 | `npm run android` / `ios` / `web` | Start the dev server targeting a specific platform |
+| `npm run build:web` | Export the web version into `dist/` |
+| `npm run deploy:web` | Export the web version and publish it to production on EAS Hosting (<https://goodlist.expo.app>) |
 | `npm run lint` | Run `expo lint` |
 | `npm run reset-project` | Move the starter code aside and scaffold a blank `app/` directory |
 | `npm run report:distribution` | Generate a user-distribution report from Supabase data (admin tooling) |
@@ -146,8 +172,11 @@ Builds are produced with [EAS Build](https://docs.expo.dev/build/introduction/) 
 `development`, `preview`, and `production` profiles). For example:
 
 ```bash
-npx eas-cli build --platform android --profile preview
+npx eas-cli@24.1.2 build --platform android --profile preview
 ```
+
+(The CLI version is pinned because an unpinned `npx eas-cli` once resolved to a release that
+wasn't published yet and failed to install.)
 
 `preview` produces a directly installable APK; `production` produces a Play Store-ready `.aab` with an
 auto-incrementing version code. There is no OTA/EAS Update channel configured yet — JS changes require a
@@ -160,6 +189,43 @@ For Google Play specifically, three docs split the work:
 | [docs/play-store-deployment.md](docs/play-store-deployment.md) | The step-by-step runbook — the account and closed-testing gates that set the timeline, the repo changes needed before the first build, and the order to do everything in |
 | [docs/play-store-testing.md](docs/play-store-testing.md) | The internal- and closed-testing tracks in detail — which track counts toward the 12-testers/14-days rule, the tester opt-in mechanics, shipping updates to each track, and troubleshooting |
 | [docs/play-store-listing.md](docs/play-store-listing.md) | The listing copy and the Data Safety answers |
+
+### The web version
+
+`app.json` sets `web.output: "single"`, so `npm run build:web` produces a single-page app in
+`dist/`. `npm run deploy:web` publishes it to [EAS Hosting](https://docs.expo.dev/eas/hosting/get-started/)
+at <https://goodlist.expo.app>, which serves `index.html` for every route, so direct links like
+`/premium` work. Plain `eas deploy` (no `--prod`) gives a one-off preview URL to check first.
+
+Password reset on the web sends users back to `https://goodlist.expo.app/reset-password`, so that
+address must stay listed under Supabase → Auth → Redirect URLs.
+
+### Premium & RevenueCat
+
+Subscription state flows one way: **Google Play / Stripe → RevenueCat → `revenuecat-sync` →
+`public.entitlements`**. The database's Premium checks only ever read `entitlements`, so the app
+can't grant itself Premium.
+
+- **RevenueCat project:** an Android app (package `com.goodlist.app`) and a Web Billing app
+  (connected to Stripe). One entitlement, `premium`. One `default` offering with the standard
+  `$rc_monthly` and `$rc_annual` packages; each holds the Play product and the Web Billing product.
+- **Google Play:** one subscription with a monthly and a yearly base plan. No free-trial offer —
+  the 90-day trial is Goodlist's own (no card), not a store trial.
+- **App ↔ RevenueCat identity:** the app calls `logIn` / `changeUser` with the Supabase user id
+  (`src/hooks/use-purchases-identity.ts`), so RevenueCat customers map one-to-one to Supabase users.
+- **`revenuecat-sync`:** deployed with JWT verification off, because RevenueCat's webhook doesn't
+  send a Supabase token; the function checks auth itself. Deploy and configure it with:
+
+  ```bash
+  npx supabase functions deploy revenuecat-sync --project-ref <project-ref> --no-verify-jwt
+  npx supabase secrets set --project-ref <project-ref> \
+    REVENUECAT_SECRET_KEY=<RevenueCat secret API key> \
+    REVENUECAT_WEBHOOK_AUTH="Bearer <long random string>"
+  ```
+
+  Then in RevenueCat → Integrations → Webhooks, set the URL to
+  `https://<project-ref>.supabase.co/functions/v1/revenuecat-sync` and the Authorization header to
+  the same `Bearer <long random string>`.
 
 ### The published site
 

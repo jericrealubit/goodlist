@@ -13,7 +13,7 @@
 // built-in type stripping.
 
 export const CONTACT_EMAIL = 'jericrealubit@gmail.com';
-export const EFFECTIVE_DATE = 'September 7, 2026';
+export const EFFECTIVE_DATE = 'September 12, 2026';
 
 /** An inline run of text: plain, bold, or the contact email as a mailto link. */
 export type Span = string | { bold: string } | { email: true };
@@ -53,7 +53,7 @@ export const privacyPolicy: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'This policy applies to everyone who uses Goodlist — the task and group-sharing app built by an independent developer, Jeric Realubit. Goodlist runs on Supabase (Postgres + authentication) as its backend infrastructure. We don’t run ads, and we don’t use analytics or tracking SDKs of any kind in the app today.',
+            'This policy applies to everyone who uses Goodlist — the task and group-sharing app built by an independent developer, Jeric Realubit — whether on Android or on the web at goodlist.expo.app. Goodlist runs on Supabase (Postgres + authentication) as its backend infrastructure, and uses RevenueCat to manage the optional Premium subscription. We don’t run ads, and we don’t use analytics or tracking SDKs of any kind in the app today.',
           ],
         },
       ],
@@ -93,6 +93,22 @@ export const privacyPolicy: LegalDoc = {
           ],
         },
         {
+          kind: 'para',
+          spans: [
+            { bold: 'Premium & purchases.' },
+            ' If you start the free trial or subscribe, we store when your trial started and ends, and when your paid subscription expires. Payments are handled entirely by Google Play (on Android) or by Stripe (on the web) — ',
+            { bold: 'we never see or store your card or bank details' },
+            '. RevenueCat, our subscription provider, receives your Goodlist account ID (a random identifier, not your name or email) and the purchase records from Google Play or Stripe, so it can tell us whether your subscription is active. On the web, the checkout page may ask for your email address to send you a receipt.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'On the web.' },
+            ' The website keeps your sign-in session and an offline copy of your tasks in your browser’s local storage, the same way the Android app keeps them on your phone. We don’t use advertising or tracking cookies.',
+          ],
+        },
+        {
           kind: 'lead',
           spans: [
             'We don’t collect your precise location, contacts, or advertising identifiers, and we don’t track you across other apps or websites. There’s nothing being collected in the background beyond what’s listed above.',
@@ -111,6 +127,7 @@ export const privacyPolicy: LegalDoc = {
             ['To sync your Personal tasks across your own devices.'],
             ['To share Requested tasks and group task lists with the members you’ve chosen to invite.'],
             ['To send in-app notifications — for example, when someone requests a task from you.'],
+            ['To run the Premium free trial and subscription, and unlock Premium features while it’s active.'],
             [
               'To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.',
             ],
@@ -125,7 +142,7 @@ export const privacyPolicy: LegalDoc = {
     },
     {
       id: 'sharing',
-      title: 'Sharing within your group',
+      title: 'Sharing & service providers',
       blocks: [
         {
           kind: 'para',
@@ -136,7 +153,25 @@ export const privacyPolicy: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'Outside of your own group, we don’t share your personal data with other users, and we don’t share it with third parties for marketing or advertising purposes. Our infrastructure provider, Supabase, Inc., processes and stores data on our behalf as part of running the service — it doesn’t use your data for its own purposes.',
+            'Outside of your own group, we don’t share your personal data with other users, and we don’t share it with third parties for marketing or advertising purposes.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            'A few service providers process data on our behalf to run Goodlist, and only for that purpose:',
+          ],
+        },
+        {
+          kind: 'bullets',
+          items: [
+            [{ bold: 'Supabase, Inc.' }, ' — hosts the database and handles sign-in.'],
+            [{ bold: 'Expo (650 Industries, Inc.)' }, ' — hosts the Goodlist website.'],
+            [{ bold: 'RevenueCat, Inc.' }, ' — keeps track of Premium subscriptions.'],
+            [
+              { bold: 'Google Play and Stripe, Inc.' },
+              ' — process payments if you subscribe (Google Play on Android, Stripe on the web). Each handles your payment details under its own privacy policy.',
+            ],
           ],
         },
       ],
@@ -163,6 +198,15 @@ export const privacyPolicy: LegalDoc = {
           kind: 'para',
           spans: [
             'You can also clear your completed/cancelled task history from the History screen at any time, independent of deleting your account.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'Subscriptions.' },
+            ' Deleting your account removes your trial and subscription status from our database, but ',
+            { bold: 'it does not cancel a subscription' },
+            ' — cancel it first in Google Play, or from Premium → Manage subscription on the web. Google Play, Stripe and RevenueCat keep their own records of past purchases for as long as tax and accounting rules require. Email us if you’d like us to ask RevenueCat to delete its record of your account too.',
           ],
         },
       ],
@@ -260,7 +304,7 @@ export const termsOfService: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'Goodlist is a task-management app for personal to-dos and group task sharing. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. We may add, change, or remove features over time as the app evolves.',
+            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
           ],
         },
       ],
@@ -294,6 +338,55 @@ export const termsOfService: LegalDoc = {
           variant: 'info',
           spans: [
             'As noted in the Privacy Policy: if you own a group with other members in it, you won’t be able to delete your account until you transfer ownership or remove those members first.',
+          ],
+        },
+      ],
+    },
+    {
+      id: 'premium',
+      title: 'Premium, free trial & billing',
+      blocks: [
+        {
+          kind: 'bullets',
+          items: [
+            [
+              { bold: 'What’s free.' },
+              ' Everything in Goodlist except owning a second group: your personal tasks, one group of your own, and joining someone else’s group.',
+            ],
+            [
+              { bold: 'Free trial.' },
+              ' The first time you create a second group of your own, a 90-day Premium trial starts automatically. It’s one trial per account, no payment details are needed, and nothing is charged when it ends.',
+            ],
+            [
+              { bold: 'When Premium ends.' },
+              ' If your trial or subscription ends and you don’t subscribe, your oldest group stays fully usable. Any other group you own becomes read-only: its members can still see everything, but nobody can add, edit or complete its tasks, rename it, or join it until you subscribe again. Nothing is deleted. Leaving, removing members and transferring ownership still work.',
+            ],
+            [
+              { bold: 'Subscriptions.' },
+              ' Premium is sold monthly or yearly. The price, in your local currency and including any taxes that apply, is shown before you confirm. Only the group owner pays; members never need Premium.',
+            ],
+            [
+              { bold: 'Billing & renewal.' },
+              ' On Android, Google Play bills you; on the web, Stripe does, through RevenueCat. Subscriptions renew automatically at the end of each period until you cancel.',
+            ],
+            [
+              { bold: 'Cancelling.' },
+              ' Cancel any time — in Google Play → Payments & subscriptions on Android, or from Premium → Manage subscription on the web. You keep Premium until the end of the period you’ve paid for. Deleting your Goodlist account does not cancel a subscription.',
+            ],
+            [
+              { bold: 'Refunds.' },
+              ' Google Play purchases are refunded under Google Play’s refund policies. For purchases made on the website, contact us and we’ll review your request in line with the law that applies to you.',
+            ],
+            [
+              { bold: 'Price changes.' },
+              ' If we change the price, we’ll tell you in advance, and it won’t apply until your next renewal, so you’ll have the chance to cancel first.',
+            ],
+          ],
+        },
+        {
+          kind: 'lead',
+          spans: [
+            'Nothing in these terms takes away rights you have under consumer-protection law where you live.',
           ],
         },
       ],
@@ -410,6 +503,14 @@ export const accountDeletion: LegalDoc = {
             ' that still has other members in it, deletion is blocked until you transfer ownership or remove those members — otherwise deleting your account would destroy a group other people are still using. Transfer or remove first, then delete.',
           ],
         },
+        {
+          kind: 'callout',
+          variant: 'warn',
+          spans: [
+            { bold: 'If you subscribe to Premium,' },
+            ' cancel the subscription first — in Google Play → Payments & subscriptions on Android, or from Premium → Manage subscription on the web. Deleting your account does not stop the subscription from renewing.',
+          ],
+        },
       ],
     },
     {
@@ -445,6 +546,7 @@ export const accountDeletion: LegalDoc = {
             ['Your completion and cancellation history.'],
             ['Your notifications.'],
             ['Your group memberships, and any country/time-zone value stored for community stats.'],
+            ['Your Premium trial and subscription status.'],
           ],
         },
         {
@@ -457,6 +559,14 @@ export const accountDeletion: LegalDoc = {
           kind: 'para',
           spans: [
             'We keep no backup copy of a deleted account beyond our infrastructure provider’s routine encrypted database backups, which age out on their own schedule and are never used to restore an individual deleted account.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            'If you ever bought Premium, Google Play, Stripe and RevenueCat keep their own records of those purchases for as long as tax and accounting rules require. RevenueCat’s record is tied to a random account ID, not your name or email — email ',
+            { email: true },
+            ' if you’d like us to ask for it to be deleted too.',
           ],
         },
       ],

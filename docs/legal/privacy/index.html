@@ -214,7 +214,7 @@
   <div class="hero">
     <h1>Privacy Policy</h1>
     <p>What Goodlist collects, why, who can see it, and how to get it deleted.</p>
-    <span class="stamp">Effective <b>September 7, 2026</b></span>
+    <span class="stamp">Effective <b>September 12, 2026</b></span>
   </div>
   <div class="layout">
     <nav class="toc" aria-label="On this page">
@@ -222,7 +222,7 @@
       <a href="#who-this-covers">Who this covers</a>
       <a href="#what-we-collect">What we collect</a>
       <a href="#how-we-use-it">How we use it</a>
-      <a href="#sharing">Sharing within your group</a>
+      <a href="#sharing">Sharing &amp; service providers</a>
       <a href="#retention-deletion">Retention &amp; deletion</a>
       <a href="#childrens-privacy">Children’s privacy</a>
       <a href="#security">Security</a>
@@ -233,7 +233,7 @@
     <article>
       <section id="who-this-covers">
         <h2><span class="num">1.</span>Who this covers</h2>
-          <p>This policy applies to everyone who uses Goodlist — the task and group-sharing app built by an independent developer, Jeric Realubit. Goodlist runs on Supabase (Postgres + authentication) as its backend infrastructure. We don’t run ads, and we don’t use analytics or tracking SDKs of any kind in the app today.</p>
+          <p>This policy applies to everyone who uses Goodlist — the task and group-sharing app built by an independent developer, Jeric Realubit — whether on Android or on the web at goodlist.expo.app. Goodlist runs on Supabase (Postgres + authentication) as its backend infrastructure, and uses RevenueCat to manage the optional Premium subscription. We don’t run ads, and we don’t use analytics or tracking SDKs of any kind in the app today.</p>
       </section>
       <section id="what-we-collect">
         <h2><span class="num">2.</span>What we collect</h2>
@@ -241,6 +241,8 @@
           <p><strong>Task &amp; group content.</strong> Anything you enter to use the app: task titles, notes, due dates, completion status, group names, invite codes, and member roles. This is the content the app exists to store.</p>
           <p><strong>Activity timestamp.</strong> While the app is open, it records a single “last seen” time on your profile, roughly once a minute. It is one timestamp, overwritten each time — not a history of when or how you use the app — and it exists only so the app can show how many people are using Goodlist right now. Other users see that count, never your timestamp, your name, or anything you do.</p>
           <p><strong>Country &amp; time zone.</strong> Your device’s Region setting (a country, like “Philippines”) and its time zone (like “Asia/Manila”). These are read from your device’s own language and region settings — <strong>not</strong> from GPS, and not from your IP address. We use them only to count how many people use Goodlist in each country. You can turn this off at any time in Settings, which also clears the two values we’ve stored.</p>
+          <p><strong>Premium &amp; purchases.</strong> If you start the free trial or subscribe, we store when your trial started and ends, and when your paid subscription expires. Payments are handled entirely by Google Play (on Android) or by Stripe (on the web) — <strong>we never see or store your card or bank details</strong>. RevenueCat, our subscription provider, receives your Goodlist account ID (a random identifier, not your name or email) and the purchase records from Google Play or Stripe, so it can tell us whether your subscription is active. On the web, the checkout page may ask for your email address to send you a receipt.</p>
+          <p><strong>On the web.</strong> The website keeps your sign-in session and an offline copy of your tasks in your browser’s local storage, the same way the Android app keeps them on your phone. We don’t use advertising or tracking cookies.</p>
           <p class="lead">We don’t collect your precise location, contacts, or advertising identifiers, and we don’t track you across other apps or websites. There’s nothing being collected in the background beyond what’s listed above.</p>
       </section>
       <section id="how-we-use-it">
@@ -250,21 +252,30 @@
             <li>To sync your Personal tasks across your own devices.</li>
             <li>To share Requested tasks and group task lists with the members you’ve chosen to invite.</li>
             <li>To send in-app notifications — for example, when someone requests a task from you.</li>
+            <li>To run the Premium free trial and subscription, and unlock Premium features while it’s active.</li>
             <li>To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.</li>
             <li>To count, in aggregate, how many people use Goodlist in each country — never to locate an individual.</li>
           </ul>
           <p>We don’t use your data to train models, sell it, or use it for advertising.</p>
       </section>
       <section id="sharing">
-        <h2><span class="num">4.</span>Sharing within your group</h2>
+        <h2><span class="num">4.</span>Sharing &amp; service providers</h2>
           <p>Goodlist is built around small, invite-only groups — Family or Team mode, up to two per account. If you join or create one, your display name and any tasks marked as shared or requested within that group become visible to the other members — that visibility is the point of the feature, and it’s limited to people who joined using your group’s invite code.</p>
-          <p>Outside of your own group, we don’t share your personal data with other users, and we don’t share it with third parties for marketing or advertising purposes. Our infrastructure provider, Supabase, Inc., processes and stores data on our behalf as part of running the service — it doesn’t use your data for its own purposes.</p>
+          <p>Outside of your own group, we don’t share your personal data with other users, and we don’t share it with third parties for marketing or advertising purposes.</p>
+          <p>A few service providers process data on our behalf to run Goodlist, and only for that purpose:</p>
+          <ul>
+            <li><strong>Supabase, Inc.</strong> — hosts the database and handles sign-in.</li>
+            <li><strong>Expo (650 Industries, Inc.)</strong> — hosts the Goodlist website.</li>
+            <li><strong>RevenueCat, Inc.</strong> — keeps track of Premium subscriptions.</li>
+            <li><strong>Google Play and Stripe, Inc.</strong> — process payments if you subscribe (Google Play on Android, Stripe on the web). Each handles your payment details under its own privacy policy.</li>
+          </ul>
       </section>
       <section id="retention-deletion">
         <h2><span class="num">5.</span>Retention &amp; deletion</h2>
           <p>Your data is kept for as long as your account exists. You can permanently delete your account at any time from Settings — this immediately and permanently removes your profile and tasks.</p>
           <aside class="callout warn"><strong>If you own a group</strong> (you created it) and other members still belong to it, we block account deletion until you transfer ownership to someone else or remove the other members first — so a deletion can’t destroy a group out from under the people in it.</aside>
           <p>You can also clear your completed/cancelled task history from the History screen at any time, independent of deleting your account.</p>
+          <p><strong>Subscriptions.</strong> Deleting your account removes your trial and subscription status from our database, but <strong>it does not cancel a subscription</strong> — cancel it first in Google Play, or from Premium → Manage subscription on the web. Google Play, Stripe and RevenueCat keep their own records of past purchases for as long as tax and accounting rules require. Email us if you’d like us to ask RevenueCat to delete its record of your account too.</p>
       </section>
       <section id="childrens-privacy">
         <h2><span class="num">6.</span>Children’s privacy</h2>

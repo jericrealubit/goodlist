@@ -41,6 +41,10 @@ FEATURES
 • Request tasks from another household member; they see your name on it
 • Live updates — no need to refresh to see what's changed
 • Delete your account and all of your data at any time, right from Settings
+• Also on the web at goodlist.expo.app, with the same account
+
+Goodlist is free. An optional Premium subscription lets you own a second
+group, and it starts with a 90-day free trial, no card needed.
 
 Goodlist doesn't show ads, doesn't track you for advertising, and doesn't
 sell your data. See our Privacy Policy for the specifics.
@@ -96,10 +100,10 @@ all ages (e.g. "Everyone" / PEGI 3 equivalent).
 | Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | Yes |
-| Data collected | Email address (account), User-generated content (task titles/notes/due dates, display name, group name), App activity → Other actions (a single overwritten "last seen" timestamp, used only for the live active-user count), Approximate location (country + time zone — see note below) |
+| Data collected | Email address (account), User-generated content (task titles/notes/due dates, display name, group name), App activity → Other actions (a single overwritten "last seen" timestamp, used only for the live active-user count), Approximate location (country + time zone — see note below), Financial info → Purchase history (Premium trial/subscription status — see note below) |
 | Is data encrypted in transit? | Yes |
 | Can users request data deletion? | Yes — in-app (Settings → Delete account), immediate and permanent. The country/time zone alone can also be cleared on its own via Settings → Privacy |
-| Is data shared with third parties? | No |
+| Is data shared with third parties? | No — Supabase and RevenueCat are service providers processing data on our behalf, which Play does not count as sharing |
 | Is data sold? | No |
 | Is data used for advertising or marketing? | No |
 | Purpose of location collection | Analytics only — an aggregate count of users per country. Never used for advertising, personalisation, or locating an individual |
@@ -118,6 +122,21 @@ line. If a reviewer questions it, the accurate description is: *device locale se
 infer country for aggregate analytics; no location permission is requested.*
 
 Answer **No** to "Does your app use precise location?" — it does not, and cannot.
+
+### Note on the "Purchase history" declaration
+
+Premium is sold through Google Play Billing, via RevenueCat's SDK. Card and bank details never
+reach Goodlist or RevenueCat — Google Play collects them, and Play's own billing does not need to
+be declared. What the app *does* handle is purchase history: RevenueCat receives the Play purchase
+records keyed to the user's Supabase user ID, and `public.entitlements` stores the trial dates and
+subscription expiry. Declare **Financial info → Purchase history**:
+
+| Question | Answer |
+|---|---|
+| Collected or shared? | Collected (RevenueCat is a service provider, so not shared) |
+| Processed ephemerally? | No |
+| Required or optional? | Optional — only for users who start the trial or subscribe |
+| Purposes | App functionality (unlocking Premium) and account management |
 
 ## Data deletion declaration
 
