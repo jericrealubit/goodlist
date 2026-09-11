@@ -5,8 +5,17 @@
 // `raise exception` messages, auth errors) reaches the user instead of a
 // generic fallback.
 export function getErrorMessage(err: unknown, fallback: string): string {
-  if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string' && err.message) {
-    return err.message;
+  if (err && typeof err === 'object') {
+    // Constraint violations quote table and column names at the user. The
+    // wording below is what someone can actually act on; the heartbeat's
+    // profile upsert (see touch_last_seen in supabase/schema.sql) is what
+    // makes reopening the app a real fix rather than advice.
+    if ('code' in err && err.code === '23503') {
+      return 'Something looks out of sync with your account. Close and reopen the app, then try again.';
+    }
+    if ('message' in err && typeof err.message === 'string' && err.message) {
+      return err.message;
+    }
   }
   return fallback;
 }

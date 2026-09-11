@@ -2093,3 +2093,54 @@ revoke all on function public.family_is_writable(uuid) from public, anon;
 grant execute on function public.family_is_writable(uuid) to authenticated;
 revoke all on function public.is_writable(public.families) from public, anon;
 grant execute on function public.is_writable(public.families) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- profile safety net
+--
+-- Every task's creator_id/assignee_id is a foreign key to `profiles`, so an
+-- auth user with no profile row can't create a task at all — the insert fails
+-- with "violates foreign key constraint tasks_assignee_profile_fk". The row is
+-- normally written by on_auth_user_created, but any account created before
+-- that trigger existed (or whose insert didn't land) is stuck in that state.
+-- Backfill the ones already out there, then make both paths self-healing.
+-- ---------------------------------------------------------------------------
+
+insert into public.profiles (id, display_name)
+select u.id, u.raw_user_meta_data ->> 'display_name'
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null;
+
+-- on conflict: a re-fired trigger (or a backfill racing a signup) must not
+-- fail the signup itself.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, new.raw_user_meta_data ->> 'display_name')
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+-- The heartbeat already runs every 60s while the app is open, so making it an
+-- upsert re-creates a missing profile on its own — no extra round trip, and no
+-- client change. SECURITY DEFINER now (it was INVOKER): the insert half has no
+-- policy behind it, and auth.uid() still scopes it to the caller's own row.
+create or replace function public.touch_last_seen()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.profiles (id, last_seen_at)
+  values (auth.uid(), now())
+  on conflict (id) do update set last_seen_at = now();
+$$;
+
+revoke all on function public.touch_last_seen() from public, anon;
+grant execute on function public.touch_last_seen() to authenticated;
