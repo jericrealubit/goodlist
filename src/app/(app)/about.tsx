@@ -14,7 +14,7 @@ import { useTokens } from '@/hooks/use-tokens';
 
 const FEATURES = [
   'Keep a personal to-do list that syncs across your devices, even offline.',
-  'Create or join up to two groups — Family or Team mode, each with its own member roles.',
+  'Create or join up to two groups — Family or Team mode, each with its own member roles. A second group of your own is a Premium feature, free for the first 90 days.',
   'Request a task from a group member, and jump straight to that task’s group.',
   'Drag to reorder, tap or swipe to complete, and reopen anything you finish by mistake.',
   'Browse a full history of finished and cancelled tasks, each timestamped with when it was completed.',

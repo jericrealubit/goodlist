@@ -11,8 +11,10 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ActionIcons } from '@/constants/icons';
+import { READ_ONLY_MESSAGE } from '@/constants/premium';
 import { Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useTheme } from '@/hooks/use-theme';
 import {
   useCancelTaskMutation,
@@ -44,6 +46,7 @@ export default function EditTaskScreen() {
   const router = useRouter();
   const { user } = useSession();
   const { data: task } = useTaskDetailQuery(id);
+  const { data: groups } = useGroupsQuery();
   const updateMutation = useUpdateTaskMutation();
   const completeMutation = useCompleteTaskMutation();
   const reopenMutation = useReopenTaskMutation();
@@ -116,10 +119,13 @@ export default function EditTaskScreen() {
   const isRequested = task.origin === 'requested';
   const isAssignee = isRequested && task.assignee_id === user?.id;
   const isCreator = isRequested && task.creator_id === user?.id;
+  const groupReadOnly =
+    !!task.family_id && groups?.find((g) => g.id === task.family_id)?.is_writable === false;
   const isOpen = task.status === 'open';
+  const canEditRequest = isOpen && !groupReadOnly;
   // Exactly the cases the fields below are editable in: a personal task, or a
   // request you made that nobody has acted on yet.
-  const canSave = !isAssignee && (!isRequested || (isCreator && isOpen));
+  const canSave = !isAssignee && (!isRequested || (isCreator && canEditRequest));
 
   return (
     <ThemedView style={styles.container}>
@@ -156,7 +162,7 @@ export default function EditTaskScreen() {
                 returnKeyType="done"
                 submitBehavior="blurAndSubmit"
                 style={styles.titleInput}
-                editable={!isRequested || isOpen}
+                editable={!isRequested || canEditRequest}
               />
               <TextField
                 label="Note (optional)"
@@ -165,14 +171,14 @@ export default function EditTaskScreen() {
                 placeholder="Add details"
                 multiline
                 style={styles.noteInput}
-                editable={!isRequested || isOpen}
+                editable={!isRequested || canEditRequest}
               />
 
               <ThemedView style={styles.dueDateGroup}>
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   Due date (optional)
                 </ThemedText>
-                <DueDatePicker value={dueAt} onChange={setDueAt} disabled={isRequested && !isOpen} />
+                <DueDatePicker value={dueAt} onChange={setDueAt} disabled={isRequested && !canEditRequest} />
               </ThemedView>
 
               {isCreator && !isOpen ? (
@@ -180,6 +186,8 @@ export default function EditTaskScreen() {
               ) : null}
             </>
           )}
+
+          {groupReadOnly ? <ThemedText themeColor="textSecondary">{READ_ONLY_MESSAGE}</ThemedText> : null}
 
           {error ? (
             <ThemedText type="small" themeColor="danger">
@@ -213,7 +221,7 @@ export default function EditTaskScreen() {
             </>
           )}
 
-          {isCreator && isOpen && (
+          {isCreator && canEditRequest && (
             <PrimaryButton
               title="Cancel request"
               icon={ActionIcons.cancel}
@@ -222,7 +230,7 @@ export default function EditTaskScreen() {
             />
           )}
 
-          {isAssignee && (
+          {isAssignee && !groupReadOnly && (
             <PrimaryButton
               title={task.status === 'open' ? 'Mark complete' : 'Reopen task'}
               icon={task.status === 'open' ? ActionIcons.complete : ActionIcons.reopen}

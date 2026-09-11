@@ -90,6 +90,15 @@ export type Group = {
   created_by: string;
   mode: GroupMode;
   created_at: string;
+  /** False once the owner's Premium lapses on a group beyond their first. */
+  is_writable: boolean;
+};
+
+export type Entitlement = {
+  user_id: string;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  premium_until: string | null;
 };
 
 export type GroupMember = {

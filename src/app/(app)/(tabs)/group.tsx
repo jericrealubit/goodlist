@@ -13,6 +13,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { usePremiumStatus } from '@/hooks/use-premium-query';
 import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { getErrorMessage } from '@/lib/errors';
 
@@ -23,6 +24,7 @@ export default function GroupScreen() {
   const router = useRouter();
   const { user } = useSession();
   const { data: groups, isLoading, isError, error: queryError, refetch } = useGroupsQuery();
+  const { status: premium, refetch: refetchPremium } = usePremiumStatus();
   const error = isError && !groups ? getErrorMessage(queryError, 'Could not load your groups.') : null;
   const isOnline = useOnlineStatus();
   const [refreshing, setRefreshing] = useState(false);
@@ -30,12 +32,13 @@ export default function GroupScreen() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch]),
+      refetchPremium();
+    }, [refetch, refetchPremium]),
   );
 
   async function handleRefresh() {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([refetch(), refetchPremium()]);
     setRefreshing(false);
   }
 
@@ -93,6 +96,15 @@ export default function GroupScreen() {
         {!isOnline ? (
           <ThemedText type="small" themeColor="textSecondary">
             You&apos;re offline — group changes require an internet connection.
+          </ThemedText>
+        ) : null}
+        {premium.trialUsed || premium.isPaid ? (
+          <ThemedText type="small" themeColor="accent" onPress={() => router.push('/premium')}>
+            {premium.isPaid
+              ? 'Goodlist Premium'
+              : premium.inTrial
+                ? `Premium trial: ${premium.trialDaysLeft} ${premium.trialDaysLeft === 1 ? 'day' : 'days'} left`
+                : 'Premium trial ended — see Premium'}
           </ThemedText>
         ) : null}
       </ThemedView>

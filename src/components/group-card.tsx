@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Share, StyleSheet } from 'react-native';
 
@@ -11,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { modeLabel, roleLabel } from '@/constants/group';
 import { ActionIcons } from '@/constants/icons';
+import { READ_ONLY_MESSAGE } from '@/constants/premium';
 import { Spacing } from '@/constants/theme';
 import { useTokens } from '@/hooks/use-tokens';
 import { getErrorMessage } from '@/lib/errors';
@@ -33,7 +35,10 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
   const queryClient = useQueryClient();
   const tokens = useTokens();
   const cardStyle = useSurfaceStyle();
+  const router = useRouter();
   const isOwner = group.role === 'owner';
+  // Undefined (a cache persisted before the field existed) counts as writable.
+  const isReadOnly = group.is_writable === false;
 
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -100,24 +105,44 @@ export function GroupCard({ group, currentUserId, isOnline }: GroupCardProps) {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.inviteRow}>
-        <ThemedView style={styles.inviteText}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            Invite code
+      {isReadOnly ? (
+        <ThemedView style={[cardStyle, styles.readOnlyBanner]}>
+          <ThemedText type="small">
+            {isOwner
+              ? 'Read-only: your Premium has ended. Members can still see everything, but nothing can change until you subscribe.'
+              : READ_ONLY_MESSAGE}
           </ThemedText>
-          <ThemedText type="title" style={styles.inviteCode}>
-            {group.invite_code}
-          </ThemedText>
+          {isOwner ? (
+            <PrimaryButton
+              title="See Premium"
+              icon={ActionIcons.premium}
+              variant="secondary"
+              onPress={() => router.push('/premium')}
+            />
+          ) : null}
         </ThemedView>
-        <PrimaryButton
-          title="Share"
-          icon={ActionIcons.share}
-          variant="secondary"
-          onPress={() => Share.share({ message: `Join my group on Goodlist: ${group.invite_code}` })}
-        />
-      </ThemedView>
+      ) : null}
 
-      {isOwner ? (
+      {isReadOnly ? null : (
+        <ThemedView style={styles.inviteRow}>
+          <ThemedView style={styles.inviteText}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              Invite code
+            </ThemedText>
+            <ThemedText type="title" style={styles.inviteCode}>
+              {group.invite_code}
+            </ThemedText>
+          </ThemedView>
+          <PrimaryButton
+            title="Share"
+            icon={ActionIcons.share}
+            variant="secondary"
+            onPress={() => Share.share({ message: `Join my group on Goodlist: ${group.invite_code}` })}
+          />
+        </ThemedView>
+      )}
+
+      {isOwner && !isReadOnly ? (
         <ThemedView style={styles.section}>
           {renaming ? (
             <ThemedView style={styles.renameRow}>
@@ -307,6 +332,10 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
   },
   section: {
+    gap: Spacing.two,
+  },
+  readOnlyBanner: {
+    padding: Spacing.three,
     gap: Spacing.two,
   },
   renameRow: {

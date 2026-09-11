@@ -20,7 +20,12 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Goodlist",
+      "shortName": "Goodlist",
+      "description": "A better place for your everyday tasks.",
+      "themeColor": "#072655",
+      "backgroundColor": "#072655"
     },
     "plugins": [
       "expo-router",

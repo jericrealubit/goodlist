@@ -35,4 +35,5 @@ export const ActionIcons = {
   dueDate: 'calendar-outline',
   guide: 'book-outline',
   clear: 'close-circle-outline',
+  premium: 'diamond-outline',
 } as const satisfies Record<string, IconName>;

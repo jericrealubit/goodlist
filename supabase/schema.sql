@@ -1846,3 +1846,250 @@ grant execute on function public.user_distribution_report() to authenticated;
 -- it; anon has no use for it.
 revoke all on function public.is_app_admin() from public, anon;
 grant execute on function public.is_app_admin() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Premium (Phase 7 — see "Goodlist — Project Plan.md" section 17)
+--
+-- Owning one group is free. Creating a second owned group needs Premium: the
+-- first time, it silently starts a 90-day trial (no card). Once the trial or
+-- a paid period lapses, every group beyond the owner's oldest owned one goes
+-- read-only — visible, but no new requests, edits, joins or renames. Leaving,
+-- removing members and transferring ownership stay open so nobody is trapped.
+-- The overall 2-membership cap (create + join combined) is unchanged.
+-- `premium_until` is written only by the future purchase webhook.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.entitlements (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  trial_started_at timestamptz,
+  trial_ends_at timestamptz,
+  premium_until timestamptz,
+  source text check (source in ('trial', 'play', 'stripe')),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.entitlements enable row level security;
+
+-- Select-only: clients can read their own status but never grant themselves
+-- Premium. Writes happen in the security definer functions below.
+drop policy if exists "Users can view their own entitlements" on public.entitlements;
+create policy "Users can view their own entitlements"
+  on public.entitlements for select
+  using (user_id = auth.uid());
+
+drop trigger if exists entitlements_set_updated_at on public.entitlements;
+create trigger entitlements_set_updated_at
+  before update on public.entitlements
+  for each row execute function public.set_updated_at();
+
+create or replace function public.user_has_premium(p_user_id uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.entitlements
+    where user_id = p_user_id
+      and (trial_ends_at > now() or premium_until > now())
+  );
+$$;
+
+-- Keyed to the *current* owner (not families.created_by), so a transfer that
+-- leaves the new owner holding two groups locks the newer one for them too.
+create or replace function public.family_is_writable(p_family_id uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select coalesce((
+    select public.user_has_premium(o.user_id)
+      or p_family_id = (
+        select f.id
+        from public.families f
+        join public.family_members m on m.family_id = f.id
+        where m.user_id = o.user_id and m.role = 'owner'
+        order by f.created_at, f.id
+        limit 1
+      )
+    from public.family_members o
+    where o.family_id = p_family_id and o.role = 'owner'
+    limit 1
+  ), true);
+$$;
+
+-- PostgREST computed field: `families(*, is_writable)`.
+create or replace function public.is_writable(public.families)
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select public.family_is_writable($1.id);
+$$;
+
+create or replace function public.create_household(p_name text, p_mode text default 'family', p_member_role text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_membership_count int;
+  v_owned_count int;
+begin
+  perform pg_advisory_xact_lock(hashtext('household_membership:' || auth.uid()::text));
+
+  select count(*) into v_membership_count from public.family_members where user_id = auth.uid();
+  if v_membership_count >= 2 then
+    raise exception 'You already belong to the maximum of 2 households.';
+  end if;
+
+  if p_mode not in ('family', 'team') then
+    raise exception 'Invalid group type.';
+  end if;
+
+  if not public.family_role_is_valid(p_mode, p_member_role) then
+    raise exception 'Invalid role for this group type.';
+  end if;
+
+  select count(*) into v_owned_count
+  from public.family_members
+  where user_id = auth.uid() and role = 'owner';
+
+  if v_owned_count >= 1 and not public.user_has_premium(auth.uid()) then
+    -- The client matches on this prefix to open the Premium screen.
+    if exists (select 1 from public.entitlements where user_id = auth.uid() and trial_started_at is not null) then
+      raise exception 'PREMIUM_REQUIRED: A second group needs Goodlist Premium.';
+    end if;
+
+    insert into public.entitlements (user_id, trial_started_at, trial_ends_at, source)
+    values (auth.uid(), now(), now() + interval '90 days', 'trial')
+    on conflict (user_id) do update
+      set trial_started_at = excluded.trial_started_at,
+          trial_ends_at = excluded.trial_ends_at;
+  end if;
+
+  insert into public.families (name, created_by, mode)
+  values (p_name, auth.uid(), p_mode)
+  returning id into v_family_id;
+
+  insert into public.family_members (family_id, user_id, role, member_role)
+  values (v_family_id, auth.uid(), 'owner', p_member_role);
+
+  return v_family_id;
+end;
+$$;
+
+create or replace function public.join_household(p_invite_code text, p_member_role text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_family_id uuid;
+  v_mode text;
+  v_membership_count int;
+begin
+  perform pg_advisory_xact_lock(hashtext('household_membership:' || auth.uid()::text));
+
+  select count(*) into v_membership_count from public.family_members where user_id = auth.uid();
+  if v_membership_count >= 2 then
+    raise exception 'You already belong to the maximum of 2 households.';
+  end if;
+
+  select id, mode into v_family_id, v_mode from public.families where invite_code = upper(p_invite_code);
+  if v_family_id is null then
+    raise exception 'Invalid invite code.';
+  end if;
+
+  if exists (select 1 from public.family_members where family_id = v_family_id and user_id = auth.uid()) then
+    raise exception 'You are already a member of this household.';
+  end if;
+
+  if not public.family_is_writable(v_family_id) then
+    raise exception 'This group is read-only until its owner renews Premium.';
+  end if;
+
+  if not public.family_role_is_valid(v_mode, p_member_role) then
+    raise exception 'Invalid role for this group type.';
+  end if;
+
+  insert into public.family_members (family_id, user_id, role, member_role)
+  values (v_family_id, auth.uid(), 'member', p_member_role);
+
+  return v_family_id;
+end;
+$$;
+
+create or replace function public.rename_household(p_family_id uuid, p_name text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  select role into v_role
+  from public.family_members
+  where family_id = p_family_id and user_id = auth.uid();
+
+  if v_role is null then
+    raise exception 'You are not a member of that household.';
+  end if;
+  if v_role <> 'owner' then
+    raise exception 'Only the household owner can rename it.';
+  end if;
+  if not public.family_is_writable(p_family_id) then
+    raise exception 'This group is read-only until its owner renews Premium.';
+  end if;
+  if trim(p_name) = '' then
+    raise exception 'Household name cannot be empty.';
+  end if;
+
+  update public.families set name = trim(p_name) where id = p_family_id;
+end;
+$$;
+
+-- Restrictive = ANDed with the permissive insert policies above.
+drop policy if exists "Read-only groups accept no new tasks" on public.tasks;
+create policy "Read-only groups accept no new tasks"
+  on public.tasks as restrictive for insert
+  with check (family_id is null or public.family_is_writable(family_id));
+
+-- A trigger rather than a restrictive update policy so that sort_order-only
+-- updates (drag to reorder) still pass for tasks in a read-only group.
+create or replace function public.enforce_group_task_read_only()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if old.family_id is not null
+     and (new.title, new.notes, new.due_at, new.status, new.completed_at, new.assignee_id, new.family_id)
+         is distinct from (old.title, old.notes, old.due_at, old.status, old.completed_at, old.assignee_id, old.family_id)
+     and not public.family_is_writable(old.family_id) then
+    raise exception 'This group is read-only until its owner renews Premium.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists tasks_enforce_group_read_only on public.tasks;
+create trigger tasks_enforce_group_read_only
+  before update on public.tasks
+  for each row execute function public.enforce_group_task_read_only();
+
+-- user_has_premium() takes any user id, so keep it internal; the others are
+-- needed by signed-in clients (RLS, the trigger, the computed field).
+revoke all on function public.user_has_premium(uuid) from public, anon, authenticated;
+revoke all on function public.family_is_writable(uuid) from public, anon;
+grant execute on function public.family_is_writable(uuid) to authenticated;
+revoke all on function public.is_writable(public.families) from public, anon;
+grant execute on function public.is_writable(public.families) to authenticated;

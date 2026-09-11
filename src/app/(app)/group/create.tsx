@@ -10,13 +10,16 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { GROUP_MODE_OPTIONS, roleOptionsForMode } from '@/constants/group';
+import { PrimaryButton } from '@/components/primary-button';
 import { ActionIcons } from '@/constants/icons';
+import { TRIAL_DAYS, isPremiumRequiredError } from '@/constants/premium';
 import { Spacing } from '@/constants/theme';
 import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { usePremiumStatus } from '@/hooks/use-premium-query';
 import { getErrorMessage } from '@/lib/errors';
 import { createGroup } from '@/lib/mutations/group';
-import { groupKeys } from '@/lib/query-client';
+import { groupKeys, premiumKeys } from '@/lib/query-client';
 import type { GroupMode, MemberRole } from '@/lib/types';
 
 const MAX_GROUPS = 2;
@@ -26,7 +29,11 @@ export default function CreateGroupScreen() {
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
   const { data: groups } = useGroupsQuery();
+  const { status: premium } = usePremiumStatus();
   const atCap = (groups?.length ?? 0) >= MAX_GROUPS;
+  const ownsGroup = (groups ?? []).some((g) => g.role === 'owner');
+  const startsTrial = ownsGroup && !premium.isPremium && !premium.trialUsed;
+  const needsPremium = ownsGroup && !premium.isPremium && premium.trialUsed;
   const [name, setName] = useState('');
   const [mode, setMode] = useState<GroupMode>('family');
   const [memberRole, setMemberRole] = useState<MemberRole | null>(null);
@@ -51,9 +58,17 @@ export default function CreateGroupScreen() {
     setSaving(true);
     try {
       await createGroup(name, mode, memberRole);
-      await queryClient.invalidateQueries({ queryKey: groupKeys.mine });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: groupKeys.mine }),
+        queryClient.invalidateQueries({ queryKey: premiumKeys.mine }),
+      ]);
       router.back();
     } catch (err) {
+      if (isPremiumRequiredError(err)) {
+        await queryClient.invalidateQueries({ queryKey: premiumKeys.mine });
+        router.replace('/premium');
+        return;
+      }
       setError(getErrorMessage(err, 'Could not create this group.'));
     } finally {
       setSaving(false);
@@ -73,7 +88,7 @@ export default function CreateGroupScreen() {
                 icon={ActionIcons.createGroup}
                 onPress={handleCreate}
                 loading={saving}
-                disabled={!isOnline || atCap}
+                disabled={!isOnline || atCap || needsPremium}
               />
             </HeaderActionSlot>
           ),
@@ -108,6 +123,22 @@ export default function CreateGroupScreen() {
           {atCap ? (
             <ThemedText type="small" themeColor="textSecondary">
               You&apos;ve already joined the maximum of {MAX_GROUPS} groups.
+            </ThemedText>
+          ) : needsPremium ? (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                Your free trial has ended. A second group of your own needs Goodlist Premium.
+              </ThemedText>
+              <PrimaryButton
+                title="See Premium"
+                icon={ActionIcons.premium}
+                onPress={() => router.replace('/premium')}
+              />
+            </>
+          ) : startsTrial ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              A second group of your own is a Premium feature. Creating it starts your free{' '}
+              {TRIAL_DAYS}-day Premium trial. No card needed.
             </ThemedText>
           ) : !isOnline ? (
             <ThemedText type="small" themeColor="textSecondary">

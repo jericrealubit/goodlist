@@ -12,7 +12,7 @@ export async function getMyGroups(): Promise<GroupSummary[]> {
 
   const { data: memberships, error: membershipError } = await supabase
     .from('family_members')
-    .select('family_id, role, families(*)')
+    .select('family_id, role, families(*, is_writable)')
     .eq('user_id', user.id);
 
   if (membershipError) throw membershipError;

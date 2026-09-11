@@ -15,6 +15,7 @@ import { OptionPicker } from '@/components/option-picker';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { READ_ONLY_MESSAGE } from '@/constants/premium';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useSelectedTheme } from '@/contexts/theme-context';
@@ -81,7 +82,7 @@ export default function TasksScreen() {
   // family_id the created request attaches to.
   const otherMemberOptions = useMemo(
     () =>
-      (groups ?? []).flatMap((g) =>
+      (groups ?? []).filter((g) => g.is_writable !== false).flatMap((g) =>
         g.members
           .filter((m) => m.user_id !== user?.id)
           .map((m) => ({
@@ -118,17 +119,17 @@ export default function TasksScreen() {
         { ...task, status: 'completed', completed_at: new Date().toISOString() },
       ]);
       completeMutation.mutate(task, {
-        onError: () => {
+        onError: (err) => {
           setJustCompleted((current) => current.filter((t) => t.id !== task.id));
-          setActionError('Could not update this task.');
+          setActionError(getErrorMessage(err, 'Could not update this task.'));
         },
       });
     } else {
       setJustCompleted((current) => current.filter((t) => t.id !== task.id));
       reopenMutation.mutate(task, {
-        onError: () => {
+        onError: (err) => {
           setJustCompleted((current) => [...current, task]);
-          setActionError('Could not update this task.');
+          setActionError(getErrorMessage(err, 'Could not update this task.'));
         },
       });
     }
@@ -151,7 +152,9 @@ export default function TasksScreen() {
       return;
     }
     if (tab === 'requested' && !effectiveAssignee) {
-      setComposeError('Choose who this task is for.');
+      setComposeError(
+        groups?.some((g) => g.is_writable === false) ? READ_ONLY_MESSAGE : 'Choose who this task is for.',
+      );
       return;
     }
     setComposeError(null);

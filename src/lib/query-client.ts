@@ -10,6 +10,10 @@ export const groupKeys = {
   mine: ['group', 'mine'] as const,
 };
 
+export const premiumKeys = {
+  mine: ['premium', 'mine'] as const,
+};
+
 export const notificationKeys = {
   unreadCount: ['notifications', 'unreadCount'] as const,
 };
