@@ -258,12 +258,14 @@ export default function TasksScreen() {
   const completedVisibleTasks = justCompleted.filter((t) => t.origin === tab);
   const isEmpty = openVisibleTasks.length === 0 && completedVisibleTasks.length === 0;
   const showAssigneePicker = tab === 'requested' && otherMemberOptions.length >= 2;
-  const headerTitle = !groups?.length ? 'Solo mode' : groups.length === 1 ? groups[0].name : 'Groups';
+  const headerTitle = groups?.length ? groups.map((g) => g.name).join(' · ') : 'Solo mode';
 
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
-        <ThemedText type="header">{headerTitle}</ThemedText>
+        <ThemedText type="header" numberOfLines={1}>
+          {headerTitle}
+        </ThemedText>
         {actionError ? (
           <ThemedText type="small" themeColor="danger">
             {actionError}
