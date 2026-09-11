@@ -101,6 +101,16 @@ export type Entitlement = {
   premium_until: string | null;
 };
 
+export type PremiumPlan = {
+  /** RevenueCat package identifier, e.g. `$rc_monthly`. */
+  id: string;
+  period: 'monthly' | 'yearly';
+  /** Localized price from the store, e.g. "$1.99". */
+  priceLabel: string;
+};
+
+export type PurchaseOutcome = 'purchased' | 'cancelled';
+
 export type GroupMember = {
   family_id: string;
   user_id: string;

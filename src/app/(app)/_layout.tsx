@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { usePresenceHeartbeat } from '@/hooks/use-presence-heartbeat';
+import { usePurchasesIdentity } from '@/hooks/use-purchases-identity';
 import { useSyncDeviceLocale } from '@/hooks/use-sync-device-locale';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -13,6 +14,7 @@ export default function AppLayout() {
   // nothing and never blocks — see the hook for why it's a no-op when the user
   // has opted out.
   useSyncDeviceLocale();
+  usePurchasesIdentity();
 
   return (
     <Stack

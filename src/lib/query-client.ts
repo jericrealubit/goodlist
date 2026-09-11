@@ -12,6 +12,7 @@ export const groupKeys = {
 
 export const premiumKeys = {
   mine: ['premium', 'mine'] as const,
+  plans: ['premium', 'plans'] as const,
 };
 
 export const notificationKeys = {
