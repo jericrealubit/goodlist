@@ -75,10 +75,11 @@ export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 // clearance that native screens don't.
 export const WebTopNavInset = Platform.select({ web: 72 }) ?? 0;
 // Breathing room under anything pinned to the bottom of a tab screen — today
-// the Tasks compose bar. On Android it also has to absorb the gap between
-// where the native tab bar's automatic content inset ends and where the bar
-// actually paints: without it the bar covers the bottom few dp of the compose
-// bar, eating the rounded corners, border and elevation shadow. That reads as
-// a clipped input in themes whose controls are outlined or elevated.
-export const PinnedBottomClearance = Spacing.four;
+// the Tasks compose bar. On Android this is the *only* clearance that matters:
+// expo-router's native tabs already inset the screen above the bar, so this
+// sits on top of that. It stays non-zero because the bar's automatic inset
+// under-reports by a few dp — at zero the bar covers the compose bar's rounded
+// corners, border and elevation shadow, which reads as a clipped input in
+// themes whose controls are outlined or elevated. A few dp is all that takes.
+export const PinnedBottomClearance = Spacing.two;
 export const MaxContentWidth = 800;

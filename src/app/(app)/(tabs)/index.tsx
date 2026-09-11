@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, StyleSheet, TextInput } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable, { type SortableGridDragEndParams } from 'react-native-sortables';
 
@@ -17,6 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
+import { useSelectedTheme } from '@/contexts/theme-context';
 import { useGroupsQuery } from '@/hooks/use-group-query';
 import { useMarkAllReadMutation } from '@/hooks/use-notifications-mutations';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
@@ -45,6 +46,11 @@ const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
 export default function TasksScreen() {
   const router = useRouter();
   const { topInset, bottomInset, pinnedBottomInset } = useTabScreenInsets();
+  // With the keyboard up the tab bar is hidden and the compose bar sits on the
+  // keyboard's edge, so it needs its own gutter; with the keyboard down the
+  // tab bar's inset already supplies one (pinnedBottomInset).
+  const keyboardVisible = useKeyboardState((state) => state.isVisible);
+  const { themeId } = useSelectedTheme();
   const tokens = useTokens();
   const { data: groups } = useGroupsQuery();
   const { user } = useSession();
@@ -262,8 +268,6 @@ export default function TasksScreen() {
         ) : null}
       </ThemedView>
 
-      <OfflineBanner />
-
       {groups?.length ? (
         <ThemedView style={styles.tabRow}>
           <OptionPicker
@@ -307,6 +311,13 @@ export default function TasksScreen() {
               },
             ]}>
             <Sortable.Grid
+              // Sortable measures each row once and positions the rest off
+              // those heights. Row height is token-derived (task-row.tsx pads
+              // with tokens.spacing), so a theme whose spacing scale differs
+              // leaves the cached heights wrong and the rows overlapping —
+              // colors repaint, the layout doesn't. Keying on the theme
+              // remounts the grid so it measures again.
+              key={themeId}
               columns={1}
               rowGap={tokens.spacing.two}
               data={openVisibleTasks}
@@ -325,7 +336,11 @@ export default function TasksScreen() {
           </Animated.ScrollView>
         )}
 
-        <ThemedView style={[styles.footer, { paddingBottom: pinnedBottomInset }]}>
+        <ThemedView
+          style={[
+            styles.footer,
+            { paddingBottom: keyboardVisible ? Spacing.two : pinnedBottomInset },
+          ]}>
           {showAssigneePicker ? (
             <OptionPicker
               layout="row"
@@ -351,6 +366,9 @@ export default function TasksScreen() {
           />
         </ThemedView>
       </KeyboardAvoidingView>
+
+      {/* Absolutely positioned, and last so it paints over everything above. */}
+      <OfflineBanner />
     </ThemedView>
   );
 }
@@ -395,5 +413,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.four,
+    // Opaque (ThemedView paints the background), so the list scrolls *under*
+    // this band. Without the top padding a task card is clipped flush against
+    // the input's top edge instead of fading out with a gutter above it.
+    // Matches PinnedBottomClearance below the input, so the bar sits in an
+    // even gutter rather than a lopsided one once the keyboard is up.
+    paddingTop: Spacing.two,
   },
 });
