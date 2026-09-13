@@ -159,6 +159,7 @@ export default function EditTaskScreen() {
                 onChangeText={handleTitleChange}
                 placeholder="Buy groceries"
                 multiline
+                autoGrow
                 returnKeyType="done"
                 submitBehavior="blurAndSubmit"
                 style={styles.titleInput}
@@ -170,6 +171,7 @@ export default function EditTaskScreen() {
                 onChangeText={setNotes}
                 placeholder="Add details"
                 multiline
+                autoGrow
                 style={styles.noteInput}
                 editable={!isRequested || canEditRequest}
               />
@@ -261,6 +263,8 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   noteInput: {
+    // No maxHeight, unlike the title: the whole note should be readable at once,
+    // and the ScrollView above already scrolls the page.
     minHeight: 80,
     textAlignVertical: 'top',
   },
