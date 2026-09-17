@@ -12,7 +12,7 @@ import { ActionIcons } from '@/constants/icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 import type { Task } from '@/lib/types';
-import { displayTitle, extractUrl, urlHost } from '@/lib/url';
+import { displayTitle, extractUrl, urlHost, urlOnly } from '@/lib/url';
 
 function formatDueDate(dueAt: string) {
   return new Date(dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -106,9 +106,11 @@ export function TaskRow({
     },
   ];
 
-  // A title that is nothing but a link reads as its domain — see displayTitle.
-  // Only the row's text changes; task.title is still what gets edited and saved.
+  // A title that is nothing but a link reads as a tidied URL — see
+  // displayTitle. Only the row's text changes; task.title is still what gets
+  // edited and saved.
   const title = displayTitle(task.title);
+  const isLinkTitle = urlOnly(task.title) !== null;
 
   const checkbox = showCheckbox ? (
     <RowTouchable
@@ -158,7 +160,15 @@ export function TaskRow({
 
   const textColumn = (
     <ThemedView style={styles.textColumn}>
-      <ThemedText type="default" style={isCompleted ? styles.strikethrough : undefined} numberOfLines={1}>
+      <ThemedText
+        type="default"
+        style={isCompleted ? styles.strikethrough : undefined}
+        numberOfLines={1}
+        // A URL too long for the row loses its middle rather than its end: the
+        // site and the last path segment are what identify it, and the deep
+        // middle of a path is what doesn't. (Android/iOS honour this; web
+        // falls back to an end ellipsis.)
+        ellipsizeMode={isLinkTitle ? 'middle' : 'tail'}>
         {title}
       </ThemedText>
       {task.notes ? (

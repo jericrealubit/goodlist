@@ -58,14 +58,37 @@ export function extractUrl(text: string | null | undefined): string | null {
   return HAS_HOST.test(url) ? url : null;
 }
 
+// The scheme and a leading "www." carry no information — every link has them —
+// so both come off before a URL is shown or spoken.
+function bareUrl(url: string) {
+  return url.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+}
+
 /**
- * The host of a URL, without scheme or "www.", for showing or labelling the
- * link ("vercel.com"). Falls back to the whole URL if it somehow has no host —
- * a label is never worth throwing over.
+ * The host of a URL, without scheme or "www.", for labelling the control that
+ * opens it ("Open vercel.com"). Falls back to the whole URL if it somehow has
+ * no host — a label is never worth throwing over.
  */
 export function urlHost(url: string): string {
-  const host = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split(/[/?#]/)[0];
+  const host = bareUrl(url).split(/[/?#]/)[0];
   return host ? host.toLowerCase() : url;
+}
+
+/**
+ * A URL as it should read on screen: scheme and "www." dropped, everything
+ * else kept, because the path is what tells two links from the same site
+ * apart. A trailing "/" goes too. The host is lowercased — hosts are
+ * case-insensitive — while the path keeps the case it was typed in, since
+ * that part of a URL isn't.
+ */
+export function urlLabel(url: string): string {
+  const bare = bareUrl(url);
+  const hostEnd = bare.search(/[/?#]/);
+  if (hostEnd === -1) return bare ? bare.toLowerCase() : url;
+
+  const host = bare.slice(0, hostEnd).toLowerCase();
+  const path = bare.slice(hostEnd).replace(/\/+$/, '');
+  return host ? host + path : url;
 }
 
 /**
@@ -73,7 +96,7 @@ export function urlHost(url: string): string {
  * that merely contains one. "https://vercel.com/academy" qualifies; "Read
  * https://vercel.com/academy first" doesn't — there the words are the task.
  */
-function urlOnly(text: string | null | undefined): string | null {
+export function urlOnly(text: string | null | undefined): string | null {
   const trimmed = text?.trim();
   const url = extractUrl(trimmed);
   if (!trimmed || !url) return null;
@@ -83,13 +106,12 @@ function urlOnly(text: string | null | undefined): string | null {
 
 /**
  * How a task's title should read on a row. A title that is nothing but a link
- * shows as its domain, because a URL long enough to be worth saving is always
- * long enough to be truncated, and "https://play.google.com/cons…" identifies
- * a task far less than "play.google.com" does. Everything else is left exactly
- * as it was typed — and the stored title is never rewritten either, so the
- * editor still opens on the full URL.
+ * sheds the parts that repeat on every link and keeps the rest:
+ * "play.google.com/console/u/0/developers". Everything else is left exactly as
+ * it was typed — and the stored title is never rewritten either, so the editor
+ * still opens on the full URL.
  */
 export function displayTitle(title: string): string {
   const url = urlOnly(title);
-  return url ? urlHost(url) : title;
+  return url ? urlLabel(url) : title;
 }

@@ -32,9 +32,10 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 
 - **Personal tasks** — a to-do list that's yours alone: add, edit, complete, reopen, delete, add notes
   and due dates, and drag to reorder.
-- **Links** — a task that's just a pasted URL reads as its domain (`play.google.com`, not a truncated
-  URL) and carries a button that opens it: an in-app browser on Android, a new tab on the web. A link
-  in a task's notes gets the same button, and the editor still holds the full URL.
+- **Links** — a task that's just a pasted URL reads without the noise (`play.google.com/console/u/0`,
+  no `https://www.`) and carries a button that opens it: an in-app browser on Android, a new tab on
+  the web. Too long for the row and it loses its middle, not its end. A link in a task's notes gets
+  the same button, and the editor still holds the full URL.
 - **Groups** — create or join up to two groups per account, in Family mode (roles: father, mother,
   guardian, child, other) or Team mode (roles: leader, member). Join with an invite code; the owner can
   rename the group, remove members, or transfer ownership.
