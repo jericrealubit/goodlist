@@ -32,6 +32,8 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 
 - **Personal tasks** — a to-do list that's yours alone: add, edit, complete, reopen, delete, add notes
   and due dates, and drag to reorder.
+- **Links** — paste a URL as a task (or drop one in its notes) and the row grows an open button, so a
+  saved link is one tap from the browser instead of a trip through the editor.
 - **Groups** — create or join up to two groups per account, in Family mode (roles: father, mother,
   guardian, child, other) or Team mode (roles: leader, member). Join with an invite code; the owner can
   rename the group, remove members, or transfer ownership.
