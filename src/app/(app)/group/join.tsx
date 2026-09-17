@@ -119,10 +119,18 @@ export default function JoinGroupScreen() {
               <TextField
                 label="Invite code"
                 value={code}
-                onChangeText={(text) => setCode(text.toUpperCase())}
+                // An invite code is a lookup key, so strip newlines outright
+                // rather than collapsing them to a space: joinGroup only trims
+                // the ends, and an interior one would corrupt the code.
+                onChangeText={(text) => setCode(text.replace(/\r?\n/g, '').toUpperCase())}
                 placeholder="ABCD2345"
                 autoCapitalize="characters"
                 autoCorrect={false}
+                multiline
+                autoGrow
+                returnKeyType="done"
+                submitBehavior="blurAndSubmit"
+                style={styles.codeInput}
                 autoFocus
               />
               {error ? (
@@ -188,5 +196,10 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.four,
     gap: Spacing.four,
+  },
+  codeInput: {
+    // Multiline shifts the text to the vertical centre of the box; keep it
+    // top-aligned so the single short code sits where it always did.
+    textAlignVertical: 'top',
   },
 });

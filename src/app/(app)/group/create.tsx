@@ -45,6 +45,13 @@ export default function CreateGroupScreen() {
     setMemberRole(null);
   }
 
+  // The name field wraps so a long group name is fully readable while typing,
+  // but it is still one logical line: collapse the newlines a Return key or a
+  // pasted multi-line string would otherwise leave in it.
+  function handleNameChange(next: string) {
+    setName(next.replace(/\r?\n/g, ' '));
+  }
+
   async function handleCreate() {
     if (name.trim().length === 0) {
       setError('Give your group a name.');
@@ -99,7 +106,18 @@ export default function CreateGroupScreen() {
           <ThemedText themeColor="textSecondary">
             Give your group a name. You can invite others once it&apos;s created.
           </ThemedText>
-          <TextField label="Group name" value={name} onChangeText={setName} placeholder="The Smiths" autoFocus />
+          <TextField
+            label="Group name"
+            value={name}
+            onChangeText={handleNameChange}
+            placeholder="The Smiths"
+            multiline
+            autoGrow
+            returnKeyType="done"
+            submitBehavior="blurAndSubmit"
+            style={styles.nameInput}
+            autoFocus
+          />
 
           <ThemedText type="smallBold" themeColor="textSecondary">
             Is this a family or a team?
@@ -161,5 +179,11 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.four,
     gap: Spacing.four,
+  },
+  nameInput: {
+    // Grows with the name so the whole value stays visible, then scrolls
+    // inside the field instead of pushing the form down.
+    maxHeight: 132,
+    textAlignVertical: 'top',
   },
 });
