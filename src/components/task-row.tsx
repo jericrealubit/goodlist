@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Linking, Pressable, StyleSheet, type AccessibilityState, type StyleProp, type ViewStyle } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Sortable from 'react-native-sortables';
 
@@ -11,6 +12,7 @@ import { ActionIcons } from '@/constants/icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 import type { Task } from '@/lib/types';
+import { displayTitle, extractUrl, urlHost } from '@/lib/url';
 
 function formatDueDate(dueAt: string) {
   return new Date(dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -19,6 +21,30 @@ function formatDueDate(dueAt: string) {
 function formatCompletedAt(completedAt: string) {
   const date = new Date(completedAt);
   return `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+}
+
+type RowTouchableProps = {
+  onPress: () => void;
+  accessibilityRole: 'button' | 'checkbox' | 'link';
+  accessibilityLabel: string;
+  accessibilityState?: AccessibilityState;
+  style?: StyleProp<ViewStyle>;
+  children?: ReactNode;
+  draggable?: boolean;
+};
+
+/**
+ * One tap target inside a row. In the draggable list the row already owns a
+ * drag gesture, and only Sortable.Touchable composes with it — a short tap
+ * still fires while a long-press-and-move still drags the row. Everywhere else
+ * a plain Pressable keeps the platform's own press handling.
+ */
+function RowTouchable({ draggable, onPress, ...rest }: RowTouchableProps) {
+  return draggable ? (
+    <Sortable.Touchable onTap={onPress} hitSlop={8} {...rest} />
+  ) : (
+    <Pressable onPress={onPress} hitSlop={8} {...rest} />
+  );
 }
 
 type TaskRowProps = {
@@ -80,33 +106,60 @@ export function TaskRow({
     },
   ];
 
+  // A title that is nothing but a link reads as its domain — see displayTitle.
+  // Only the row's text changes; task.title is still what gets edited and saved.
+  const title = displayTitle(task.title);
+
   const checkbox = showCheckbox ? (
-    draggable ? (
-      <Sortable.Touchable
-        onTap={onToggleComplete}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: isCompleted }}
-        accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
-        style={checkboxStyle}>
-        {isCompleted && <Ionicons name={ActionIcons.confirm} size={16} color="#ffffff" />}
-      </Sortable.Touchable>
-    ) : (
-      <Pressable
-        onPress={onToggleComplete}
-        hitSlop={8}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: isCompleted }}
-        accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
-        style={checkboxStyle}>
-        {isCompleted && <Ionicons name={ActionIcons.confirm} size={16} color="#ffffff" />}
-      </Pressable>
-    )
+    <RowTouchable
+      draggable={draggable}
+      onPress={onToggleComplete}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: isCompleted }}
+      accessibilityLabel={`Mark "${title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
+      style={checkboxStyle}>
+      {isCompleted && <Ionicons name={ActionIcons.confirm} size={16} color="#ffffff" />}
+    </RowTouchable>
+  ) : null;
+
+  // A task that is a pasted link — or whose notes carry one — gets a button of
+  // its own. Tapping the row opens the task for editing, which is the right
+  // default for every other task, so following the link needs a target the row
+  // press can't swallow.
+  const linkUrl = extractUrl(task.title) ?? extractUrl(task.notes);
+
+  function handleOpenLink() {
+    if (!linkUrl) return;
+    // An in-app browser on Android/iOS, a new tab on web. Linking is the
+    // fallback for a device where that module has nothing to drive; a link
+    // that won't open is never worth crashing the list over.
+    WebBrowser.openBrowserAsync(linkUrl).catch(() => {
+      Linking.openURL(linkUrl).catch(() => {});
+    });
+  }
+
+  const openLinkButton = linkUrl ? (
+    <RowTouchable
+      draggable={draggable}
+      onPress={handleOpenLink}
+      accessibilityRole="link"
+      accessibilityLabel={`Open ${urlHost(linkUrl)}`}
+      style={[
+        styles.linkButton,
+        {
+          borderRadius: tokens.radii.pill,
+          borderColor: theme.border,
+          backgroundColor: theme.background,
+        },
+      ]}>
+      <Ionicons name={ActionIcons.openLink} size={16} color={theme.primary} />
+    </RowTouchable>
   ) : null;
 
   const textColumn = (
     <ThemedView style={styles.textColumn}>
       <ThemedText type="default" style={isCompleted ? styles.strikethrough : undefined} numberOfLines={1}>
-        {task.title}
+        {title}
       </ThemedText>
       {task.notes ? (
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
@@ -140,7 +193,7 @@ export function TaskRow({
         <Sortable.Touchable
           onTap={onPress}
           accessibilityRole="button"
-          accessibilityLabel={task.title}
+          accessibilityLabel={title}
           style={[styles.pressableContent, contentSpacing]}>
           {checkbox}
           {textColumn}
@@ -149,13 +202,14 @@ export function TaskRow({
         <Pressable
           onPress={onPress}
           accessibilityRole="button"
-          accessibilityLabel={task.title}
+          accessibilityLabel={title}
           style={({ pressed }) => [styles.pressableContent, contentSpacing, pressed && styles.pressed]}>
           {checkbox}
           {textColumn}
         </Pressable>
       )}
 
+      {openLinkButton}
       {trailingActions}
     </>
   );
@@ -231,6 +285,13 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkButton: {
+    width: 32,
+    height: 32,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
