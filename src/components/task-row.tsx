@@ -12,7 +12,7 @@ import { ActionIcons } from '@/constants/icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 import type { Task } from '@/lib/types';
-import { extractUrl, urlHost } from '@/lib/url';
+import { displayTitle, extractUrl, urlHost } from '@/lib/url';
 
 function formatDueDate(dueAt: string) {
   return new Date(dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -106,13 +106,17 @@ export function TaskRow({
     },
   ];
 
+  // A title that is nothing but a link reads as its domain — see displayTitle.
+  // Only the row's text changes; task.title is still what gets edited and saved.
+  const title = displayTitle(task.title);
+
   const checkbox = showCheckbox ? (
     <RowTouchable
       draggable={draggable}
       onPress={onToggleComplete}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: isCompleted }}
-      accessibilityLabel={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
+      accessibilityLabel={`Mark "${title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
       style={checkboxStyle}>
       {isCompleted && <Ionicons name={ActionIcons.confirm} size={16} color="#ffffff" />}
     </RowTouchable>
@@ -155,7 +159,7 @@ export function TaskRow({
   const textColumn = (
     <ThemedView style={styles.textColumn}>
       <ThemedText type="default" style={isCompleted ? styles.strikethrough : undefined} numberOfLines={1}>
-        {task.title}
+        {title}
       </ThemedText>
       {task.notes ? (
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
@@ -189,7 +193,7 @@ export function TaskRow({
         <Sortable.Touchable
           onTap={onPress}
           accessibilityRole="button"
-          accessibilityLabel={task.title}
+          accessibilityLabel={title}
           style={[styles.pressableContent, contentSpacing]}>
           {checkbox}
           {textColumn}
@@ -198,7 +202,7 @@ export function TaskRow({
         <Pressable
           onPress={onPress}
           accessibilityRole="button"
-          accessibilityLabel={task.title}
+          accessibilityLabel={title}
           style={({ pressed }) => [styles.pressableContent, contentSpacing, pressed && styles.pressed]}>
           {checkbox}
           {textColumn}

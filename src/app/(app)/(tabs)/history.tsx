@@ -19,6 +19,7 @@ import { useDeleteAllHistoryMutation, useDeleteTaskMutation, useReopenTaskMutati
 import { useHistoryQuery } from '@/hooks/use-tasks-query';
 import { getErrorMessage } from '@/lib/errors';
 import type { Task } from '@/lib/types';
+import { displayTitle } from '@/lib/url';
 
 function RowIconButton({
   icon,
@@ -161,6 +162,8 @@ export default function HistoryScreen() {
                   : `To ${item.assignee?.display_name || 'Unnamed'}`
                 : undefined;
             const canDelete = item.creator_id === user?.id;
+            // Matches the text the row itself shows: a link task reads as its domain.
+            const label = displayTitle(item.title);
             return (
               <TaskRow
                 task={item}
@@ -174,7 +177,7 @@ export default function HistoryScreen() {
                       icon={ActionIcons.undo}
                       color={theme.text}
                       onPress={() => handleUndo(item)}
-                      accessibilityLabel={`Undo "${item.title}"`}
+                      accessibilityLabel={`Undo "${label}"`}
                     />
                     {canDelete ? (
                       confirmingDeleteId === item.id ? (
@@ -183,13 +186,13 @@ export default function HistoryScreen() {
                             icon={ActionIcons.confirm}
                             color={theme.danger}
                             onPress={() => handleDelete(item)}
-                            accessibilityLabel={`Confirm delete "${item.title}"`}
+                            accessibilityLabel={`Confirm delete "${label}"`}
                           />
                           <RowIconButton
                             icon={ActionIcons.cancel}
                             color={theme.textSecondary}
                             onPress={() => setConfirmingDeleteId(null)}
-                            accessibilityLabel={`Cancel delete "${item.title}"`}
+                            accessibilityLabel={`Cancel delete "${label}"`}
                           />
                         </>
                       ) : (
@@ -197,7 +200,7 @@ export default function HistoryScreen() {
                           icon={ActionIcons.delete}
                           color={theme.danger}
                           onPress={() => setConfirmingDeleteId(item.id)}
-                          accessibilityLabel={`Delete "${item.title}"`}
+                          accessibilityLabel={`Delete "${label}"`}
                         />
                       )
                     ) : null}

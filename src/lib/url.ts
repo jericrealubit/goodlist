@@ -59,11 +59,37 @@ export function extractUrl(text: string | null | undefined): string | null {
 }
 
 /**
- * The host of a URL, without scheme or "www.", for labelling the control that
- * opens it ("Open vercel.com"). Falls back to the whole URL if it somehow has
- * no host — a label is never worth throwing over.
+ * The host of a URL, without scheme or "www.", for showing or labelling the
+ * link ("vercel.com"). Falls back to the whole URL if it somehow has no host —
+ * a label is never worth throwing over.
  */
 export function urlHost(url: string): string {
   const host = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split(/[/?#]/)[0];
-  return host || url;
+  return host ? host.toLowerCase() : url;
+}
+
+/**
+ * The URL a piece of text consists *entirely* of, or `null` when it is prose
+ * that merely contains one. "https://vercel.com/academy" qualifies; "Read
+ * https://vercel.com/academy first" doesn't — there the words are the task.
+ */
+function urlOnly(text: string | null | undefined): string | null {
+  const trimmed = text?.trim();
+  const url = extractUrl(trimmed);
+  if (!trimmed || !url) return null;
+
+  return trimmed === url || `https://${trimmed}` === url ? url : null;
+}
+
+/**
+ * How a task's title should read on a row. A title that is nothing but a link
+ * shows as its domain, because a URL long enough to be worth saving is always
+ * long enough to be truncated, and "https://play.google.com/cons…" identifies
+ * a task far less than "play.google.com" does. Everything else is left exactly
+ * as it was typed — and the stored title is never rewritten either, so the
+ * editor still opens on the full URL.
+ */
+export function displayTitle(title: string): string {
+  const url = urlOnly(title);
+  return url ? urlHost(url) : title;
 }
