@@ -58,3 +58,8 @@ example
 
 # Generated usage reports (real user data, regenerate with `npm run report:distribution`)
 reports/
+
+# Personal Claude Code settings. Holds per-developer permission rules (such as
+# auto-approving the production web deploy), which must not be granted to
+# everyone who clones the repo. Shared settings live in .claude/settings.json.
+.claude/settings.local.json
