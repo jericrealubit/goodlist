@@ -47,6 +47,7 @@
           ]
         }
       ],
+      "./plugins/with-optional-microphone",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {
