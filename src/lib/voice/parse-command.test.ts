@@ -166,3 +166,36 @@ test('titles keep their original casing', () => {
     dueAt: null,
   });
 });
+
+test('a sentence ending in a time is a task due then, verb or no verb', () => {
+  // People drop the verb far more often than they drop the date, and nobody
+  // means this to be a task *called* "buy milk tomorrow".
+  assert.deepEqual(parse('buy milk tomorrow'), {
+    kind: 'addTask',
+    title: 'buy milk',
+    dueAt: new Date(2026, 8, 19, 9, 0, 0, 0),
+  });
+  assert.deepEqual(parse('call the vet on Friday'), {
+    kind: 'addTask',
+    title: 'call the vet',
+    dueAt: new Date(2026, 8, 25, 9, 0, 0, 0),
+  });
+  assert.deepEqual(parse('dinner at 7'), {
+    kind: 'addTask',
+    title: 'dinner',
+    dueAt: new Date(2026, 8, 19, 7, 0, 0, 0),
+  });
+});
+
+test('a verbless sentence that only mentions a day is still just words', () => {
+  // parseWhen refuses to leave a stump, which is the whole reason the rule
+  // above is safe to apply to anything the grammar didn't claim.
+  assert.deepEqual(parse('the meeting is on Friday'), {
+    kind: 'dictation',
+    text: 'the meeting is on Friday',
+  });
+  assert.deepEqual(parse('call mum about Friday’s party'), {
+    kind: 'dictation',
+    text: 'call mum about Friday’s party',
+  });
+});
