@@ -32,6 +32,13 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 
 - **Personal tasks** — a to-do list that's yours alone: add, edit, complete, reopen, delete, add notes
   and due dates, and drag to reorder.
+- **Voice input** — add a task, ask a group member for one, finish, cancel, delete or undo, by
+  speaking: *"add milk tomorrow"*, *"ask Sam to take the bins out"*, *"finish the laundry"*, *"undo"*,
+  *"open history"*. Spoken dates are understood (*"tomorrow"*, *"on Friday"*, *"at 5"*), an
+  unrecognised sentence becomes a task title rather than an error, and deleting or cancelling always
+  asks first. Transcription is done by the device's own speech service (Google on Android, the
+  browser's engine on the web) — Goodlist never records, stores or receives the audio. Where speech
+  isn't available (Firefox, a device with no recognizer) the microphone simply isn't shown.
 - **Links** — a task that's just a pasted URL reads as its domain (`play.google.com`, not a truncated
   URL) and carries a button that opens it: an in-app browser on Android, a new tab on the web. A link
   in a task's notes gets the same button, and the editor still holds the full URL.
@@ -66,7 +73,7 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 - **Account & privacy controls** — edit your display name, toggle whether your country/time zone is
   counted in community stats, and permanently delete your account (blocked while you still own a group
   with other members in it, to protect them).
-- **Built-in guide** — an illustrated, 15-step walkthrough under Settings → Help, bundled with the
+- **Built-in guide** — an illustrated, 16-step walkthrough under Settings → Help, bundled with the
   app so it works offline. Its copy lives once in `src/content/guide.ts` and also renders as a
   public web page (`npm run guide:site`).
 - **Legal** — in-app About, Privacy Policy, and Terms of Service screens (`src/app/(app)/about.tsx`,

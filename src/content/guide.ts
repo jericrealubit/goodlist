@@ -34,7 +34,8 @@ export type ShotName =
   | '14-requested-tab'
   | '15-request-sent'
   | '16-their-inbox'
-  | '17-settings';
+  | '17-settings'
+  | '18-voice';
 
 export type GuideBlock =
   | { kind: 'para'; spans: GuideSpan[] }
@@ -193,6 +194,64 @@ export const userGuide: GuideDoc = {
           kind: 'para',
           spans: [
             'That is it. The box empties itself so you can type the next one straight away. Add as many as you like.',
+          ],
+        },
+      ],
+    },
+    {
+      id: 'speak-a-task',
+      title: 'Say it instead of typing',
+      blocks: [
+        {
+          kind: 'para',
+          spans: [
+            'Next to the typing box there is a ',
+            { bold: 'microphone' },
+            '. Tap it and say the thing out loud, instead of typing it.',
+          ],
+        },
+        {
+          kind: 'bullets',
+          items: [
+            [
+              'Tap the ',
+              { bold: 'microphone' },
+              '. The very first time, your phone asks whether Goodlist may use it — tap ',
+              { bold: 'Allow' },
+              '.',
+            ],
+            ['Say what you want to do. ', { bold: '“Buy milk tomorrow.”' }],
+            ['A panel shows you the words it heard, so you can check them.'],
+          ],
+        },
+        { kind: 'image', shot: '18-voice', caption: 'Tap the microphone, then just talk.' },
+        { kind: 'para', spans: ['It understands a few other things too:'] },
+        {
+          kind: 'bullets',
+          items: [
+            [{ bold: '“Add call the vet on Friday”' }, ' — makes a task, due that day.'],
+            [{ bold: '“Finish the laundry”' }, ' — ticks that one off for you.'],
+            [{ bold: '“Undo”' }, ' — puts back the last thing you ticked.'],
+            [{ bold: '“Delete the milk one”' }, ' — asks you first, then deletes it.'],
+            [{ bold: '“Open history”' }, ' — goes to another page.'],
+            [{ bold: '“Ask Alex to pick up the kids”' }, ' — once you have a group (Part 2).'],
+          ],
+        },
+        {
+          kind: 'callout',
+          variant: 'info',
+          spans: [
+            'Said something that is not on that list? The words simply go into the typing box, so you can read them, fix anything wrong, and tap the arrow. ',
+            { bold: 'Nothing is saved until you are happy with it' },
+            '.',
+          ],
+        },
+        {
+          kind: 'callout',
+          variant: 'info',
+          spans: [
+            { bold: 'Nothing is recorded.' },
+            ' Your own phone turns your voice into words. Goodlist only ever receives the words — never the sound — and the microphone is only ever on while that panel is open.',
           ],
         },
       ],
@@ -590,6 +649,13 @@ export const userGuide: GuideDoc = {
           spans: [
             { bold: 'The Requested tab is missing.' },
             ' It only appears once you are in a group. Go to Group and create or join one.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'There is no microphone button.' },
+            ' Not every phone and not every web browser can listen. When yours cannot, Goodlist hides the button rather than offering one that would not work — everything else carries on exactly as normal, and you can always type instead.',
           ],
         },
         {

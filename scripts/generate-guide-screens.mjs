@@ -226,6 +226,7 @@ const ICONS = {
   history: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
   settings: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>`,
   arrowUp: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`,
+  mic: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>`,
 };
 
 // ---------------------------------------------------------------------------
@@ -572,6 +573,35 @@ const SCREENS = [
         ${btn('Sign out', 'dangerbtn')}
       </div>
       ${tabBar('settings')}</div>`,
+  },
+  {
+    // src/app/(app)/(tabs)/index.tsx + src/components/voice-sheet.tsx.
+    // The scrim is lighter here than the real 0.55 so the microphone keeps its
+    // red callout — the guide's job is to show where to tap, and a button lost
+    // under an accurate scrim teaches nothing.
+    name: '18-voice',
+    html: `<div class="screen">${statusBar()}${pageHead('Solo mode')}
+      <div class="body pad">
+        ${taskRow({ title: 'Buy milk' })}
+        ${taskRow({ title: 'Call the dentist', meta: ['Due Sep 9'] })}
+        ${taskRow({ title: 'Water the plants' })}
+      </div>
+      ${tabBar('tasks')}
+      <div style="position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.35)"></div>
+      <div class="compose">
+        <div class="input ph">Listening&hellip;</div>
+        <div class="send hi" data-step="1">${ICONS.mic}</div>
+        <div class="send">${ICONS.arrowUp}</div>
+      </div>
+      <div class="card" style="position:absolute;left:${S.four}px;right:${S.four}px;bottom:170px;padding:${S.four}px;display:flex;flex-direction:column;align-items:center;gap:${S.three}px">
+        <div style="width:96px;height:96px;border-radius:999px;border:3px solid ${C.danger};display:flex;align-items:center;justify-content:center">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="${C.danger}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+        </div>
+        <div class="center">Buy milk tomorrow</div>
+        <div class="btn secondary" style="align-self:stretch">Cancel</div>
+      </div>
+      ${note('Tap the microphone, then just say it out loud.', 470)}
+      </div>`,
   },
 ];
 

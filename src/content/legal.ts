@@ -317,7 +317,7 @@ export const termsOfService: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
+            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, adding and managing tasks by voice, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
           ],
         },
       ],
