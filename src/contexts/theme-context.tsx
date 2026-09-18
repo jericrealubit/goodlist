@@ -31,9 +31,12 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   const [switching, setSwitching] = useState(false);
   // Read by the stable setThemeId below so it can ignore a re-tap of the
   // current theme without taking themeId as a dependency — which would give
-  // every consumer a new context value on each render.
+  // every consumer a new context value on each render. It is only read in
+  // that callback, never during render, so syncing it in an effect is enough.
   const themeIdRef = useRef(themeId);
-  themeIdRef.current = themeId;
+  useEffect(() => {
+    themeIdRef.current = themeId;
+  }, [themeId]);
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_STORAGE_KEY)
