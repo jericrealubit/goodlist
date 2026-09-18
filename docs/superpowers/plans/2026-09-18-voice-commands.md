@@ -45,9 +45,16 @@ npm run lint
 node --test "src/lib/voice/**/*.test.ts"   # once Task 7 lands
 ```
 
-`npm run lint` reports two errors that already exist on `main` and are not this work's:
-`src/contexts/theme-context.tsx:36` (ref written during render) and
-`src/hooks/use-premium-query.ts:19` (`Date.now()` during render). Treat any *third* error as yours.
+**The lint baseline is now zero**, not two: commit `d91b989` fixed both of the errors this section
+used to warn about (`src/contexts/theme-context.tsx:36` and `src/hooks/use-premium-query.ts:19`).
+Treat *any* error as yours.
+
+On this Windows checkout `npm run lint` currently can't run at all — it dies with "Cannot find
+native binding" from `unrs-resolver`, which every `import/*` rule routes through. The binding file
+is present and version-matched, so this is a missing dependent DLL (the MSVC runtime), not the npm
+optional-dependency bug the message suggests. Until it's fixed, the rest of the rules — including
+the React Compiler ones, which are the ones that actually catch things here — can be run with a
+throwaway config outside the repo that switches every `import/*` rule off.
 
 Plus the manual matrix in Task 17 for anything that touches the microphone. There is no test runner
 configured for React components in this repo, and this plan does not add one.
@@ -297,26 +304,42 @@ acting.
 
 **Files:** modify `src/app/(app)/(tabs)/index.tsx`
 
-- [ ] **Step 1:** Pass the pooled `otherMemberOptions` display names as `contextualStrings` when
-      starting a session. They are already computed on this screen for the assignee picker.
-- [ ] **Step 2:** Cap the list (say 20) so an unusual group can't bloat the intent extras.
+One shipped detail differs from the sketch: the names come from **every** group, not only the
+writable ones. `otherMemberOptions` is now derived by filtering a wider `memberOptions` list that
+carries a `writable` flag, so a request spoken at a lapsed group can answer with
+`READ_ONLY_MESSAGE` instead of failing to match anyone and falling back to dictation. The picker
+still offers exactly what it did before.
+
+- [x] **Step 1:** Pass the pooled display names as `contextualStrings` when starting a session.
+      They are already computed on this screen for the assignee picker.
+- [x] **Step 2:** Cap the list (20) so an unusual group can't bloat the intent extras, and dedupe
+      it first — one person in both groups is two options but one name.
 
 ### Task 10: Run add and request from speech
 
 **Files:** create `src/components/voice-sheet.tsx`, modify `src/app/(app)/(tabs)/index.tsx`
 
-- [ ] **Step 1:** `VoiceSheet` — a themed overlay showing the live transcript, the level ring and
-      Cancel. It renders the five states from the spec (listening, heard-nothing, denied, offline,
-      unavailable) and nothing else.
-- [ ] **Step 2:** On a final transcript, parse. `addTask` → `createTaskMutation` via
+Two shipped details worth knowing. **The sheet replaces the inline streaming from Task 6** as the
+listening UI: the transcript can't be shown in two places at once, and until a sentence is final
+there is no way to know whether it is a command or a task title. The compose bar is still where a
+`dictation` result lands, editable, exactly as before. And **whether the sheet is up is derived,
+not stored** — `!dismissed && (listening || error || notice)`. Storing it needed an effect to close
+it when a session ended having heard nothing, which is both a `react-hooks/set-state-in-effect`
+error and a race against the first render of a session.
+
+- [x] **Step 1:** `VoiceSheet` — a themed overlay showing the live transcript, the level ring and
+      Cancel. Four of the spec's five states render here; the fifth, unavailable, deliberately has
+      no rendering, because the mic is never drawn there and the sheet cannot open.
+- [x] **Step 2:** On a final transcript, parse. `addTask` → `createTaskMutation` via
       `buildNewTaskInput`; `requestTask` → `createRequestMutation` via `buildNewRequestInput` with
       the matched member's `userId`/`familyId`; `dictation` → fill the compose bar and leave it to
-      the user.
-- [ ] **Step 3:** Respect the rules the screen already enforces: a requested task needs a writable
-      group, and `READ_ONLY_MESSAGE` is the copy when Premium has lapsed. Route voice failures into
-      the same `composeError` slot as typing.
-- [ ] **Step 4:** After a commit, report it in one line ("Added: buy milk · Sep 19") and keep it on
-      screen long enough to read.
+      the user. The verbs Stage 2 owns (complete, cancel, delete, undo, navigate) also fall back to
+      the compose bar for now, so what was said stays visible and sendable rather than guessed at.
+- [x] **Step 3:** Respect the rules the screen already enforces: a requested task needs a writable
+      group, and `READ_ONLY_MESSAGE` is the copy when Premium has lapsed. Voice failures route into
+      the same `composeError` slot as typing, and titles go through `validateTaskTitle` first.
+- [x] **Step 4:** After a commit, report it in one line ("Added: buy milk · Sep 19"), held for 2.6
+      seconds and then cleared — which closes the sheet with it.
 
 ---
 
@@ -367,17 +390,28 @@ export function matchTask<T extends { id: string; title: string }>(
 
 **Files:** modify `src/content/legal.ts`, modify `docs/play-store-listing.md`
 
-- [ ] **Step 1:** Add a "Voice input" paragraph to *What we collect*: the microphone is live only
+- [x] **Step 1:** Add a "Voice input" paragraph to *What we collect*: the microphone is live only
       while the listening sheet is open, audio is transcribed by the device's own speech service
       (Google on Android, the browser's engine on the web), Goodlist stores no audio, and the
-      transcript becomes task text exactly as typing would.
-- [ ] **Step 2:** Name the platform recognizer under *Sharing & service providers*, in the same
+      transcript becomes task text exactly as typing would. The closing *lead* of that section
+      also had to change — it promised "nothing being collected in the background," which a new
+      microphone permission makes a claim worth restating explicitly rather than leaving implied.
+- [x] **Step 2:** Name the platform recognizer under *Sharing & service providers*, in the same
       form as the existing entries.
-- [ ] **Step 3:** Update the Play listing's permissions note, which currently says only that no
-      location permission is requested, to cover the microphone and why.
-- [ ] **Step 4:** Re-answer the Play Console **Data safety** audio questions against the shipped
-      behaviour. Verify `recordingOptions.persist` is absent from the codebase before answering:
-      `grep -rn "persist" src/lib/voice src/hooks/use-voice-input.ts`.
+- [x] **Step 3:** Update the Play listing's permissions note to cover the microphone and why. The
+      existing *Approximate location* note stays as it is — "requests no location permission" is
+      still true — so this is a new section beside it, not an edit to it.
+- [ ] **Step 4:** Re-answer the Play Console **Data safety** audio questions. **This one is a
+      Console action only the account owner can do**; the answers are written out in
+      `play-store-listing.md`. The verification it asks for has been run and is clean —
+      `grep -rn "persist" src/lib/voice src/hooks/use-voice-input.ts` returns no matches — and the
+      conclusion is **do not declare Audio**: Data Safety covers what this app collects, and the
+      platform recognizer returns text, never audio. The transcript is already covered by
+      *User-generated content*.
+
+`EFFECTIVE_DATE` moved to September 18, 2026 and `npm run legal:site` has been re-run, so
+`docs/legal/` matches `legal.ts`. Google fetches that page and cross-checks it against the Data
+Safety form, so the policy and the form have to ship in the same release as the permission.
 
 ### Task 15: Settings toggle
 

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -15,6 +15,7 @@ import { OptionPicker } from '@/components/option-picker';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { VoiceSheet } from '@/components/voice-sheet';
 import { READ_ONLY_MESSAGE } from '@/constants/premium';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
@@ -38,6 +39,7 @@ import { useVoiceInput } from '@/hooks/use-voice-input';
 import { getErrorMessage } from '@/lib/errors';
 import { taskKeys } from '@/lib/query-client';
 import { validateTaskTitle } from '@/lib/validation/task';
+import { parseVoiceCommand } from '@/lib/voice/parse-command';
 import type { Task, TaskOrigin } from '@/lib/types';
 
 const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
@@ -52,6 +54,18 @@ const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
  */
 function mergeDictation(typed: string, heard: string): string {
   return [typed.trim(), heard.trim()].filter(Boolean).join(' ');
+}
+
+/** Enough names to bias the recognizer toward a real group; past this it is intent-extra bloat. */
+const MAX_CONTEXTUAL_NAMES = 20;
+
+/** Long enough to read one line, short enough not to hold the screen hostage. */
+const VOICE_NOTICE_MS = 2600;
+
+/** "Added: buy milk · Sep 19" — one line naming exactly what landed. */
+function describeCommit(verb: string, title: string, dueAt: Date | null): string {
+  const when = dueAt ? ` · ${dueAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : '';
+  return `${verb}: ${title}${when}`;
 }
 
 export default function TasksScreen() {
@@ -82,23 +96,158 @@ export default function TasksScreen() {
   const [composeText, setComposeText] = useState('');
   const [composeError, setComposeError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  // What was already typed when the microphone opened — dictation is appended
-  // to it, and while listening the field shows the two joined together.
-  const [dictationBase, setDictationBase] = useState('');
   const [voiceRationaleShown, setVoiceRationaleShown] = useState(false);
+  // Whether the sheet is up is derived, never stored: it shows while a session
+  // is live or still has something to say, until the user waves it away. A
+  // session that ends having heard nothing therefore closes it on its own,
+  // with no effect watching for the moment to do so.
+  const [voiceDismissed, setVoiceDismissed] = useState(true);
+  // The one line the sheet shows once a spoken task has landed. It clears
+  // itself, and the sheet goes with it.
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
   const composeInputRef = useRef<TextInput>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Stage 0 is dictation only: what was heard lands in the compose field and
-  // the user sends it. Speech never commits a task on its own.
-  function handleVoiceTranscript(heard: string) {
-    setComposeText(mergeDictation(dictationBase, heard));
+  // Every group member but the user, pooled across every group they belong to
+  // (up to 2). `writable` rides along so a task spoken at a group whose
+  // Premium has lapsed can say why it didn't land, instead of quietly matching
+  // nobody.
+  const memberOptions = useMemo(
+    () =>
+      (groups ?? []).flatMap((g) =>
+        g.members
+          .filter((m) => m.user_id !== user?.id)
+          .map((m) => ({
+            userId: m.user_id,
+            familyId: g.id,
+            displayName: m.profiles?.display_name || 'Unnamed',
+            groupName: g.name,
+            writable: g.is_writable !== false,
+          })),
+      ),
+    [groups, user],
+  );
+
+  // What the assignee picker offers, and the only members a request can
+  // actually be created for — picking one determines which group's family_id
+  // the request attaches to.
+  const otherMemberOptions = useMemo(() => memberOptions.filter((o) => o.writable), [memberOptions]);
+
+  // Handed to the recognizer so it hears "Maria" rather than "Mariah". Deduped,
+  // because one person can be in both groups, and capped so an unusually large
+  // group can't bloat the intent extras.
+  const contextualStrings = useMemo(
+    () =>
+      Array.from(new Set(memberOptions.map((o) => o.displayName)))
+        .filter((name) => name !== 'Unnamed')
+        .slice(0, MAX_CONTEXTUAL_NAMES),
+    [memberOptions],
+  );
+
+  function closeVoiceSheet() {
+    if (noticeTimer.current) {
+      clearTimeout(noticeTimer.current);
+      noticeTimer.current = null;
+    }
+    setVoiceNotice(null);
+    setVoiceDismissed(true);
+  }
+
+  /** Says what just landed, then gets out of the way on its own. */
+  function showVoiceNotice(message: string) {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    setVoiceNotice(message);
+    noticeTimer.current = setTimeout(() => {
+      noticeTimer.current = null;
+      // Nothing left to show, so the sheet closes along with the notice.
+      setVoiceNotice(null);
+    }, VOICE_NOTICE_MS);
+  }
+
+  /**
+   * What a sentence the grammar doesn't claim is worth: the compose bar, filled
+   * in and ready to send. Nothing is committed, so a misheard word costs an
+   * edit rather than an undo.
+   */
+  function fallBackToCompose(text: string) {
+    closeVoiceSheet();
+    setComposeText(mergeDictation(composeText, text));
     setComposeError(null);
+    composeInputRef.current?.focus();
+  }
+
+  /** Spoken failures report where typed ones do, not in a sheet to be dismissed. */
+  function failVoice(err: unknown, fallback: string) {
+    closeVoiceSheet();
+    setComposeError(getErrorMessage(err, fallback));
+  }
+
+  function commitSpokenTask(title: string, dueAt: Date | null) {
+    if (validateTaskTitle(title)) {
+      fallBackToCompose(title);
+      return;
+    }
+    createTaskMutation.mutate(buildNewTaskInput({ title, due_at: dueAt?.toISOString() ?? null }, user!.id), {
+      onError: (err) => failVoice(err, 'Could not add this task.'),
+    });
+    showVoiceNotice(describeCommit('Added', title, dueAt));
+  }
+
+  function commitSpokenRequest(assignee: string, title: string, dueAt: Date | null) {
+    const target = otherMemberOptions.find((o) => o.displayName === assignee);
+    if (!target) {
+      // The parser only returns a name a real member answers to, so the one way
+      // to arrive here is a group that has gone read-only — the same rule the
+      // send button enforces, reported in the same words.
+      closeVoiceSheet();
+      setComposeError(READ_ONLY_MESSAGE);
+      return;
+    }
+    if (validateTaskTitle(title)) {
+      fallBackToCompose(title);
+      return;
+    }
+    createRequestMutation.mutate(
+      buildNewRequestInput(
+        { title, assigneeId: target.userId, familyId: target.familyId, due_at: dueAt?.toISOString() ?? null },
+        user!.id,
+      ),
+      { onError: (err) => failVoice(err, 'Could not ask for this task.') },
+    );
+    showVoiceNotice(describeCommit(`Asked ${target.displayName}`, title, dueAt));
+  }
+
+  // One final transcript, one thing done. Adding and asking commit straight
+  // away — typing a task is instant too, and both are undoable — while
+  // anything the grammar doesn't own yet goes to the compose bar rather than
+  // being guessed at.
+  function handleVoiceTranscript(heard: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const command = parseVoiceCommand(heard, {
+      now: new Date(),
+      memberNames: memberOptions.map((o) => o.displayName),
+    });
+    switch (command.kind) {
+      case 'addTask':
+        commitSpokenTask(command.title, command.dueAt);
+        return;
+      case 'requestTask':
+        commitSpokenRequest(command.assignee, command.title, command.dueAt);
+        return;
+      case 'dictation':
+        fallBackToCompose(command.text);
+        return;
+      default:
+        // complete, cancel, delete, undo and navigate belong to Stage 2 (Tasks
+        // 12–13). Until those land, what was said stays visible and sendable
+        // instead of being dropped.
+        fallBackToCompose(heard);
+    }
   }
 
   const voice = useVoiceInput(handleVoiceTranscript);
   const listening = voice.status === 'starting' || voice.status === 'listening';
-  const composeValue = listening ? mergeDictation(dictationBase, voice.transcript) : composeText;
+  const voiceSheetVisible = !voiceDismissed && (listening || !!voice.error || !!voiceNotice);
 
   function handleVoicePress() {
     if (listening) {
@@ -112,34 +261,31 @@ export default function TasksScreen() {
       return;
     }
     setComposeError(null);
-    setDictationBase(composeText);
+    setVoiceNotice(null);
+    setVoiceDismissed(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    voice.start();
+    voice.start({ contextualStrings });
   }
+
+  function handleVoiceCancel() {
+    voice.cancel();
+    voice.clearError();
+    closeVoiceSheet();
+  }
+
+  useEffect(
+    () => () => {
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    },
+    [],
+  );
 
   const error = isError && !openTasks ? getErrorMessage(queryError, 'Could not load your tasks.') : null;
   // Typing and speaking report into the same slot — there is only ever one
-  // thing wrong with the compose bar at a time.
-  const shownError = composeError ?? voice.error;
+  // thing wrong with the compose bar at a time. While the sheet is up it owns
+  // the session's own errors, so they never print twice.
+  const shownError = composeError ?? (voiceSheetVisible ? null : voice.error);
   const tab = groups?.length ? activeTab : 'personal';
-
-  // Pooled across every group the user belongs to (up to 2) rather than
-  // scoped to a single one — picking an option determines which group's
-  // family_id the created request attaches to.
-  const otherMemberOptions = useMemo(
-    () =>
-      (groups ?? []).filter((g) => g.is_writable !== false).flatMap((g) =>
-        g.members
-          .filter((m) => m.user_id !== user?.id)
-          .map((m) => ({
-            userId: m.user_id,
-            familyId: g.id,
-            displayName: m.profiles?.display_name || 'Unnamed',
-            groupName: g.name,
-          })),
-      ),
-    [groups, user],
-  );
 
   useFocusEffect(
     useCallback(() => {
@@ -411,7 +557,7 @@ export default function TasksScreen() {
           ) : null}
           <ComposeBar
             ref={composeInputRef}
-            value={composeValue}
+            value={composeText}
             onChangeText={setComposeText}
             onSubmit={handleSubmitCompose}
             placeholder={tab === 'personal' ? 'I want to...' : 'Ask for...'}
@@ -421,8 +567,19 @@ export default function TasksScreen() {
         </ThemedView>
       </KeyboardAvoidingView>
 
-      {/* Absolutely positioned, and last so it paints over everything above. */}
+      {/* Both are absolutely positioned, and last so they paint over everything
+          above — the listening sheet last of all, since it covers the screen. */}
       <OfflineBanner />
+      {voiceSheetVisible ? (
+        <VoiceSheet
+          listening={listening}
+          transcript={voice.transcript}
+          level={voice.level}
+          message={voiceNotice ?? voice.error}
+          tone={voiceNotice ? 'textSecondary' : 'danger'}
+          onCancel={handleVoiceCancel}
+        />
+      ) : null}
     </ThemedView>
   );
 }
