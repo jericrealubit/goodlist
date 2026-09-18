@@ -27,9 +27,11 @@ import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import {
   buildNewRequestInput,
   buildNewTaskInput,
+  useCancelTaskMutation,
   useCompleteTaskMutation,
   useCreateRequestMutation,
   useCreateTaskMutation,
+  useDeleteTaskMutation,
   useReopenTaskMutation,
   useReorderTaskMutation,
 } from '@/hooks/use-task-mutations';
@@ -39,6 +41,7 @@ import { useVoiceInput } from '@/hooks/use-voice-input';
 import { getErrorMessage } from '@/lib/errors';
 import { taskKeys } from '@/lib/query-client';
 import { validateTaskTitle } from '@/lib/validation/task';
+import { matchTask } from '@/lib/voice/match-task';
 import { parseVoiceCommand } from '@/lib/voice/parse-command';
 import type { Task, TaskOrigin } from '@/lib/types';
 
@@ -68,6 +71,15 @@ function describeCommit(verb: string, title: string, dueAt: Date | null): string
   return `${verb}: ${title}${when}`;
 }
 
+/** The spoken verbs that act on a task that already exists. */
+type SpokenVerb = 'completeTask' | 'cancelRequest' | 'deleteTask';
+
+/** The two of those that never act on a voice match alone. */
+type DestructiveVerb = 'cancelRequest' | 'deleteTask';
+
+/** What the sheet is currently saying, and how loudly. */
+type VoiceNotice = { text: string; tone: 'danger' | 'textSecondary' };
+
 export default function TasksScreen() {
   const router = useRouter();
   const { topInset, bottomInset, pinnedBottomInset } = useTabScreenInsets();
@@ -87,6 +99,8 @@ export default function TasksScreen() {
   const completeMutation = useCompleteTaskMutation();
   const reopenMutation = useReopenTaskMutation();
   const reorderMutation = useReorderTaskMutation();
+  const cancelMutation = useCancelTaskMutation();
+  const deleteMutation = useDeleteTaskMutation();
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const [justCompleted, setJustCompleted] = useState<Task[]>([]);
@@ -102,9 +116,13 @@ export default function TasksScreen() {
   // session that ends having heard nothing therefore closes it on its own,
   // with no effect watching for the moment to do so.
   const [voiceDismissed, setVoiceDismissed] = useState(true);
-  // The one line the sheet shows once a spoken task has landed. It clears
-  // itself, and the sheet goes with it.
-  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+  // The one line the sheet shows once something has happened. A notice clears
+  // itself and takes the sheet with it; a problem stays until it is read.
+  const [voiceNotice, setVoiceNotice] = useState<VoiceNotice | null>(null);
+  // A verb that matched more than one task, and a destructive one waiting on a
+  // deliberate tap. Either one holds the sheet open.
+  const [voiceChoice, setVoiceChoice] = useState<{ verb: SpokenVerb; tasks: Task[] } | null>(null);
+  const [voicePending, setVoicePending] = useState<{ verb: DestructiveVerb; task: Task } | null>(null);
   const composeInputRef = useRef<TextInput>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -150,18 +168,29 @@ export default function TasksScreen() {
       noticeTimer.current = null;
     }
     setVoiceNotice(null);
+    setVoiceChoice(null);
+    setVoicePending(null);
     setVoiceDismissed(true);
   }
 
   /** Says what just landed, then gets out of the way on its own. */
-  function showVoiceNotice(message: string) {
+  function showVoiceNotice(text: string) {
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    setVoiceNotice(message);
+    setVoiceNotice({ text, tone: 'textSecondary' });
     noticeTimer.current = setTimeout(() => {
       noticeTimer.current = null;
       // Nothing left to show, so the sheet closes along with the notice.
       setVoiceNotice(null);
     }, VOICE_NOTICE_MS);
+  }
+
+  /** Something didn't work in a way worth reading. Stays until it's dismissed. */
+  function showVoiceProblem(text: string) {
+    if (noticeTimer.current) {
+      clearTimeout(noticeTimer.current);
+      noticeTimer.current = null;
+    }
+    setVoiceNotice({ text, tone: 'danger' });
   }
 
   /**
@@ -217,10 +246,99 @@ export default function TasksScreen() {
     showVoiceNotice(describeCommit(`Asked ${target.displayName}`, title, dueAt));
   }
 
-  // One final transcript, one thing done. Adding and asking commit straight
-  // away — typing a task is instant too, and both are undoable — while
-  // anything the grammar doesn't own yet goes to the compose bar rather than
-  // being guessed at.
+  /**
+   * Which tasks each verb is even allowed to touch. These are the rules the
+   * screen already enforces by hand — a checkbox only appears on a requested
+   * task you were the one asked to do, and the database only lets you delete
+   * or cancel rows you created. Applying them *before* matching means a spoken
+   * verb can never land on a task a tap couldn't reach.
+   */
+  function poolFor(verb: SpokenVerb): Task[] {
+    const open = openTasks ?? [];
+    if (verb === 'completeTask') {
+      return open.filter((t) => t.origin !== 'requested' || t.assignee_id === user?.id);
+    }
+    if (verb === 'cancelRequest') {
+      return open.filter((t) => t.origin === 'requested' && t.creator_id === user?.id);
+    }
+    return open.filter((t) => t.creator_id === user?.id);
+  }
+
+  /**
+   * Completing happens at once: it is exactly what a tap does, it animates the
+   * same way, and it is undoable. Cancelling and deleting never do — they stop
+   * and ask, because speech is the input most likely to have misheard which
+   * task was meant, and a wrong delete is the one mistake with no undo.
+   */
+  function runSpokenVerb(verb: SpokenVerb, task: Task) {
+    setVoiceChoice(null);
+    if (verb === 'completeTask') {
+      setVoicePending(null);
+      handleToggle(task);
+      showVoiceNotice(`Completed: ${task.title}`);
+      return;
+    }
+    setVoicePending({ verb, task });
+  }
+
+  /** Runs only after the confirmation above has been tapped. */
+  function confirmVoicePending() {
+    if (!voicePending) return;
+    const { verb, task } = voicePending;
+    setVoicePending(null);
+    if (verb === 'deleteTask') {
+      deleteMutation.mutate(task, { onError: (err) => failVoice(err, 'Could not delete this task.') });
+      showVoiceNotice(`Deleted: ${task.title}`);
+      return;
+    }
+    cancelMutation.mutate(task, { onError: (err) => failVoice(err, 'Could not cancel this request.') });
+    showVoiceNotice(`Cancelled: ${task.title}`);
+  }
+
+  function actOnSpokenTask(verb: SpokenVerb, titleHint: string) {
+    const { match, candidates } = matchTask(titleHint, poolFor(verb));
+    if (match) {
+      runSpokenVerb(verb, match);
+      return;
+    }
+    if (candidates.length) {
+      setVoiceChoice({ verb, tasks: candidates });
+      return;
+    }
+    // Nothing on the list was close. Saying so is better than acting on a
+    // guess, and better than quietly turning "finish the milk" into a new task.
+    showVoiceProblem(`Couldn’t find a task like “${titleHint}”.`);
+  }
+
+  function handleVoiceChoose(id: string) {
+    if (!voiceChoice) return;
+    const picked = voiceChoice.tasks.find((t) => t.id === id);
+    if (picked) runSpokenVerb(voiceChoice.verb, picked);
+  }
+
+  /** Reopens the last thing completed on this screen — what the checkbox undoes. */
+  function undoSpoken() {
+    const last = justCompleted[justCompleted.length - 1];
+    if (!last) {
+      showVoiceProblem('Nothing to undo yet.');
+      return;
+    }
+    setVoiceChoice(null);
+    setVoicePending(null);
+    handleToggle(last);
+    showVoiceNotice(`Back on the list: ${last.title}`);
+  }
+
+  function navigateSpoken(to: 'tasks' | 'history' | 'group' | 'settings') {
+    closeVoiceSheet();
+    // Already on the task list — "show my tasks" just means close this.
+    if (to === 'tasks') return;
+    router.push(to === 'history' ? '/history' : to === 'group' ? '/group' : '/settings');
+  }
+
+  // One final transcript, one thing done. Adding, asking and completing commit
+  // straight away — a tap does each of those instantly too, and all three are
+  // undoable — while destroying anything stops to ask first.
   function handleVoiceTranscript(heard: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const command = parseVoiceCommand(heard, {
@@ -234,20 +352,27 @@ export default function TasksScreen() {
       case 'requestTask':
         commitSpokenRequest(command.assignee, command.title, command.dueAt);
         return;
+      case 'completeTask':
+      case 'cancelRequest':
+      case 'deleteTask':
+        actOnSpokenTask(command.kind, command.titleHint);
+        return;
+      case 'undo':
+        undoSpoken();
+        return;
+      case 'navigate':
+        navigateSpoken(command.to);
+        return;
       case 'dictation':
         fallBackToCompose(command.text);
-        return;
-      default:
-        // complete, cancel, delete, undo and navigate belong to Stage 2 (Tasks
-        // 12–13). Until those land, what was said stays visible and sendable
-        // instead of being dropped.
-        fallBackToCompose(heard);
     }
   }
 
   const voice = useVoiceInput(handleVoiceTranscript);
   const listening = voice.status === 'starting' || voice.status === 'listening';
-  const voiceSheetVisible = !voiceDismissed && (listening || !!voice.error || !!voiceNotice);
+  const voiceSheetVisible =
+    !voiceDismissed &&
+    (listening || !!voice.error || !!voiceNotice || !!voiceChoice || !!voicePending);
 
   function handleVoicePress() {
     if (listening) {
@@ -262,6 +387,8 @@ export default function TasksScreen() {
     }
     setComposeError(null);
     setVoiceNotice(null);
+    setVoiceChoice(null);
+    setVoicePending(null);
     setVoiceDismissed(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     voice.start({ contextualStrings });
@@ -575,8 +702,19 @@ export default function TasksScreen() {
           listening={listening}
           transcript={voice.transcript}
           level={voice.level}
-          message={voiceNotice ?? voice.error}
-          tone={voiceNotice ? 'textSecondary' : 'danger'}
+          message={voiceNotice?.text ?? voice.error}
+          tone={voiceNotice?.tone ?? 'danger'}
+          choices={voiceChoice?.tasks.map((t) => ({ id: t.id, label: t.title }))}
+          onChoose={handleVoiceChoose}
+          confirm={
+            voicePending
+              ? {
+                  prompt: `${voicePending.verb === 'deleteTask' ? 'Delete' : 'Cancel'} “${voicePending.task.title}”?`,
+                  actionLabel: voicePending.verb === 'deleteTask' ? 'Delete' : 'Cancel task',
+                  onConfirm: confirmVoicePending,
+                }
+              : undefined
+          }
           onCancel={handleVoiceCancel}
         />
       ) : null}

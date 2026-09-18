@@ -91,9 +91,21 @@ Ships on its own: a mic that fills the compose bar with what you said. No gramma
       `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription`. (A scratch
       `expo prebuild` works too, but this needs no checkout and no network.)
 - [ ] **Step 4:** Build a new dev client (`eas build --profile development --platform android`).
-      Every later task that touches the microphone needs it — the current dev build has no mic
-      permission. **Still open:** needs an authenticated EAS build, so it can't be done from a
-      sandboxed session. Nothing on a device has been exercised until this lands.
+      **Still open** — but no longer the thing blocking device testing. A *preview* APK now exists
+      with the microphone permission in it, built from `claude/voice-commands-stage-1`:
+
+      ```
+      eas build --platform android --profile preview
+      build 53e25dee-616f-4d78-b1a0-75ab110db8de · v1.0.1 · finished 18 Sep 2026
+      ```
+
+      That artifact is enough to run the Task 17 matrix against shipped behaviour, and
+      `npx expo config --type prebuild` confirms it carries `android.permission.RECORD_AUDIO` and
+      the `com.google.android.googlequicksearchbox` queries entry. What it is *not* is a dev
+      client: it has no Metro connection, so iterating on voice code still wants the
+      `development` profile build this step asks for. Note that `autoIncrement` is set only on the
+      `production` profile, so this preview reused versionCode 12 — harmless, since a preview APK
+      is never uploaded to Play, and the next production build still increments to 13.
 
 **Verify:** `npx expo config --type prebuild` lists the plugin; `npx tsc --noEmit` clean.
 
@@ -358,29 +370,53 @@ export function matchTask<T extends { id: string; title: string }>(
 ): { match: T | null; candidates: T[] };
 ```
 
-- [ ] **Step 1:** Score on normalized token overlap, ignoring stop words ("the", "a", "my", "one").
-- [ ] **Step 2:** Return a `match` only when the best score clears a floor **and** beats the runner-up
-      by a margin; otherwise return the top three as `candidates`.
-- [ ] **Step 3:** Tests: exact title, partial ("milk" → "Buy milk at the shop"), two similar titles
-      producing candidates rather than a guess, and no plausible match returning both empty.
+One shipped detail worth naming: the score is coverage of the **hint**, not of the title — of the
+words that carry identity, how many turn up in the title. Scoring the title instead would punish
+"Buy milk at the shop" for being longer than "milk", which is backwards: a spoken fragment is
+almost always shorter than the task it names. The thresholds are a 0.5 floor and a 0.2 margin.
+
+- [x] **Step 1:** Score on normalized token overlap, ignoring stop words. The list is longer than
+      the sketch's four — it also drops "task", "thing", "that", and the prepositions a verb leaves
+      behind ("tick **off** the laundry"), which otherwise count as matched words.
+- [x] **Step 2:** Return a `match` only when the best score clears a floor **and** beats the
+      runner-up by a margin; otherwise return the top three as `candidates`. A task scoring zero is
+      never a candidate, so "no plausible match" stays empty rather than offering three bad guesses.
+- [x] **Step 3:** Tests: exact title, partial, two similar titles producing candidates rather than a
+      guess, no plausible match returning both empty, plus filler-only hints, accents, and the
+      three-candidate cap. Ten tests; the suite is at 43.
 
 ### Task 12: Complete, cancel, delete, undo
 
 **Files:** modify `src/app/(app)/(tabs)/index.tsx`
 
-- [ ] **Step 1:** `completeTask` → `completeMutation`, reusing the existing `justCompleted` optimistic
-      path so the row behaves exactly as a tap does.
-- [ ] **Step 2:** `undo` → reopen the most recent `justCompleted` entry via `reopenMutation`.
-- [ ] **Step 3:** `deleteTask` and `cancelRequest` always confirm — show the matched title and
-      require a tap. Never delete on a voice match alone.
-- [ ] **Step 4:** When `matchTask` returns candidates, render them in the sheet as a pick-one list.
+The decision the sketch didn't cover: **each verb matches against its own pool, filtered before
+`matchTask` ever sees it.** Completing only considers tasks this person could tick off (a requested
+task only if they are the assignee); cancelling only requests they created; deleting only rows they
+created, which is all the database would allow anyway. Filtering first rather than checking after
+means a spoken verb can never land on a task a tap couldn't reach — and an ineligible task doesn't
+sit in the candidate list as a choice that would fail if picked.
+
+- [x] **Step 1:** `completeTask` → reuses `handleToggle`, which is the checkbox's own handler, so the
+      optimistic `justCompleted` path, the haptic and the row animation are identical to a tap by
+      construction rather than by imitation.
+- [x] **Step 2:** `undo` → reopens the most recent `justCompleted` entry through that same handler.
+      `justCompleted` is cleared on focus, so undo reaches only what was completed on this screen,
+      this visit — "Nothing to undo yet." when it is empty.
+- [x] **Step 3:** `deleteTask` and `cancelRequest` always confirm, showing the matched title. The
+      dismiss button reads "Keep it" in front of a confirmation rather than "Cancel", which is
+      ambiguous when the verb being confirmed is itself *cancel*.
+- [x] **Step 4:** When `matchTask` returns candidates, the sheet renders them as a pick-one list.
+      Picking a task for a destructive verb goes to the confirmation, not straight to the action.
 
 ### Task 13: Navigation commands
 
 **Files:** modify `src/app/(app)/(tabs)/index.tsx`
 
-- [ ] **Step 1:** `navigate` → `router.push` to the typed routes for History, Group and Settings
-      (`experiments.typedRoutes` is on, so these are checked at compile time).
+- [x] **Step 1:** `navigate` → `router.push` to the typed routes for History, Group and Settings.
+      `(app)` and `(tabs)` are both route groups, so the paths are the bare `/history`, `/group` and
+      `/settings`; `experiments.typedRoutes` checks them at compile time and `npx tsc --noEmit`
+      passes. The fourth target, `tasks`, pushes nothing — it is the screen the sheet is already
+      open on, so "show my tasks" just closes it.
 
 ---
 
