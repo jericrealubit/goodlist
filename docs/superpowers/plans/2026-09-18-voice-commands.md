@@ -223,18 +223,32 @@ modify `package.json`
 
 **Produces:** `parseWhen(text: string, now: Date): { dueAt: Date | null; rest: string }`
 
-- [ ] **Step 1:** Add `"@types/node": "^22"` to `devDependencies` (needed for `node:test` types
-      under `tsc --noEmit`; the repo's only timer typing is `ReturnType<typeof setTimeout>` in
-      `src/components/app-tabs.tsx`, which is unaffected) and a script:
-      `"test": "node --test \"src/**/*.test.ts\""`.
-- [ ] **Step 2:** Implement the phrase set from the spec: `today`, `tonight`, `this evening`,
+Decisions the tests pin down, each one arbitrary until it is written down:
+a weekday is **never today** ("on Friday" said on a Friday means the next one), **"next Friday"
+means the same day as "Friday"** (a task that arrives early is recoverable; one buried a week
+further away is not), a **bare hour is the afternoon** ("at 5" is 17:00, 7–11 stay morning) and
+rolls to tomorrow once it has passed, and a relative offset keeps its own time **to the minute**.
+
+- [x] **Step 1:** Add `"@types/node": "^22"` to `devDependencies` and a `test` script. Three
+      settings turned out to be needed, none of them obvious:
+      - `tsconfig.json` needs `"types": ["node"]` — this project gets no automatic `@types`
+        inclusion, so `node:test` is otherwise unresolvable. It only adds Node's globals; the
+        repo's one timer typing (`ReturnType<typeof setTimeout>` in `src/components/app-tabs.tsx`)
+        is unaffected, and `npx tsc --noEmit` stays clean.
+      - `tsconfig.json` needs `"allowImportingTsExtensions": true`, because Node's ESM resolver
+        will not guess an extension. For the same reason, imports **inside `src/lib/voice/`** are
+        written with their `.ts` extension; app code importing the folder stays extensionless,
+        since Metro resolves that itself.
+      - The script matches the repo's existing convention for Node scripts:
+        `node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test "src/**/*.test.ts"`.
+- [x] **Step 2:** Implement the phrase set from the spec: `today`, `tonight`, `this evening`,
       `tomorrow` (+ morning/afternoon/evening), weekday names with and without `next`,
       `this weekend`, `next week`, `in N minutes|hours|days|weeks`, `at 5`, `at 5:30 pm`, `at noon`,
       `at midnight`, `on <month> <day>`.
-- [ ] **Step 3:** Enforce the two rules: the phrase matches only at the **end** of the string
+- [x] **Step 3:** Enforce the two rules: the phrase matches only at the **end** of the string
       (optionally introduced by `by`, `due` or `on`), and a date with no spoken time resolves to
       **09:00 local**.
-- [ ] **Step 4:** Tests, with a frozen `now`. Cover each phrase, the anchoring rule ("call mum about
+- [x] **Step 4:** Tests, with a frozen `now`. Cover each phrase, the anchoring rule ("call mum about
       Friday's party" keeps its text and returns `dueAt: null`), `rest` being trimmed, and a
       weekday that is today resolving to next week rather than to the past.
 
@@ -262,14 +276,20 @@ export function parseVoiceCommand(
 ): VoiceCommand;
 ```
 
-- [ ] **Step 1:** Normalize first: lower-case, strip trailing punctuation, collapse whitespace,
+Two shipped details differ from the sketch above: the request intent carries `assignee` (the
+member's real display name, already resolved) rather than a raw `assigneeHint`, so the screen has
+nothing left to guess; and an **ambiguous** first name — two Marias in one group — resolves to
+nobody and falls back to `dictation`, on the same reasoning as a destructive verb asking before
+acting.
+
+- [x] **Step 1:** Normalize first: lower-case, strip trailing punctuation, collapse whitespace,
       fold accents for name matching only (the title keeps its original casing from the transcript).
-- [ ] **Step 2:** Match the verb table in the spec, longest pattern first, so "mark X done" is not
+- [x] **Step 2:** Match the verb table in the spec, longest pattern first, so "mark X done" is not
       eaten by "mark".
-- [ ] **Step 3:** Run `parseWhen` on the remainder for `addTask` and `requestTask` only. A due date
+- [x] **Step 3:** Run `parseWhen` on the remainder for `addTask` and `requestTask` only. A due date
       on "delete the milk one" is meaningless and must not be stripped from the match hint.
-- [ ] **Step 4:** Anything unmatched returns `{ kind: 'dictation', text }` — never an error.
-- [ ] **Step 5:** Tests: every row of the verb table, "ask Maria to pick up the parcel tomorrow"
+- [x] **Step 4:** Anything unmatched returns `{ kind: 'dictation', text }` — never an error.
+- [x] **Step 5:** Tests: every row of the verb table, "ask Maria to pick up the parcel tomorrow"
       producing the right three fields, a member name that isn't in `memberNames` falling back to
       `dictation`, and casing/punctuation variants.
 
