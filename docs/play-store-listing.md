@@ -106,6 +106,7 @@ all ages (e.g. "Everyone" / PEGI 3 equivalent).
 | Is data shared with third parties? | No — Supabase and RevenueCat are service providers processing data on our behalf, which Play does not count as sharing |
 | Is data sold? | No |
 | Is data used for advertising or marketing? | No |
+| Does the app collect audio (voice or sound recordings)? | **No** — the microphone is used, but the audio never reaches Goodlist. See the voice-input note below |
 | Purpose of location collection | Analytics only — an aggregate count of users per country. Never used for advertising, personalisation, or locating an individual |
 | Is collection required or optional? | Email required for account creation; display name optional; task content is whatever the user chooses to enter; **country/time zone is optional** and can be switched off in Settings → Privacy |
 
@@ -122,6 +123,36 @@ line. If a reviewer questions it, the accurate description is: *device locale se
 infer country for aggregate analytics; no location permission is requested.*
 
 Answer **No** to "Does your app use precise location?" — it does not, and cannot.
+
+### Note on voice input and the "Audio" declaration
+
+The app now requests `android.permission.RECORD_AUDIO`, so a task can be spoken instead of typed.
+That permission is new, and it is the one thing on this page a reviewer is most likely to ask about.
+
+**Do not declare Audio → "Voice or sound recordings."** Data Safety covers what *this app* collects,
+and Goodlist never receives the audio. `expo-speech-recognition` hands the microphone to the
+platform's own recognizer — Google's `SpeechRecognizer` on Android, the browser's `SpeechRecognition`
+on the web — which returns text. Nothing is written to disk and nothing reaches Goodlist's backend.
+The line that makes that true is that `recordingOptions.persist` is never set anywhere in the
+codebase. Verify it before answering, rather than trusting this paragraph:
+
+```bash
+grep -rn "persist" src/lib/voice src/hooks/use-voice-input.ts   # expect no matches
+```
+
+The transcript that comes back becomes a task title, and is already declared under **User-generated
+content** — no new category is needed for it. If a reviewer does ask, the accurate description is:
+*the microphone is live only while the user holds the listening panel open; audio is transcribed by
+the device's own speech service and is never recorded, stored, or transmitted by the app.*
+
+The permission reaches the manifest through the `expo-speech-recognition` config plugin in
+`app.json`, which also adds the `<queries>` entry for `com.google.android.googlequicksearchbox` that
+Android 11+ package visibility requires. Both show up in `npx expo config --type prebuild`.
+
+The matching disclosure in the privacy policy is the **Voice input** paragraph under *What we
+collect*, plus the speech-service entry under *Sharing & service providers* — both in
+`src/content/legal.ts`. Google fetches that policy and cross-checks it against this form, so the two
+must ship together.
 
 ### Note on the "Purchase history" declaration
 
