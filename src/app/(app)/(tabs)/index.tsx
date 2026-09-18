@@ -34,6 +34,7 @@ import {
 } from '@/hooks/use-task-mutations';
 import { useOpenTasksQuery } from '@/hooks/use-tasks-query';
 import { useTokens } from '@/hooks/use-tokens';
+import { useVoiceInput } from '@/hooks/use-voice-input';
 import { getErrorMessage } from '@/lib/errors';
 import { taskKeys } from '@/lib/query-client';
 import { validateTaskTitle } from '@/lib/validation/task';
@@ -43,6 +44,15 @@ const TAB_OPTIONS: { id: TaskOrigin; label: string }[] = [
   { id: 'personal', label: 'Personal' },
   { id: 'requested', label: 'Requested' },
 ];
+
+/**
+ * Dictation adds to what's already in the field rather than replacing it, so
+ * someone can type half a task and say the rest — and so pressing the mic by
+ * accident never destroys typing.
+ */
+function mergeDictation(typed: string, heard: string): string {
+  return [typed.trim(), heard.trim()].filter(Boolean).join(' ');
+}
 
 export default function TasksScreen() {
   const router = useRouter();
@@ -72,9 +82,45 @@ export default function TasksScreen() {
   const [composeText, setComposeText] = useState('');
   const [composeError, setComposeError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // What was already typed when the microphone opened — dictation is appended
+  // to it, and while listening the field shows the two joined together.
+  const [dictationBase, setDictationBase] = useState('');
+  const [voiceRationaleShown, setVoiceRationaleShown] = useState(false);
   const composeInputRef = useRef<TextInput>(null);
 
+  // Stage 0 is dictation only: what was heard lands in the compose field and
+  // the user sends it. Speech never commits a task on its own.
+  function handleVoiceTranscript(heard: string) {
+    setComposeText(mergeDictation(dictationBase, heard));
+    setComposeError(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  const voice = useVoiceInput(handleVoiceTranscript);
+  const listening = voice.status === 'starting' || voice.status === 'listening';
+  const composeValue = listening ? mergeDictation(dictationBase, voice.transcript) : composeText;
+
+  function handleVoicePress() {
+    if (listening) {
+      voice.stop();
+      return;
+    }
+    // Say why the microphone is wanted before the system asks for it, not after.
+    if (voice.needsRationale && !voiceRationaleShown) {
+      setVoiceRationaleShown(true);
+      setComposeError('Goodlist needs the microphone to hear a task. Tap the mic again to allow it.');
+      return;
+    }
+    setComposeError(null);
+    setDictationBase(composeText);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    voice.start();
+  }
+
   const error = isError && !openTasks ? getErrorMessage(queryError, 'Could not load your tasks.') : null;
+  // Typing and speaking report into the same slot — there is only ever one
+  // thing wrong with the compose bar at a time.
+  const shownError = composeError ?? voice.error;
   const tab = groups?.length ? activeTab : 'personal';
 
   // Pooled across every group the user belongs to (up to 2) rather than
@@ -158,6 +204,7 @@ export default function TasksScreen() {
       return;
     }
     setComposeError(null);
+    voice.clearError();
     const title = composeText;
     setComposeText('');
     composeInputRef.current?.focus();
@@ -357,17 +404,19 @@ export default function TasksScreen() {
               onSelect={setAssigneeKey}
             />
           ) : null}
-          {composeError ? (
+          {shownError ? (
             <ThemedText type="small" themeColor="danger">
-              {composeError}
+              {shownError}
             </ThemedText>
           ) : null}
           <ComposeBar
             ref={composeInputRef}
-            value={composeText}
+            value={composeValue}
             onChangeText={setComposeText}
             onSubmit={handleSubmitCompose}
             placeholder={tab === 'personal' ? 'I want to...' : 'Ask for...'}
+            onVoicePress={voice.status === 'unavailable' ? undefined : handleVoicePress}
+            voice={{ listening, starting: voice.status === 'starting', level: voice.level }}
           />
         </ThemedView>
       </KeyboardAvoidingView>

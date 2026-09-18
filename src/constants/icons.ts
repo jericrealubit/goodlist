@@ -14,6 +14,7 @@ export const ActionIcons = {
   delete: 'trash-outline',
   cancel: 'close-outline',
   confirm: 'checkmark-outline',
+  send: 'arrow-up',
   complete: 'checkmark-circle-outline',
   reopen: 'arrow-undo-outline',
   undo: 'arrow-undo-outline',
@@ -35,6 +36,8 @@ export const ActionIcons = {
   dueDate: 'calendar-outline',
   guide: 'book-outline',
   clear: 'close-circle-outline',
+  voice: 'mic-outline',
+  voiceListening: 'stop-circle-outline',
   openLink: 'open-outline',
   premium: 'diamond-outline',
 } as const satisfies Record<string, IconName>;

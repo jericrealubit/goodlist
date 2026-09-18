@@ -45,6 +45,10 @@ npm run lint
 node --test "src/lib/voice/**/*.test.ts"   # once Task 7 lands
 ```
 
+`npm run lint` reports two errors that already exist on `main` and are not this work's:
+`src/contexts/theme-context.tsx:36` (ref written during render) and
+`src/hooks/use-premium-query.ts:19` (`Date.now()` during render). Treat any *third* error as yours.
+
 Plus the manual matrix in Task 17 for anything that touches the microphone. There is no test runner
 configured for React components in this repo, and this plan does not add one.
 
@@ -58,9 +62,9 @@ Ships on its own: a mic that fills the compose bar with what you said. No gramma
 
 **Files:** `package.json`, `app.json`
 
-- [ ] **Step 1:** `npx expo install expo-speech-recognition` — expect `~57.1.0`. Use `expo install`,
+- [x] **Step 1:** `npx expo install expo-speech-recognition` — expect `~57.1.0`. Use `expo install`,
       not `npm install`, so the SDK-matched version is picked.
-- [ ] **Step 2:** Add the config plugin to `app.json`'s `plugins` array, after
+- [x] **Step 2:** Add the config plugin to `app.json`'s `plugins` array, after
       `expo-splash-screen` and before `@react-native-community/datetimepicker`:
 
 ```json
@@ -74,14 +78,15 @@ Ships on its own: a mic that fills the compose bar with what you said. No gramma
 ]
 ```
 
-- [ ] **Step 3:** Confirm what it generates, without committing native dirs:
-      `npx expo prebuild --platform android --no-install --clean` into a scratch checkout, then
-      check `android/app/src/main/AndroidManifest.xml` for `RECORD_AUDIO` and for the `<queries>`
-      block naming `com.google.android.googlequicksearchbox` and
-      `android.speech.RecognitionService`. Delete the scratch output; this repo uses CNG.
+- [x] **Step 3:** Confirm what it generates, without writing native dirs: `npx expo config --type
+      prebuild` runs the plugins and prints the result. Expect `android.permission.RECORD_AUDIO`,
+      `com.google.android.googlequicksearchbox` in the manifest queries, and both
+      `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription`. (A scratch
+      `expo prebuild` works too, but this needs no checkout and no network.)
 - [ ] **Step 4:** Build a new dev client (`eas build --profile development --platform android`).
       Every later task that touches the microphone needs it — the current dev build has no mic
-      permission.
+      permission. **Still open:** needs an authenticated EAS build, so it can't be done from a
+      sandboxed session. Nothing on a device has been exercised until this lands.
 
 **Verify:** `npx expo config --type prebuild` lists the plugin; `npx tsc --noEmit` clean.
 
@@ -102,12 +107,12 @@ export type VoiceAvailability = {
 };
 ```
 
-- [ ] **Step 1:** Read `ExpoSpeechRecognitionModule.isRecognitionAvailable()` once on mount and
+- [x] **Step 1:** Read `ExpoSpeechRecognitionModule.isRecognitionAvailable()` once on mount and
       memoize it; it is synchronous and does not change within a session.
-- [ ] **Step 2:** Read `getPermissionsAsync()` on mount; call
+- [x] **Step 2:** Read `getPermissionsAsync()` on mount; call
       `requestMicrophonePermissionsAsync()` in `request()`. Android has no separate speech
       permission, so do not use the combined request there.
-- [ ] **Step 3:** Return `supported: false` rather than throwing on any error, so a broken
+- [x] **Step 3:** Return `supported: false` rather than throwing on any error, so a broken
       recognizer degrades into "no mic button" instead of a crash.
 
 ### Task 3: The session hook
@@ -135,9 +140,9 @@ export type VoiceSession = {
 export function useVoiceInput(onFinal: (transcript: string) => void): VoiceSession;
 ```
 
-- [ ] **Step 1:** Subscribe with `useSpeechRecognitionEvent` to `start`, `result`, `error`, `end`
+- [x] **Step 1:** Subscribe with `useSpeechRecognitionEvent` to `start`, `result`, `error`, `end`
       and `volumechange`. Keep interim text in state; call `onFinal` only when `isFinal` is true.
-- [ ] **Step 2:** Start with:
+- [x] **Step 2:** Start with:
 
 ```ts
 ExpoSpeechRecognitionModule.start({
@@ -152,12 +157,12 @@ ExpoSpeechRecognitionModule.start({
 
   `continuous` on Android 13+ is what suppresses the OS start/stop beep; because of it, call
   `abort()` as soon as a final result arrives so behaviour still reads as single-shot.
-- [ ] **Step 3:** Map every error code to a sentence — `not-allowed` → microphone permission and
+- [x] **Step 3:** Map every error code to a sentence — `not-allowed` → microphone permission and
       where to change it; `network` → speech needs a connection; `no-speech`/`speech-timeout` →
       didn't catch that; `service-not-allowed`/`language-not-supported` → unavailable here;
       `busy` → already listening; `audio-capture`/`client`/`unknown` → generic retry. Never surface
       the raw code.
-- [ ] **Step 4:** Safety rails: a 15-second hard stop, `abort()` in the effect cleanup, and
+- [x] **Step 4:** Safety rails: a 15-second hard stop, `abort()` in the effect cleanup, and
       `abort()` on `AppState` leaving `active`. A session must not outlive the screen.
 
 ### Task 4: Extract the round action button, add the mic
@@ -165,16 +170,16 @@ ExpoSpeechRecognitionModule.start({
 **Files:** create `src/components/round-action-button.tsx`, create `src/components/mic-button.tsx`,
 modify `src/components/send-button.tsx`, modify `src/constants/icons.ts`
 
-- [ ] **Step 1:** Move the nine-theme shape logic out of `send-button.tsx` into
+- [x] **Step 1:** Move the nine-theme shape logic out of `send-button.tsx` into
       `RoundActionButton`, which takes `{ glyph, onPress, disabled, loading, accessibilityLabel,
       variant }` and keeps every existing branch: the `colorful3d`/`brutalist` offset layer, the
       `lavenderGlass` `GlassView` with its fallback fill, `darkNeon`'s ring, `paperCollage`'s
       rotation, `darkLuxury`'s inverted fill, `natureZen`'s organic radii. The named constants stay
       with it.
-- [ ] **Step 2:** Rewrite `SendButton` as a thin wrapper. Its rendered output must not change.
-- [ ] **Step 3:** Add to `ActionIcons`: `voice: 'mic-outline'`, `voiceListening: 'stop-circle-outline'`,
+- [x] **Step 2:** Rewrite `SendButton` as a thin wrapper. Its rendered output must not change.
+- [x] **Step 3:** Add to `ActionIcons`: `voice: 'mic-outline'`, `voiceListening: 'stop-circle-outline'`,
       `voiceOff: 'mic-off-outline'`.
-- [ ] **Step 4:** `MicButton` wraps `RoundActionButton` with a listening state: the glyph swaps to
+- [x] **Step 4:** `MicButton` wraps `RoundActionButton` with a listening state: the glyph swaps to
       `voiceListening`, the label swaps from "Start voice input" to "Stop listening", and the level
       from Task 3 drives a Reanimated scale on a ring behind the button (`react-native-reanimated`
       is already a dependency).
@@ -185,7 +190,7 @@ modify `src/components/send-button.tsx`, modify `src/constants/icons.ts`
 
 **Files:** create `src/lib/voice/language.ts`
 
-- [ ] **Step 1:** `getRecognitionLanguage(): string` — read `Localization.getLocales()[0]`, prefer
+- [x] **Step 1:** `getRecognitionLanguage(): string` — read `Localization.getLocales()[0]`, prefer
       `languageTag`, fall back to `'en-US'` when it is missing or empty. `expo-localization` is
       already a dependency and already read in `src/lib/device-locale.ts`; follow that file's shape.
 
@@ -193,15 +198,15 @@ modify `src/components/send-button.tsx`, modify `src/constants/icons.ts`
 
 **Files:** modify `src/components/compose-bar.tsx`, modify `src/app/(app)/(tabs)/index.tsx`
 
-- [ ] **Step 1:** `ComposeBar` takes two new optional props: `onVoicePress` and `voiceState`. When
+- [x] **Step 1:** `ComposeBar` takes two new optional props: `onVoicePress` and `voiceState`. When
       `onVoicePress` is absent — which is what an unsupported platform produces — the bar renders
       exactly as it does today.
-- [ ] **Step 2:** On the Tasks screen, wire `useVoiceAvailability` + `useVoiceInput` so interim
+- [x] **Step 2:** On the Tasks screen, wire `useVoiceAvailability` + `useVoiceInput` so interim
       transcripts flow into `composeText` and the final transcript lands there editable. Do not
       submit automatically in this stage.
-- [ ] **Step 3:** Before the first `request()`, show a one-line rationale (reuse the inline
+- [x] **Step 3:** Before the first `request()`, show a one-line rationale (reuse the inline
       `composeError` slot rather than an `Alert`, matching how the screen already reports problems).
-- [ ] **Step 4:** Light haptic on listening start and on final result, matching
+- [x] **Step 4:** Light haptic on listening start and on final result, matching
       `Haptics.ImpactFeedbackStyle.Light` used elsewhere on this screen.
 
 **Verify:** on an Android 13+ device, speak "buy milk", see it appear in the field, tap send, see the
