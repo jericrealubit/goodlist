@@ -87,6 +87,38 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
+## Release notes — the voice release
+
+Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
+set these, so they are typed into the Console by hand for each release.
+
+Play caps this field at **500 characters per language**. The note below is inside that; check it
+again if you edit it.
+
+The two things it has to do are tell testers what to try and pre-empt the microphone prompt. A new
+permission appearing with no explanation is the fastest way to lose a tester, and a tester who
+uninstalls restarts their own 14-day clock.
+
+```
+What's new: you can talk to Goodlist.
+
+Tap the microphone beside the send button and say things like:
+• "Buy milk tomorrow"
+• "Ask Sam to take the bins out"
+• "Finish the laundry"
+• "Undo"
+• "Open history"
+
+It shows what it heard before saving, and always asks before deleting anything.
+
+Your phone will ask for microphone access the first time — that's expected. Nothing is recorded: your phone turns speech into text, and Goodlist only ever receives the text.
+```
+
+Two things deliberately left out. There is no mention of the commands that are *not* wired up,
+because every verb in the guide now works — that was true of an earlier draft and is not any more.
+And there is no apology for it being rough: testers who are told a feature is unfinished report
+less, not more.
+
 ## Content rating questionnaire (IARC)
 
 Goodlist has no user-generated media beyond plain text task titles/notes, no
