@@ -13,7 +13,7 @@
 // built-in type stripping.
 
 export const CONTACT_EMAIL = 'jericrealubit@gmail.com';
-export const EFFECTIVE_DATE = 'September 12, 2026';
+export const EFFECTIVE_DATE = 'September 18, 2026';
 
 /** An inline run of text: plain, bold, or the contact email as a mailto link. */
 export type Span = string | { bold: string } | { email: true };
@@ -79,6 +79,15 @@ export const privacyPolicy: LegalDoc = {
         {
           kind: 'para',
           spans: [
+            { bold: 'Voice input.' },
+            ' If you press the microphone button to speak a task, the microphone is live only while the listening panel is open — never in the background, and never before you press it. What you say is turned into text by your own device’s speech service (Google’s on Android and in Chrome, your browser’s built-in engine elsewhere), not by us. ',
+            { bold: 'Goodlist never records, stores, or receives the audio' },
+            ' — only the text that comes back, which becomes a task exactly as if you had typed it. On Android and in Chrome that transcription is done by Google and the audio may be sent to Google’s servers to do it, under Google’s own privacy policy.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
             { bold: 'Activity timestamp.' },
             ' While the app is open, it records a single “last seen” time on your profile, roughly once a minute. It is one timestamp, overwritten each time — not a history of when or how you use the app — and it exists only so the app can show how many people are using Goodlist right now. Other users see that count, never your timestamp, your name, or anything you do.',
           ],
@@ -111,7 +120,7 @@ export const privacyPolicy: LegalDoc = {
         {
           kind: 'lead',
           spans: [
-            'We don’t collect your precise location, contacts, or advertising identifiers, and we don’t track you across other apps or websites. There’s nothing being collected in the background beyond what’s listed above.',
+            'We don’t collect your precise location, contacts, or advertising identifiers, and we don’t track you across other apps or websites. There’s nothing being collected in the background beyond what’s listed above — the microphone included. Goodlist has no wake word and never listens until you press the microphone button.',
           ],
         },
       ],
@@ -171,6 +180,10 @@ export const privacyPolicy: LegalDoc = {
             [
               { bold: 'Google Play and Stripe, Inc.' },
               ' — process payments if you subscribe (Google Play on Android, Stripe on the web). Each handles your payment details under its own privacy policy.',
+            ],
+            [
+              { bold: 'Your device or browser’s speech service' },
+              ' — if you use voice input, it turns what you say into text and hands the text back to the app. On Android and in Chrome this is Google’s speech service, which may process the audio on Google’s servers under Google’s own privacy policy; other browsers use their own engine. It receives the audio; Goodlist only ever receives the text.',
             ],
           ],
         },
@@ -304,7 +317,7 @@ export const termsOfService: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
+            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, adding and managing tasks by voice, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
           ],
         },
       ],

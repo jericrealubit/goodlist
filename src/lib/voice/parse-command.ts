@@ -12,10 +12,10 @@ import type { VoiceCommand, VoiceContext, NavigationTarget } from './types.ts';
  * to look at. It is a pure function of the transcript and a little context, so
  * it can be tested exhaustively without a microphone.
  *
- * Only the two intents that create a task read a due date off the end. "delete
- * the milk one tomorrow" is not a task due tomorrow — it is someone describing
- * which task they mean, and stripping words from that hint would make it
- * harder to match, not easier.
+ * Intents that create a task read a due date off the end; intents that act on
+ * one never do. "delete the milk one tomorrow" is not a task due tomorrow — it
+ * is someone describing which task they mean, and stripping words from that
+ * hint would make it harder to match, not easier.
  */
 
 /** Strips the punctuation a recognizer adds, plus the politeness people speak. */
@@ -152,6 +152,17 @@ export function parseVoiceCommand(transcript: string, ctx: VoiceContext): VoiceC
     const { title, dueAt } = withWhen(added[1], ctx.now);
     return { kind: 'addTask', title, dueAt };
   }
+
+  // No verb matched. Usually that is a task title exactly as spoken — but a
+  // sentence that *ends by naming a time* is someone saying when, and nobody
+  // means "buy milk tomorrow" to be a task called "buy milk tomorrow". People
+  // drop the verb far more often than they drop the date.
+  //
+  // This leans entirely on parseWhen being anchored and refusing to leave a
+  // stump: a sentence that merely mentions a day — "the meeting is on Friday",
+  // "call mum about Friday's party" — finds no date here and stays dictation.
+  const { dueAt, rest } = parseWhen(text, ctx.now);
+  if (dueAt && rest) return { kind: 'addTask', title: rest, dueAt };
 
   return { kind: 'dictation', text };
 }

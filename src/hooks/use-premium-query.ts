@@ -16,6 +16,16 @@ export type PremiumStatus = {
   isPaid: boolean;
 };
 
+// Postgres timestamps can be 'infinity' / '-infinity' (revenuecat-sync stores
+// a non-expiring grant as premium_until = 'infinity'), which Date.parse reads
+// as NaN. Map them to ±Infinity so comparisons agree with the database's.
+function parseTimestamp(value: string | null | undefined): number {
+  if (!value) return 0;
+  if (value === 'infinity') return Infinity;
+  if (value === '-infinity') return -Infinity;
+  return Date.parse(value);
+}
+
 export function usePremiumStatus() {
   const query = useQuery({ queryKey: premiumKeys.mine, queryFn: getMyEntitlement });
   const entitlement = query.data;
@@ -25,16 +35,17 @@ export function usePremiumStatus() {
   // each moment the status would change.
   const [clock, setClock] = useState(() => Date.now());
   const now = Math.max(clock, query.dataUpdatedAt);
-  const trialEnds = entitlement?.trial_ends_at ? Date.parse(entitlement.trial_ends_at) : 0;
-  const paidUntil = entitlement?.premium_until ? Date.parse(entitlement.premium_until) : 0;
+  const trialEnds = parseTimestamp(entitlement?.trial_ends_at);
+  const paidUntil = parseTimestamp(entitlement?.premium_until);
   const inTrial = trialEnds > now;
   const isPaid = paidUntil > now;
   const trialDaysLeft = inTrial ? Math.ceil((trialEnds - now) / DAY_MS) : 0;
 
   // The trial's day count ticking down (its last tick is the trial ending),
-  // or the paid period lapsing — whichever comes first.
+  // or the paid period lapsing — whichever comes first. An endless trial never
+  // ticks (and Infinity - Infinity would make the timer delay NaN).
   const nextChange = Math.min(
-    inTrial ? trialEnds - (trialDaysLeft - 1) * DAY_MS : Infinity,
+    inTrial && trialEnds !== Infinity ? trialEnds - (trialDaysLeft - 1) * DAY_MS : Infinity,
     isPaid ? paidUntil : Infinity,
   );
 

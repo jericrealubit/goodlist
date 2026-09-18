@@ -33,6 +33,7 @@ const SHOTS: Record<ShotName, number> = {
   '15-request-sent': require('@/assets/images/guide/15-request-sent.png'),
   '16-their-inbox': require('@/assets/images/guide/16-their-inbox.png'),
   '17-settings': require('@/assets/images/guide/17-settings.png'),
+  '18-voice': require('@/assets/images/guide/18-voice.png'),
 };
 
 /** One phone screenshot, sized so it still reads as a phone inside the page. */
