@@ -108,6 +108,11 @@ its JSON key, and save it as `credentials/play-service-account.json`. `.gitignor
 `*service-account*.json` and `credentials/`, so it will not be committed — but keeping it outside
 the repo and using an absolute path is safer still.
 
+> This is **not** the same service account RevenueCat needs. That one carries financial and
+> order permissions instead of release permissions, and lives in Google Cloud with Pub/Sub roles
+> attached — see [`revenuecat-play-credentials.md`](./revenuecat-play-credentials.md). Keep them
+> separate so one leaked key cannot both ship releases and read revenue.
+
 `track` is `internal` and `releaseStatus` is `draft` on the `production` profile because that is
 what the *first* submission needs. Change it to `track: "production"` and drop `releaseStatus` at
 the very end, once the app has a live release.
