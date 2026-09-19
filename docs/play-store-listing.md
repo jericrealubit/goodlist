@@ -36,6 +36,8 @@ changes what you already had.
 
 FEATURES
 • Personal tasks with optional notes and due dates
+• A calendar view — see what's due when, and move a task to another day
+• Add tasks by speaking, including dates like "buy milk tomorrow"
 • A history of everything you've completed
 • Optional household collaboration — create or join with an invite code
 • Request tasks from another household member; they see your name on it
