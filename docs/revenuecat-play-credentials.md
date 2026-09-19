@@ -50,7 +50,23 @@ Play Console → **Setup → API access**. If no Cloud project is linked yet, li
 the page create one. A Play developer account links exactly one Cloud project, and every service
 account you use with Play must live in it, so do this before creating anything.
 
-Note the project id — it shows up again in the Pub/Sub topic name in §7.
+Note the project id — it shows up again in the Pub/Sub topic name in §7. **Start from this page
+rather than typing a project id into a Cloud Console URL.** Project ids are globally unique across
+all of Google Cloud, and short generic ones like `goodlist` were claimed years ago by strangers, so
+`console.cloud.google.com/...?project=goodlist` lands on somebody else's project and answers with:
+
+> You need additional access to the project: goodlist — `resourcemanager.projects.get` (Missing)
+
+That is not a permission you are missing on your own project; Owner already includes it. It means
+you are looking at a project that isn't yours, or you are signed into Cloud Console as a different
+Google account than the one that owns the Play developer account. **Do not submit the "Request
+access" form** it offers — that mails an administrator you have no relationship with. Close it,
+click *Select a project* → *All*, and check what the signed-in account actually owns.
+
+Your project's real id carries a numeric suffix — `goodlist-473921` — because the bare word was
+taken. Accept the generated id; it is invisible to users, and it cannot be changed after creation.
+If Cloud Console asks for a billing account when you enable Pub/Sub, attach one: developer
+notifications for an app this size stay inside the free tier.
 
 ## 4. Enable the APIs
 
@@ -169,6 +185,7 @@ Credentials alone do not make a purchase possible. Also required, and tracked el
 | Symptom | Cause |
 |---|---|
 | *Invalid Play Store credentials* right after upload | Propagation. Wait 36 h (§9). |
+| *You need additional access to the project* / missing `resourcemanager.projects.get` | You are on a project that isn't yours (a guessed project id) or signed in as the wrong Google account. Don't request access — §3. |
 | Still invalid after 36 h | The service account was never invited in Play Console, or was invited on a different Play account than the one owning `com.goodlist.app`. |
 | *Permission denied* validating purchases | Missing *View financial data* on the account permissions. |
 | Refunds from the RevenueCat dashboard fail | Missing *Manage orders and subscriptions*. |
