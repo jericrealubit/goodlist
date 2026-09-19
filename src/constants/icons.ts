@@ -34,6 +34,7 @@ export const ActionIcons = {
   email: 'mail-outline',
   password: 'key-outline',
   dueDate: 'calendar-outline',
+  calendarView: 'calendar-number-outline',
   guide: 'book-outline',
   clear: 'close-circle-outline',
   voice: 'mic-outline',

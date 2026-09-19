@@ -35,7 +35,8 @@ export type ShotName =
   | '15-request-sent'
   | '16-their-inbox'
   | '17-settings'
-  | '18-voice';
+  | '18-voice'
+  | '19-calendar';
 
 export type GuideBlock =
   | { kind: 'para'; spans: GuideSpan[] }
@@ -334,6 +335,55 @@ export const userGuide: GuideDoc = {
           spans: [
             { bold: 'Deleting cannot be undone' },
             ' — that is why the button is red. To leave without changing anything, tap the arrow at the top left.',
+          ],
+        },
+      ],
+    },
+    {
+      id: 'calendar',
+      title: 'See it all on a calendar',
+      blocks: [
+        {
+          kind: 'para',
+          spans: [
+            'Tap ',
+            { bold: 'Calendar' },
+            ' at the bottom. Every task you gave a day to turns up on that day.',
+          ],
+        },
+        {
+          kind: 'bullets',
+          items: [
+            ['A ', { bold: 'dot' }, ' under a date means something is due that day.'],
+            [
+              'A ',
+              { bold: 'red dot' },
+              ' means that day has something still not done, and the day has already gone past.',
+            ],
+            ['The day with a ', { bold: 'ring' }, ' around it is today.'],
+          ],
+        },
+        { kind: 'image', shot: '19-calendar', caption: 'Tap any day to see what is on it.' },
+        {
+          kind: 'para',
+          spans: [
+            'Tap a day and its tasks appear underneath, with a box for adding another one to that same day.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'To move a task to a different day:' },
+            ' tap the little calendar button on the task, then tap the day you want. Two taps, and it has moved.',
+          ],
+        },
+        {
+          kind: 'callout',
+          variant: 'info',
+          spans: [
+            'Tasks you never gave a day to are gathered at the bottom, under ',
+            { bold: 'no date' },
+            '. Tap the calendar button on one of those to put it on a day.',
           ],
         },
       ],

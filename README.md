@@ -39,6 +39,11 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
   asks first. Transcription is done by the device's own speech service (Google on Android, the
   browser's engine on the web) — Goodlist never records, stores or receives the audio. Where speech
   isn't available (Firefox, a device with no recognizer) the microphone simply isn't shown.
+- **Calendar** — a month view of everything with a due date, with the selected day's tasks listed
+  beneath it. Tap a task to give it a day, then tap the day — the same two taps move a dated task to
+  a different day, or clear its date entirely. Tasks with no date sit in an "Unscheduled" tray so the
+  calendar is useful on the first open rather than empty. Reads from the same offline-first cache as
+  the task list, so it works with no connection, and adds no permission of any kind.
 - **Links** — a task that's just a pasted URL reads as its domain (`play.google.com`, not a truncated
   URL) and carries a button that opens it: an in-app browser on Android, a new tab on the web. A link
   in a task's notes gets the same button, and the editor still holds the full URL.
@@ -73,7 +78,7 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 - **Account & privacy controls** — edit your display name, toggle whether your country/time zone is
   counted in community stats, and permanently delete your account (blocked while you still own a group
   with other members in it, to protect them).
-- **Built-in guide** — an illustrated, 16-step walkthrough under Settings → Help, bundled with the
+- **Built-in guide** — an illustrated, 17-step walkthrough under Settings → Help, bundled with the
   app so it works offline. Its copy lives once in `src/content/guide.ts` and also renders as a
   public web page (`npm run guide:site`).
 - **Legal** — in-app About, Privacy Policy, and Terms of Service screens (`src/app/(app)/about.tsx`,

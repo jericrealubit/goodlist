@@ -6,6 +6,7 @@ import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
+import { withDueTime } from '@/lib/calendar/day';
 
 export type DueDatePickerProps = {
   value: Date | null;
@@ -42,7 +43,13 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
         type="date"
         value={value ? toYMD(value) : ''}
         disabled={disabled}
-        onChange={(event) => onChange(fromYMD(event.target.value))}
+        onChange={(event) => {
+          // fromYMD gives local midnight; normalising is what makes every
+          // writer — this picker, the native one, and the voice parser — agree
+          // on the same hour.
+          const picked = fromYMD(event.target.value);
+          onChange(picked ? withDueTime(picked) : null);
+        }}
         style={{
           color: theme.text,
           backgroundColor: theme.backgroundElement,

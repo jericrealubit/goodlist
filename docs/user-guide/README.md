@@ -26,18 +26,19 @@ and ask them to do things too.
 5. [Look at your list](#step-5--look-at-your-list)
 6. [Tick something off](#step-6--tick-something-off)
 7. [Change a task](#step-7--change-a-task)
-8. [Find things you finished](#step-8--find-things-you-finished)
+8. [See it all on a calendar](#step-8--see-it-all-on-a-calendar)
+9. [Find things you finished](#step-9--find-things-you-finished)
 
 **Part 2 — You and other people**
 
-9. [Open the Group page](#step-9--open-the-group-page)
-10. [Make your group](#step-10--make-your-group)
-11. [Give out your code](#step-11--give-out-your-code)
-12. [They type in the code](#step-12--they-type-in-the-code)
-13. [They pick who they are](#step-13--they-pick-who-they-are)
-14. [Your list now has two parts](#step-14--your-list-now-has-two-parts)
-15. [Ask someone to do something](#step-15--ask-someone-to-do-something)
-16. [What they see](#step-16--what-they-see)
+10. [Open the Group page](#step-10--open-the-group-page)
+11. [Make your group](#step-11--make-your-group)
+12. [Give out your code](#step-12--give-out-your-code)
+13. [They type in the code](#step-13--they-type-in-the-code)
+14. [They pick who they are](#step-14--they-pick-who-they-are)
+15. [Your list now has two parts](#step-15--your-list-now-has-two-parts)
+16. [Ask someone to do something](#step-16--ask-someone-to-do-something)
+17. [What they see](#step-17--what-they-see)
 
 **Also useful**
 
@@ -192,7 +193,25 @@ The other two buttons:
 
 Don't want to change anything? Tap the **‹** arrow at the top left. Nothing is saved.
 
-## Step 8 — Find things you finished
+## Step 8 — See it all on a calendar
+
+Tap **Calendar** at the bottom. Every task you gave a day to turns up on that day.
+
+<img src="images/19-calendar.png" alt="The calendar screen showing a month grid with dots on several days and the selected day's tasks listed underneath" width="270">
+
+- A **dot** under a date means something is due that day.
+- A **red dot** means that day has something still not done, and the day has already gone past.
+- The day with a **ring** around it is today.
+
+Tap a day and its tasks appear underneath, with a box for adding another one to that same day.
+
+**To move a task to a different day:** tap the little calendar button on the task, then tap the day
+you want. Two taps, and it has moved.
+
+> Tasks you never gave a day to are gathered at the bottom, under **no date**. Tap the calendar
+> button on one of those to put it on a day.
+
+## Step 9 — Find things you finished
 
 Tap **History** at the bottom.
 
@@ -221,7 +240,7 @@ one, you can ask each other to do things.
 > see your own list, ever. The only things anybody else sees are the ones you specifically
 > ask them to do.
 
-## Step 9 — Open the Group page
+## Step 10 — Open the Group page
 
 Tap **Group** at the bottom of the screen.
 
@@ -234,7 +253,7 @@ There are two buttons, and you only need one of them:
 
 This guide shows **Create a group** first, then what the other person does.
 
-## Step 10 — Make your group
+## Step 11 — Make your group
 
 <img src="images/10-create-group.png" alt="The create group form with a name box, Family and Team buttons, a list of roles, and a Create group button" width="270">
 
@@ -247,7 +266,7 @@ This guide shows **Create a group** first, then what the other person does.
 
 Done. The group exists, and right now you are the only one in it.
 
-## Step 11 — Give out your code
+## Step 12 — Give out your code
 
 Your group now has a card with a **code** on it — eight letters and numbers.
 
@@ -261,7 +280,7 @@ Or just read it out loud — that works too.
 > The code never uses a **zero**, an **O**, a **one**, or an **I**. That's on purpose,
 > so nobody mixes them up.
 
-## Step 12 — They type in the code
+## Step 13 — They type in the code
 
 **The next two steps happen on the other person's phone, not yours.**
 
@@ -272,7 +291,7 @@ They install Goodlist, make their own account (Step 1), and tap **Group** → **
 1. They type the code you gave them.
 2. They tap **Continue**.
 
-## Step 13 — They pick who they are
+## Step 14 — They pick who they are
 
 The app shows them the group name so they know it's the right one.
 
@@ -284,7 +303,7 @@ The app shows them the group name so they know it's the right one.
 That's it. You're now in a group together. Both of you will see the other person's name
 on the Group page.
 
-## Step 14 — Your list now has two parts
+## Step 15 — Your list now has two parts
 
 Go back to **Tasks**. Something has changed: there are two words at the top now.
 
@@ -296,7 +315,7 @@ Go back to **Tasks**. Something has changed: there are two words at the top now.
 The name at the very top has changed too. Instead of **Solo mode** it now shows your
 group's name.
 
-## Step 15 — Ask someone to do something
+## Step 16 — Ask someone to do something
 
 Tap **Requested**, then use the same typing box as always.
 
@@ -313,7 +332,7 @@ Your request appears with **To Alex** under it — that's who you asked.
 Tap the task to add a note or a due date, just like before. If you change your mind, open
 it and tap **Cancel request**.
 
-## Step 16 — What they see
+## Step 17 — What they see
 
 On the other person's phone, the same task looks like this:
 

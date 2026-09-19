@@ -227,6 +227,7 @@ const ICONS = {
   settings: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>`,
   arrowUp: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`,
   mic: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>`,
+  calendar: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>`,
 };
 
 // ---------------------------------------------------------------------------
@@ -248,7 +249,7 @@ const tabBar = (active = 'tasks', badge = 0) => {
   const tab = (id, label) => `<div class="tab ${active === id ? 'on' : ''}">
     ${badge && id === 'tasks' ? `<span class="badge">${badge}</span>` : ''}
     ${ICONS[id]}<span>${label}</span></div>`;
-  return `<div class="tabs">${tab('tasks', 'Tasks')}${tab('group', 'Group')}${tab('history', 'History')}${tab('settings', 'Settings')}</div>`;
+  return `<div class="tabs">${tab('tasks', 'Tasks')}${tab('calendar', 'Calendar')}${tab('group', 'Group')}${tab('history', 'History')}${tab('settings', 'Settings')}</div>`;
 };
 
 const navHead = (title) =>
@@ -287,6 +288,51 @@ const compose = (text, { placeholder = true, step } = {}) => `
 </div>`;
 
 const note = (text, bottom = 150) => `<div class="note" style="bottom:${bottom}px">${text}</div>`;
+
+// A month of September 2026: starts on a Tuesday, 30 days, so a Sunday-start
+// grid leads with two days of August and trails into October. Computed rather
+// than hand-written, because forty-two divs is forty-two chances to typo.
+const calendarGrid = () => {
+  const LEAD = 2;
+  const DAYS = 30;
+  // The 17th is a Thursday in September 2026 — deliberately an interior column,
+  // so the callout ring and its step badge stay inside the 390px frame. A day
+  // in the Sunday or Saturday column clips.
+  const TODAY = 17;
+  const dotted = { 3: 1, 9: 2, 14: 1, 17: 3, 24: 1 };
+  const overdue = new Set([9]);
+
+  const cell = (text, { inMonth = true, mark = false, dots = 0, late = false, step } = {}) => {
+    const dotRow = Array.from(
+      { length: dots },
+      (_unused, i) =>
+        `<span style="width:5px;height:5px;border-radius:999px;background:${i === 0 && late ? C.danger : C.primary}"></span>`,
+    ).join('');
+    return `<div ${step ? `class="hi" data-step="${step}"` : ''} style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:${R.sm}px;${
+      mark ? `border:2px solid ${C.primary};background:${C.backgroundSelected};` : ''
+    }">
+      <span style="font-size:13px;font-weight:700;${inMonth ? '' : `color:${C.textSecondary};font-weight:500;`}">${text}</span>
+      <span style="display:flex;gap:3px;height:5px">${dotRow}</span>
+    </div>`;
+  };
+
+  const cells = [];
+  for (let i = 0; i < 42; i += 1) {
+    const day = i - LEAD + 1;
+    if (day < 1) cells.push(cell(31 + day, { inMonth: false }));
+    else if (day > DAYS) cells.push(cell(day - DAYS, { inMonth: false }));
+    else
+      cells.push(
+        cell(day, {
+          mark: day === TODAY,
+          dots: dotted[day] || 0,
+          late: overdue.has(day),
+          step: day === TODAY ? '1' : undefined,
+        }),
+      );
+  }
+  return cells.join('');
+};
 
 // ---------------------------------------------------------------------------
 // Screens — each mirrors a real file under src/app
@@ -602,6 +648,37 @@ const SCREENS = [
       </div>
       ${note('Tap the microphone, then just say it out loud.', 470)}
       </div>`,
+  },
+  {
+    // src/app/(app)/(tabs)/calendar.tsx + src/components/calendar/month-grid.tsx
+    name: '19-calendar',
+    html: `<div class="screen">${statusBar()}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:${S.two}px ${S.four}px">
+        <div class="header">September 2026</div>
+        <div style="display:flex;gap:${S.two}px">
+          <div style="width:34px;height:34px;border:1px solid ${C.border};border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:18px">&lsaquo;</div>
+          <div style="width:34px;height:34px;border:1px solid ${C.border};border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:18px">&rsaquo;</div>
+        </div>
+      </div>
+      <div class="body" style="gap:${S.three}px">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center">
+          ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+            .map((d) => `<div class="small muted">${d}</div>`)
+            .join('')}
+          ${calendarGrid()}
+        </div>
+        <div class="stack tight">
+          <div class="small bold">Thursday 17 September</div>
+          ${taskRow({
+            title: 'Call the dentist',
+            checkbox: false,
+            trailing: `<div class="hi" data-step="2" style="width:32px;height:32px;border-radius:999px;border:1px solid ${C.border};display:flex;align-items:center;justify-content:center;color:${C.text}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></div>`,
+          })}
+          <div class="small muted">3 tasks have no date</div>
+        </div>
+      </div>
+      ${note('Tap a day to see it. Tap the calendar button on a task to move it.', 150)}
+      ${tabBar('calendar')}</div>`,
   },
 ];
 
