@@ -8,6 +8,7 @@ import { MonthGrid, type DayState } from '@/components/calendar/month-grid';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
+import { RoundActionButton } from '@/components/round-action-button';
 import { TaskRow } from '@/components/task-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -391,11 +392,15 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
                   },
                 ]}
               />
-              <PrimaryButton
-                title="Add"
-                icon={ActionIcons.confirm}
+              {/* The same round button the compose bar submits with, rather than a
+                  labelled one: it is compact enough not to crowd the field, it
+                  carries all nine themes' shapes already, and it means adding a
+                  task here reads exactly like adding one on the Tasks screen. */}
+              <RoundActionButton
+                icon={ActionIcons.send}
                 onPress={handleCreate}
                 disabled={draftTitle.trim().length === 0}
+                accessibilityLabel="Add task"
               />
             </ThemedView>
 
