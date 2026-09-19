@@ -8,6 +8,7 @@ import { ActionIcons } from '@/constants/icons';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
+import { withDueTime } from '@/lib/calendar/day';
 
 export type DueDatePickerProps = {
   value: Date | null;
@@ -57,7 +58,11 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
           mode="date"
           onChange={(_event, selectedDate) => {
             setShowDatePicker(Platform.OS === 'ios');
-            if (selectedDate) onChange(selectedDate);
+            // The picker hands back the chosen day carrying whatever time
+            // `value` held — or, with no value, the time the picker happened to
+            // open. Normalising it is what makes a date set here agree with one
+            // set by voice or from the calendar.
+            if (selectedDate) onChange(withDueTime(selectedDate));
           }}
         />
       )}

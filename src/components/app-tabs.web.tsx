@@ -21,6 +21,9 @@ export default function AppTabs() {
           <TabTrigger name="index" href="/" asChild>
             <TabButton hasBadge={unreadCount > 0}>Tasks</TabButton>
           </TabTrigger>
+          <TabTrigger name="calendar" href="/calendar" asChild>
+            <TabButton>Calendar</TabButton>
+          </TabTrigger>
           <TabTrigger name="group" href="/group" asChild>
             <TabButton>Group</TabButton>
           </TabTrigger>

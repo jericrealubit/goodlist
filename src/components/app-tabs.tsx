@@ -50,6 +50,11 @@ export default function AppTabs() {
         {unreadCount > 0 && <NativeTabs.Trigger.Badge>{String(unreadCount)}</NativeTabs.Trigger.Badge>}
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="calendar">
+        <NativeTabs.Trigger.Label>Calendar</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} md="calendar_month" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="group">
         <NativeTabs.Trigger.Label>Group</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
