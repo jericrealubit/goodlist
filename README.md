@@ -6,13 +6,15 @@ and a realtime [Supabase](https://supabase.com) backend. It runs on Android and 
 <https://goodlist.expo.app>.
 
 <p align="center">
-  <img src="docs/screenshots/05-my-list.png" width="195" alt="The Tasks screen in Solo mode, showing four task cards">
-  <img src="docs/screenshots/16-their-inbox.png" width="195" alt="The Requested tab showing two tasks a group member asked for, with an unread badge on Tasks">
-  <img src="docs/screenshots/11-invite-code.png" width="195" alt="A group card showing the group name, invite code and member list">
-  <img src="docs/screenshots/17-settings.png" width="195" alt="Settings, showing the display name field and the theme picker">
+  <img src="docs/screenshots/05-my-list.png" width="130" alt="The Tasks screen in Solo mode, showing four task cards">
+  <img src="docs/screenshots/19-calendar.png" width="130" alt="A month grid with dots under the days that have tasks due, and the selected day's tasks listed below it">
+  <img src="docs/screenshots/18-voice.png" width="130" alt="The listening panel over the task list, showing the words &quot;Buy milk tomorrow&quot; it heard">
+  <img src="docs/screenshots/16-their-inbox.png" width="130" alt="The Requested tab showing two tasks a group member asked for, with an unread badge on Tasks">
+  <img src="docs/screenshots/11-invite-code.png" width="130" alt="A group card showing the group name, invite code and member list">
+  <img src="docs/screenshots/17-settings.png" width="130" alt="Settings, showing the display name field and the theme picker">
 </p>
 <p align="center">
-  <sub>Your own list · What your group asked of you · Invite code · Nine themes</sub>
+  <sub>Your own list · What is due when · Say it instead of typing · What your group asked of you · Invite code · Nine themes</sub>
 </p>
 
 ## Using the app
