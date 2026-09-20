@@ -36,10 +36,10 @@ permissions, and one leaked key should not be able to both publish releases and 
 
 | | `eas submit` (uploads builds) | RevenueCat (validates purchases) |
 |---|---|---|
-| Key file | `credentials/play-service-account.json` | anywhere outside the repo — RevenueCat stores it, you do not |
+| Where the key lives | uploaded once to EAS servers (KMS-encrypted); no file in the repo | uploaded once to RevenueCat; no file in the repo |
 | Play permissions | release to testing tracks, manage production releases | view app info, view financial data, manage orders and subscriptions |
 | Google Cloud roles | none needed | Pub/Sub Editor, Monitoring Viewer |
-| Used by | `eas.json` → `submit.*.android.serviceAccountKeyPath` | RevenueCat servers only |
+| Used by | `eas submit` (EAS resolves the stored key; `eas.json` names no path) | RevenueCat servers only |
 
 A single account with the union of both permission sets does work, if you would rather manage one.
 It is just a worse blast radius.
@@ -50,7 +50,23 @@ Play Console → **Setup → API access**. If no Cloud project is linked yet, li
 the page create one. A Play developer account links exactly one Cloud project, and every service
 account you use with Play must live in it, so do this before creating anything.
 
-Note the project id — it shows up again in the Pub/Sub topic name in §7.
+Note the project id — it shows up again in the Pub/Sub topic name in §7. **Start from this page
+rather than typing a project id into a Cloud Console URL.** Project ids are globally unique across
+all of Google Cloud, and short generic ones like `goodlist` were claimed years ago by strangers, so
+`console.cloud.google.com/...?project=goodlist` lands on somebody else's project and answers with:
+
+> You need additional access to the project: goodlist — `resourcemanager.projects.get` (Missing)
+
+That is not a permission you are missing on your own project; Owner already includes it. It means
+you are looking at a project that isn't yours, or you are signed into Cloud Console as a different
+Google account than the one that owns the Play developer account. **Do not submit the "Request
+access" form** it offers — that mails an administrator you have no relationship with. Close it,
+click *Select a project* → *All*, and check what the signed-in account actually owns.
+
+Your project's real id carries a numeric suffix — `goodlist-473921` — because the bare word was
+taken. Accept the generated id; it is invisible to users, and it cannot be changed after creation.
+If Cloud Console asks for a billing account when you enable Pub/Sub, attach one: developer
+notifications for an app this size stay inside the free tier.
 
 ## 4. Enable the APIs
 
@@ -76,6 +92,23 @@ Enabling is idempotent; a project created by Play Console often has the first on
 
 Copy the account's email — `revenuecat-goodlist@<project-id>.iam.gserviceaccount.com`. You need it in
 §6, and it is the only identifier Play Console will accept.
+
+**Adding those roles to an account that already exists** (for instance if you merged this with the
+`eas submit` account) is a different page, and the wrong one is easy to land on. Go to **IAM & Admin
+→ IAM**, not Service Accounts — the *Permissions* tab on a service account governs who may
+impersonate it, which is not what this is. Then **+ Grant access**, paste the service account's
+email as the principal, add both roles, and save. Or:
+
+```bash
+gcloud projects add-iam-policy-binding <project-id> \
+  --member="serviceAccount:<name>@<project-id>.iam.gserviceaccount.com" \
+  --role="roles/pubsub.editor"
+gcloud projects add-iam-policy-binding <project-id> \
+  --member="serviceAccount:<name>@<project-id>.iam.gserviceaccount.com" \
+  --role="roles/monitoring.viewer"
+```
+
+IAM changes are usually live in seconds; Google allows up to a few minutes.
 
 ## 6. Invite it into Play Console
 
@@ -169,8 +202,9 @@ Credentials alone do not make a purchase possible. Also required, and tracked el
 | Symptom | Cause |
 |---|---|
 | *Invalid Play Store credentials* right after upload | Propagation. Wait 36 h (§9). |
+| *You need additional access to the project* / missing `resourcemanager.projects.get` | You are on a project that isn't yours (a guessed project id) or signed in as the wrong Google account. Don't request access — §3. |
 | Still invalid after 36 h | The service account was never invited in Play Console, or was invited on a different Play account than the one owning `com.goodlist.app`. |
-| *Permission denied* validating purchases | Missing *View financial data* on the account permissions. |
+| Catalog checks pass but *Can validate Google Play subscription purchases* fails | The account has app access but not *View financial data, orders, and cancellation survey responses* + *Manage orders and subscriptions*. Add both, then press *Check credentials*. If it is the `eas submit` account, upload the RevenueCat one instead of widening that one. |
 | Refunds from the RevenueCat dashboard fail | Missing *Manage orders and subscriptions*. |
 | Test notification fails in Play Console | `google-play-developer-notifications@system.gserviceaccount.com` lacks Pub/Sub Publisher on the topic (§8). |
 | Purchases validate, but cancellations show up late | Notifications topic not configured — §8 was skipped. |
