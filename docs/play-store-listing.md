@@ -111,81 +111,33 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Screenshots
-
-Play takes 2–8 phone screenshots. Six live in `docs/screenshots/`, written by
-`npm run guide:screens` — the same screens as the user guide, re-rendered with the teaching
-callouts suppressed so they read as the app rather than as a tutorial. **Upload them in this
-order**; Play gives the first two or three to search results, so the list opens on what the app
-is and follows with the two things that set it apart.
-
-| # | File | What it shows |
-|---|---|---|
-| 1 | `05-my-list.png` | The task list — what the app is, in one glance |
-| 2 | `19-calendar.png` | The month grid with due-date dots, and a selected day below it |
-| 3 | `18-voice.png` | The listening panel, showing "Buy milk tomorrow" heard and not yet saved |
-| 4 | `16-their-inbox.png` | The Requested tab — what a household member asked of you |
-| 5 | `11-invite-code.png` | The group card with its invite code |
-| 6 | `17-settings.png` | Settings and the theme picker |
-
-The published listing still shows only the four pre-voice shots, in an older order. Replacing the
-set is one drag per file in **Store listing → Phone screenshots**; Play keeps the upload order, so
-add them top to bottom as above.
-
-All six are **1266×2532, exactly 2:1, 24-bit PNG with no alpha** — inside every rule Play enforces
-on upload (shorter side ≥ 320px, longer ≤ 3840px, longer side at most twice the shorter) and over
-the 1080px-per-side floor for promotion eligibility. The generator guarantees that rather than
-leaving it to a device capture; the header comment in `scripts/generate-guide-screens.mjs` explains
-how. Re-check any time with:
-
-```bash
-npm run guide:screens
-```
-
-Play has no caption field for phone screenshots, so the "What it shows" column is for you, not for
-the listing — each shot has to carry its own meaning with no words around it.
-
 ## Release notes — the calendar release
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
-set these, so they are typed into the Console by hand for each release.
+set these, so they are typed into the Console by hand, and rewritten for each release — the note
+below replaces the voice one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. Both notes below are inside that; check
-again if you edit them.
-
-Use the first. It assumes the last build your testers received predates *both* the calendar and
-voice — which is the case as long as the published listing still shows the four pre-voice
-screenshots. If a voice build did reach the track in between, use the calendar-only note instead:
-re-announcing a feature testers already have reads as padding.
+Play caps this field at **500 characters per language**. The note below is 362; check it again if
+you edit it.
 
 ```
-What's new: a calendar, and you can talk to Goodlist.
+What's new: a Calendar tab.
 
-CALENDAR — tap Calendar at the bottom. Tasks with a day show up there: a dot means something is due, red means overdue. Tap a day to see it; tap a task's calendar button to move it.
+Everything with a due date now shows up on the month it falls in. Tap a day to see what's on it, or to add something to that day.
 
-VOICE — tap the microphone beside the send button and say "Buy milk tomorrow", "Finish the laundry" or "Ask Sam to take the bins out".
+To move a task to a different day: tap the calendar button on it, then tap the day you want.
 
-Your phone asks for the microphone the first time. Nothing is recorded: the phone makes the text, Goodlist only gets it.
+Tasks with no date sit at the bottom — tap the calendar button on one to give it a day.
+
+No new permissions.
 ```
 
-The calendar-only variant, if a voice build already went out:
-
-```
-What's new: Goodlist has a calendar.
-
-Tap Calendar in the tab bar. Every task you gave a day to turns up on that day — a dot under the date means something is due, and a red dot means it is overdue and still not done.
-
-Tap any day to see what is on it, and add straight to that day. To move a task, tap the little calendar button on it and pick a new day: two taps and it has moved.
-
-Tasks with no day are gathered at the bottom, so nothing gets lost.
-```
-
-Three things deliberately kept. The microphone sentence stays in the first note even though voice
-is no longer the headline — a permission prompt appearing with no explanation is the fastest way
-to lose a tester, and a tester who uninstalls restarts their own 14-day clock. There is no mention
-of commands that are *not* wired up, because every verb in the guide now works. And there is no
-apology for anything being rough: testers who are told a feature is unfinished report less, not
-more.
+Three deliberate choices. **The microphone is not mentioned** — that release's note existed largely
+to pre-empt a permission prompt, and this one adds no permission, so the last line says so plainly
+instead. **The unscheduled tray gets its own line**, because most existing tasks have no due date
+and a tester who opens the calendar to an empty month will assume it is broken rather than empty.
+And **there is no "nothing else has changed"**, because whether the voice build ever reached these
+testers is not something this document can know.
 
 ## Content rating questionnaire (IARC)
 

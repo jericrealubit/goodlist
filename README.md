@@ -103,7 +103,7 @@ src/
   app/            Expo Router screens (file-based routing)
     (auth)/        Sign in, sign up, forgot/reset password
     (app)/
-      (tabs)/       Tasks, Group, History, Settings
+      (tabs)/       Tasks, Calendar, Group, History, Settings
       group/        Create / join a group
       task/[id]     Task detail / edit
       about, guide, premium, privacy, terms, stats, distribution
@@ -111,6 +111,8 @@ src/
                   guide-document, ...)
   hooks/          Data-fetching and mutation hooks (React Query)
   lib/            Supabase client, queries, mutations, types, validation;
+                  calendar/ and voice/ — pure, dependency-free modules (no React,
+                  no Expo, no @/ aliases) so `npm test` can run them directly;
                   purchases.ts / purchases.web.ts — RevenueCat on Android / web,
                   same exports, picked by Metro's platform extensions
   constants/      Theme definitions, group role/mode options, Premium prices
@@ -123,8 +125,10 @@ docs/
   guide/          Pages from main /docs at https://jericrealubit.github.io/goodlist/
   legal/
   user-guide/     The same walkthrough as Markdown, for reading on GitHub
-  screenshots/    Callout-free product shots used by this README and uploaded to the
-                  Play listing (npm run guide:screens)
+  screenshots/    Callout-free product shots used by this README
+plugins/          Local Expo config plugins. with-optional-microphone.js declares
+                  android.hardware.microphone optional, so devices without one
+                  still appear in the listing and keep receiving updates
 scripts/
   lib/            site-shell.mjs (shared site chrome), distribution-report.mjs
 supabase/
