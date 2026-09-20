@@ -128,7 +128,16 @@ Invite that account's email under Play Console → Users and permissions, and gi
   still a draft fails without it
 
 That is [Expo's own required set](https://github.com/expo/fyi/blob/main/creating-google-service-account.md).
-Play auto-selects a few read-only extras (app quality, policy declarations, deep links) alongside them.
+Play auto-selects a few read-only extras (app quality, policy declarations, deep links) alongside them,
+which cannot be unticked. Leave everything else off, in particular:
+
+- **Play Games Services** (*Edit* / *Publish … projects*) — Goodlist is not a game, and both grant
+  across *all* apps rather than just this one.
+- **Register and manage package names for Android developer verification** — that is a different
+  system (the Android Developer Console, for registering package names and signing keys against a
+  verified developer identity). `eas submit` only calls the Play Android Developer API, and this
+  permission can delete those registrations.
+- **Reply to reviews** — nothing automated should be able to speak publicly as you.
 
 Keep the downloaded JSON out of the repo entirely once EAS has it — there is no longer any reason
 for a copy to sit in the working tree. `.gitignore` still excludes `*service-account*.json` and
