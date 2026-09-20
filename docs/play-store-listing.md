@@ -17,9 +17,13 @@ Goodlist
 
 **Short description** (max 80 characters)
 ```
-Personal tasks that stay simple solo, and work together with your household.
+Personal tasks you can speak, see on a calendar, and share with your household.
 ```
-(78 characters)
+(79 characters)
+
+This leads on the two newest features because they are what a search result has to earn a tap
+with. If you would rather keep the solo-to-household framing, the previous line still fits:
+`Personal tasks that stay simple solo, and work together with your household.` (78 characters).
 
 **Full description** (max 4000 characters)
 ```
@@ -27,6 +31,15 @@ Goodlist is a personal task list that starts simple and grows with you.
 
 Sign up and start adding tasks in seconds — no household, no setup, no
 friction. Every task you create is private to you by default.
+
+Type a task, or tap the microphone and just say it: "Buy milk tomorrow"
+becomes a task, due tomorrow. You see the words it heard before anything is
+saved, and nothing is ever recorded — your own phone turns speech into text,
+and Goodlist only ever receives the text.
+
+Give a task a day and it turns up on the calendar, so you can see what's
+coming instead of scrolling a list. Tap a day to see what is on it, and move
+a task to another day with two taps.
 
 When you're ready, create or join a household with a partner. You can then
 send each other Requested tasks — clear, visible asks with a name attached,
@@ -36,8 +49,10 @@ changes what you already had.
 
 FEATURES
 • Personal tasks with optional notes and due dates
-• A calendar view — see what's due when, and move a task to another day
+• A calendar view — a dot on every day with something due, red if it's overdue
+• Move a task to another day with two taps
 • Add tasks by speaking, including dates like "buy milk tomorrow"
+• Tick off, undo or delete a task by voice — deleting always asks first
 • A history of everything you've completed
 • Optional household collaboration — create or join with an invite code
 • Request tasks from another household member; they see your name on it
@@ -51,6 +66,13 @@ group, and it starts with a 90-day free trial, no card needed.
 Goodlist doesn't show ads, doesn't track you for advertising, and doesn't
 sell your data. See our Privacy Policy for the specifics.
 ```
+
+> **The published listing does not currently match the block above.** The live description
+> opens "Goodlist is a simple, fast to-do list for your own tasks", is organised under CAPS
+> section headings, and mentions neither voice nor the calendar — an older draft that predates
+> this file. Pasting the block above replaces it wholesale, which is the intended direction:
+> this file is the one that gets checked against the privacy policy. Replace it in one edit
+> rather than patching the live copy, so the two stop diverging.
 
 **Category**
 ```
@@ -89,37 +111,81 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Release notes — the voice release
+## Screenshots
+
+Play takes 2–8 phone screenshots. Six live in `docs/screenshots/`, written by
+`npm run guide:screens` — the same screens as the user guide, re-rendered with the teaching
+callouts suppressed so they read as the app rather than as a tutorial. **Upload them in this
+order**; Play gives the first two or three to search results, so the list opens on what the app
+is and follows with the two things that set it apart.
+
+| # | File | What it shows |
+|---|---|---|
+| 1 | `05-my-list.png` | The task list — what the app is, in one glance |
+| 2 | `19-calendar.png` | The month grid with due-date dots, and a selected day below it |
+| 3 | `18-voice.png` | The listening panel, showing "Buy milk tomorrow" heard and not yet saved |
+| 4 | `16-their-inbox.png` | The Requested tab — what a household member asked of you |
+| 5 | `11-invite-code.png` | The group card with its invite code |
+| 6 | `17-settings.png` | Settings and the theme picker |
+
+The published listing still shows only the four pre-voice shots, in an older order. Replacing the
+set is one drag per file in **Store listing → Phone screenshots**; Play keeps the upload order, so
+add them top to bottom as above.
+
+All six are **1266×2532, exactly 2:1, 24-bit PNG with no alpha** — inside every rule Play enforces
+on upload (shorter side ≥ 320px, longer ≤ 3840px, longer side at most twice the shorter) and over
+the 1080px-per-side floor for promotion eligibility. The generator guarantees that rather than
+leaving it to a device capture; the header comment in `scripts/generate-guide-screens.mjs` explains
+how. Re-check any time with:
+
+```bash
+npm run guide:screens
+```
+
+Play has no caption field for phone screenshots, so the "What it shows" column is for you, not for
+the listing — each shot has to carry its own meaning with no words around it.
+
+## Release notes — the calendar release
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
 set these, so they are typed into the Console by hand for each release.
 
-Play caps this field at **500 characters per language**. The note below is inside that; check it
-again if you edit it.
+Play caps this field at **500 characters per language**. Both notes below are inside that; check
+again if you edit them.
 
-The two things it has to do are tell testers what to try and pre-empt the microphone prompt. A new
-permission appearing with no explanation is the fastest way to lose a tester, and a tester who
-uninstalls restarts their own 14-day clock.
+Use the first. It assumes the last build your testers received predates *both* the calendar and
+voice — which is the case as long as the published listing still shows the four pre-voice
+screenshots. If a voice build did reach the track in between, use the calendar-only note instead:
+re-announcing a feature testers already have reads as padding.
 
 ```
-What's new: you can talk to Goodlist.
+What's new: a calendar, and you can talk to Goodlist.
 
-Tap the microphone beside the send button and say things like:
-• "Buy milk tomorrow"
-• "Ask Sam to take the bins out"
-• "Finish the laundry"
-• "Undo"
-• "Open history"
+CALENDAR — tap Calendar at the bottom. Tasks with a day show up there: a dot means something is due, red means overdue. Tap a day to see it; tap a task's calendar button to move it.
 
-It shows what it heard before saving, and always asks before deleting anything.
+VOICE — tap the microphone beside the send button and say "Buy milk tomorrow", "Finish the laundry" or "Ask Sam to take the bins out".
 
-Your phone will ask for microphone access the first time — that's expected. Nothing is recorded: your phone turns speech into text, and Goodlist only ever receives the text.
+Your phone asks for the microphone the first time. Nothing is recorded: the phone makes the text, Goodlist only gets it.
 ```
 
-Two things deliberately left out. There is no mention of the commands that are *not* wired up,
-because every verb in the guide now works — that was true of an earlier draft and is not any more.
-And there is no apology for it being rough: testers who are told a feature is unfinished report
-less, not more.
+The calendar-only variant, if a voice build already went out:
+
+```
+What's new: Goodlist has a calendar.
+
+Tap Calendar in the tab bar. Every task you gave a day to turns up on that day — a dot under the date means something is due, and a red dot means it is overdue and still not done.
+
+Tap any day to see what is on it, and add straight to that day. To move a task, tap the little calendar button on it and pick a new day: two taps and it has moved.
+
+Tasks with no day are gathered at the bottom, so nothing gets lost.
+```
+
+Three things deliberately kept. The microphone sentence stays in the first note even though voice
+is no longer the headline — a permission prompt appearing with no explanation is the fastest way
+to lose a tester, and a tester who uninstalls restarts their own 14-day clock. There is no mention
+of commands that are *not* wired up, because every verb in the guide now works. And there is no
+apology for anything being rough: testers who are told a feature is unfinished report less, not
+more.
 
 ## Content rating questionnaire (IARC)
 
@@ -188,6 +254,21 @@ collect*, plus the speech-service entry under *Sharing & service providers* — 
 `src/content/legal.ts`. Google fetches that policy and cross-checks it against this form, so the two
 must ship together.
 
+### Note on the calendar view
+
+The Calendar tab plots the due dates already stored on the user's own tasks. It does **not** read,
+write, or sync the device calendar: there is no `expo-calendar` dependency, no `READ_CALENDAR` or
+`WRITE_CALENDAR` in the manifest, and no calendar permission is requested. Nothing new is
+collected, so **no Data Safety answer changes for it** — the due dates are already declared under
+User-generated content. Verify before answering rather than trusting this paragraph:
+
+```bash
+grep -rn "expo-calendar\|READ_CALENDAR\|WRITE_CALENDAR" package.json app.json src   # expect no matches
+```
+
+If a reviewer asks, the accurate description is: *an in-app month view of the user's own task due
+dates; the device calendar is neither read nor written.*
+
 ### Note on the "Purchase history" declaration
 
 Premium is sold through Google Play Billing, via RevenueCat's SDK. Card and bank details never
@@ -228,7 +309,7 @@ instruction set:
 | Name | Full app access |
 | Username | *(a real Supabase account created for this purpose)* |
 | Password | *(its password)* |
-| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. |
+| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. |
 
 Create that account on the production Supabase project, seed it with a handful of tasks, a group,
 and at least one requested task, and **do not delete it** — Play re-uses it for every future update
