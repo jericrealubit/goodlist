@@ -187,7 +187,7 @@ Credentials alone do not make a purchase possible. Also required, and tracked el
 | *Invalid Play Store credentials* right after upload | Propagation. Wait 36 h (§9). |
 | *You need additional access to the project* / missing `resourcemanager.projects.get` | You are on a project that isn't yours (a guessed project id) or signed in as the wrong Google account. Don't request access — §3. |
 | Still invalid after 36 h | The service account was never invited in Play Console, or was invited on a different Play account than the one owning `com.goodlist.app`. |
-| *Permission denied* validating purchases | Missing *View financial data* on the account permissions. |
+| Catalog checks pass but *Can validate Google Play subscription purchases* fails | The account has app access but not *View financial data, orders, and cancellation survey responses* + *Manage orders and subscriptions*. Add both, then press *Check credentials*. If it is the `eas submit` account, upload the RevenueCat one instead of widening that one. |
 | Refunds from the RevenueCat dashboard fail | Missing *Manage orders and subscriptions*. |
 | Test notification fails in Play Console | `google-play-developer-notifications@system.gserviceaccount.com` lacks Pub/Sub Publisher on the topic (§8). |
 | Purchases validate, but cancellations show up late | Notifications topic not configured — §8 was skipped. |
