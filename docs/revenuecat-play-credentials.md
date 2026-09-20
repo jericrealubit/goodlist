@@ -36,10 +36,10 @@ permissions, and one leaked key should not be able to both publish releases and 
 
 | | `eas submit` (uploads builds) | RevenueCat (validates purchases) |
 |---|---|---|
-| Key file | `credentials/play-service-account.json` | anywhere outside the repo — RevenueCat stores it, you do not |
+| Where the key lives | uploaded once to EAS servers (KMS-encrypted); no file in the repo | uploaded once to RevenueCat; no file in the repo |
 | Play permissions | release to testing tracks, manage production releases | view app info, view financial data, manage orders and subscriptions |
 | Google Cloud roles | none needed | Pub/Sub Editor, Monitoring Viewer |
-| Used by | `eas.json` → `submit.*.android.serviceAccountKeyPath` | RevenueCat servers only |
+| Used by | `eas submit` (EAS resolves the stored key; `eas.json` names no path) | RevenueCat servers only |
 
 A single account with the union of both permission sets does work, if you would rather manage one.
 It is just a worse blast radius.

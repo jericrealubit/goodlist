@@ -96,17 +96,43 @@ EAS environment variables from B1 actually resolve, and an explicit Android `bui
 
 ```jsonc
 "submit": {
-  "internal":   { "android": { "serviceAccountKeyPath": "...", "track": "internal",   "releaseStatus": "completed" } },
-  "closed":     { "android": { "serviceAccountKeyPath": "...", "track": "alpha",      "releaseStatus": "completed" } },
-  "production": { "android": { "serviceAccountKeyPath": "...", "track": "internal",   "releaseStatus": "draft"     } }
+  "internal":   { "android": { "track": "internal", "releaseStatus": "completed" } },
+  "closed":     { "android": { "track": "alpha",    "releaseStatus": "completed" } },
+  "production": { "android": { "track": "internal", "releaseStatus": "draft"     } }
 }
 ```
 
-You still have to **put the key file there**: create a Google Cloud service account with the
-*Service Account User* role, grant it access in Play Console under Users and permissions, download
-its JSON key, and save it as `credentials/play-service-account.json`. `.gitignore` already excludes
-`*service-account*.json` and `credentials/`, so it will not be committed — but keeping it outside
-the repo and using an absolute path is safer still.
+**There is deliberately no `serviceAccountKeyPath`.** It used to point at
+`credentials/play-service-account.json`, which cannot work anywhere but the one machine that
+downloaded the key: the path is git-ignored (correctly — it is a secret), so a fresh clone, a CI
+runner, or a cloud session has no such file and `eas submit` fails before it starts.
+
+Instead the key lives **on EAS servers**, encrypted at rest with KMS, and is reused for every later
+submission. Upload it once, either way:
+
+- **CLI** — run `npx eas-cli submit -p android --profile internal --latest` and answer *Google
+  Service Account → Upload a Google Service Account Key* when prompted; or
+- **Dashboard** — expo.dev → the project → Credentials → Android → `com.goodlist.app` → Service
+  Credentials → *Add a Google Service Account Key* → Upload new key.
+
+To create the key: Google Cloud → IAM & Admin → Service Accounts → Create (no IAM role needed —
+its power comes from Play Console, not from Cloud), then Keys → Add key → Create new key → JSON.
+Invite that account's email under Play Console → Users and permissions, and give it, on Goodlist:
+
+- View app information (read-only)
+- Release apps to testing tracks
+- Manage testing tracks and edit tester lists
+- Release to production, exclude devices, and use Play App Signing
+- Manage store presence
+- Edit and delete draft apps — on the *Account permissions* tab; the first upload of an app that is
+  still a draft fails without it
+
+That is [Expo's own required set](https://github.com/expo/fyi/blob/main/creating-google-service-account.md).
+Play auto-selects a few read-only extras (app quality, policy declarations, deep links) alongside them.
+
+Keep the downloaded JSON out of the repo entirely once EAS has it — there is no longer any reason
+for a copy to sit in the working tree. `.gitignore` still excludes `*service-account*.json` and
+`credentials/` as a backstop.
 
 > This is **not** the same service account RevenueCat needs. That one carries financial and
 > order permissions instead of release permissions, and lives in Google Cloud with Pub/Sub roles
