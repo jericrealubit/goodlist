@@ -93,6 +93,23 @@ Enabling is idempotent; a project created by Play Console often has the first on
 Copy the account's email — `revenuecat-goodlist@<project-id>.iam.gserviceaccount.com`. You need it in
 §6, and it is the only identifier Play Console will accept.
 
+**Adding those roles to an account that already exists** (for instance if you merged this with the
+`eas submit` account) is a different page, and the wrong one is easy to land on. Go to **IAM & Admin
+→ IAM**, not Service Accounts — the *Permissions* tab on a service account governs who may
+impersonate it, which is not what this is. Then **+ Grant access**, paste the service account's
+email as the principal, add both roles, and save. Or:
+
+```bash
+gcloud projects add-iam-policy-binding <project-id> \
+  --member="serviceAccount:<name>@<project-id>.iam.gserviceaccount.com" \
+  --role="roles/pubsub.editor"
+gcloud projects add-iam-policy-binding <project-id> \
+  --member="serviceAccount:<name>@<project-id>.iam.gserviceaccount.com" \
+  --role="roles/monitoring.viewer"
+```
+
+IAM changes are usually live in seconds; Google allows up to a few minutes.
+
 ## 6. Invite it into Play Console
 
 Play Console → **Users and permissions → Invite new user**, paste the service account email.
