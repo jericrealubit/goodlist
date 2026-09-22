@@ -1,9 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { ActionIcons, type IconName } from '@/constants/icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
 import type { DayKey } from '@/lib/calendar/day';
+import { describeDaySummary, type DaySummary, type DayVerdict } from '@/lib/medications/day-summary';
 import type { MonthCell, MonthGrid as MonthGridShape } from '@/lib/calendar/month';
 
 /** What a day has on it, reduced to the two things a cell can show. */
@@ -24,6 +27,20 @@ type MonthGridProps = {
    * the grid has become rather than only what it is.
    */
   labelSuffix?: string;
+  /**
+   * One medicine verdict per day, drawn as a corner mark. Absent days get none.
+   * A glyph rather than a dot on purpose: on a past day a task dot means
+   * overdue (bad) while a check means taken (good), so the two must never be
+   * mistaken for each other.
+   */
+  medsByDay?: Map<DayKey, DaySummary>;
+};
+
+/** Shape carries the verdict, colour only reinforces it. */
+const VERDICT_GLYPH: Record<DayVerdict, IconName> = {
+  taken: ActionIcons.doseTaken,
+  missed: ActionIcons.doseMissed,
+  skipped: ActionIcons.doseSkipped,
 };
 
 const COLUMNS = 7;
@@ -37,13 +54,13 @@ const MAX_DOTS = 3;
  */
 const MAX_GRID_WIDTH = 420;
 
-function cellLabel(date: Date, state: DayState | undefined, suffix?: string): string {
+function cellLabel(date: Date, state: DayState | undefined, meds: DaySummary | undefined, suffix?: string): string {
   const day = date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
   const tasks =
     !state || state.count === 0
       ? 'nothing due'
       : `${state.count} ${state.count === 1 ? 'task' : 'tasks'}${state.hasOverdue ? ', overdue' : ''}`;
-  return suffix ? `${day}, ${tasks}, ${suffix}` : `${day}, ${tasks}`;
+  return [day, tasks, meds ? describeDaySummary(meds) : null, suffix].filter(Boolean).join(', ');
 }
 
 /**
@@ -66,6 +83,7 @@ export function MonthGrid({
   todayKey,
   onSelectDay,
   labelSuffix,
+  medsByDay,
 }: MonthGridProps) {
   const theme = useTheme();
   const tokens = useTokens();
@@ -76,6 +94,12 @@ export function MonthGrid({
   }
 
   const dotSize = Math.max(tokens.spacing.one, 4);
+  const glyphSize = dotSize * 2.5;
+  const verdictColor: Record<DayVerdict, string> = {
+    taken: theme.primary,
+    missed: theme.danger,
+    skipped: theme.textSecondary,
+  };
 
   return (
     <View style={[styles.grid, { gap: tokens.spacing.one }]}>
@@ -102,6 +126,7 @@ export function MonthGrid({
             const isToday = cell.key === todayKey;
             const isSelected = cell.key === selectedKey;
             const dots = Math.min(state?.count ?? 0, MAX_DOTS);
+            const meds = medsByDay?.get(cell.key);
 
             return (
               <Pressable
@@ -109,7 +134,7 @@ export function MonthGrid({
                 onPress={() => onSelectDay(cell.key)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
-                accessibilityLabel={cellLabel(cell.date, state, labelSuffix)}
+                accessibilityLabel={cellLabel(cell.date, state, meds, labelSuffix)}
                 style={({ pressed }) => [
                   styles.cell,
                   {
@@ -122,6 +147,15 @@ export function MonthGrid({
                     opacity: pressed ? 0.6 : 1,
                   },
                 ]}>
+                {meds ? (
+                  <View
+                    style={[styles.verdict, { top: tokens.spacing.half, right: tokens.spacing.half }]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants">
+                    <Ionicons name={VERDICT_GLYPH[meds.verdict]} size={glyphSize} color={verdictColor[meds.verdict]} />
+                  </View>
+                ) : null}
+
                 <ThemedText
                   type="small"
                   themeColor={cell.inMonth ? 'text' : 'textSecondary'}
@@ -176,6 +210,10 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // In the corner, clear of the numeral and the task dots below it.
+  verdict: {
+    position: 'absolute',
   },
   dayNumber: {
     textAlign: 'center',

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { useMedicationReminders } from '@/hooks/use-medication-reminders';
 import { usePresenceHeartbeat } from '@/hooks/use-presence-heartbeat';
 import { usePurchasesIdentity } from '@/hooks/use-purchases-identity';
 import { useSyncDeviceLocale } from '@/hooks/use-sync-device-locale';
@@ -15,6 +16,9 @@ export default function AppLayout() {
   // has opted out.
   useSyncDeviceLocale();
   usePurchasesIdentity();
+  // Here, not on the Meds tab: a reminder must be answerable whichever screen
+  // the app opens on, and an edit from another device must reschedule here.
+  useMedicationReminders();
 
   return (
     <Stack
@@ -27,6 +31,8 @@ export default function AppLayout() {
       <Stack.Screen name="task/[id]" options={{ title: 'Edit task', presentation: 'modal' }} />
       <Stack.Screen name="group/create" options={{ title: 'Create group', presentation: 'modal' }} />
       <Stack.Screen name="group/join" options={{ title: 'Join group', presentation: 'modal' }} />
+      <Stack.Screen name="medication/[id]" options={{ title: 'Medicine', presentation: 'modal' }} />
+      <Stack.Screen name="history" options={{ title: 'Completed tasks' }} />
       <Stack.Screen name="premium" options={{ title: 'Premium' }} />
       <Stack.Screen name="guide" options={{ title: 'How to use Goodlist' }} />
       <Stack.Screen name="stats" options={{ title: 'User statistics' }} />

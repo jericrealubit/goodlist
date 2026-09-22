@@ -41,4 +41,17 @@ export const ActionIcons = {
   voiceListening: 'stop-circle-outline',
   openLink: 'open-outline',
   premium: 'diamond-outline',
+  add: 'add',
+  addMedicine: 'add-circle-outline',
+  skipDose: 'play-skip-forward-outline',
+  archive: 'archive-outline',
+  reminders: 'notifications-outline',
+  time: 'time-outline',
+  // A dose's state, and a day's medicine verdict on the calendar. Shape carries
+  // the meaning so it survives every theme and colour-blindness.
+  doseTaken: 'checkmark',
+  doseMissed: 'close',
+  doseSkipped: 'remove',
+  doseDue: 'ellipse-outline',
+  remindersOff: 'notifications-off-outline',
 } as const satisfies Record<string, IconName>;

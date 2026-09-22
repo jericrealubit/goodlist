@@ -14,9 +14,13 @@ export type DueDatePickerProps = {
   value: Date | null;
   onChange: (date: Date | null) => void;
   disabled?: boolean;
+  /** What the field is, for its button and clear labels. Defaults to "due date". */
+  name?: string;
+  /** Shown when there is no value. Defaults to "No due date". */
+  placeholder?: string;
 };
 
-export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps) {
+export function DueDatePicker({ value, onChange, disabled, name = 'due date', placeholder = 'No due date' }: DueDatePickerProps) {
   const theme = useTheme();
   const tokens = useTokens();
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -27,7 +31,7 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
         disabled={disabled}
         onPress={() => setShowDatePicker(true)}
         accessibilityRole="button"
-        accessibilityLabel={value ? `Due date, ${value.toLocaleDateString()}` : 'Set due date'}
+        accessibilityLabel={value ? `${name[0].toUpperCase()}${name.slice(1)}, ${value.toLocaleDateString()}` : `Set ${name}`}
         style={[
           styles.button,
           {
@@ -38,17 +42,17 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
           },
         ]}>
         <Ionicons name={ActionIcons.dueDate} size={18} color={theme.textSecondary} />
-        <ThemedText>{value ? value.toLocaleDateString() : 'No due date'}</ThemedText>
+        <ThemedText>{value ? value.toLocaleDateString() : placeholder}</ThemedText>
       </Pressable>
       {value && !disabled ? (
         <Pressable
           onPress={() => onChange(null)}
           accessibilityRole="button"
-          accessibilityLabel="Clear due date"
+          accessibilityLabel={`Clear ${name}`}
           style={styles.clearRow}>
           <Ionicons name={ActionIcons.clear} size={16} color={theme.danger} />
           <ThemedText type="link" themeColor="danger">
-            Clear due date
+            Clear {name}
           </ThemedText>
         </Pressable>
       ) : null}

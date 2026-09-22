@@ -6,6 +6,14 @@ export const taskKeys = {
   detail: (id: string) => ['tasks', 'detail', id] as const,
 };
 
+// Everything under one prefix, which useRealtimeMedications invalidates wholesale.
+export const medicationKeys = {
+  all: ['medications'] as const,
+  list: ['medications', 'list'] as const,
+  detail: (id: string) => ['medications', 'detail', id] as const,
+  doses: (from: string, to: string) => ['medications', 'doses', from, to] as const,
+};
+
 export const groupKeys = {
   mine: ['group', 'mine'] as const,
 };

@@ -2,6 +2,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 
 import { queryClient } from '@/lib/query-client';
+import { cancelAllReminders } from '@/lib/reminders';
 import { supabase } from '@/lib/supabase';
 
 type SessionContextValue = {
@@ -41,6 +42,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
         // signed-in session's cache or replay under its identity.
         queryClient.clear();
         queryClient.getMutationCache().clear();
+        // Reminders are scheduled on the device, not the account: without
+        // this, the next person to sign in here gets the last one's medicine
+        // names on their lock screen.
+        cancelAllReminders().catch(() => {});
       } else if (nextSession) {
         setSession(nextSession);
       }

@@ -24,11 +24,11 @@ export default function AppTabs() {
           <TabTrigger name="calendar" href="/calendar" asChild>
             <TabButton>Calendar</TabButton>
           </TabTrigger>
+          <TabTrigger name="meds" href="/meds" asChild>
+            <TabButton>Meds</TabButton>
+          </TabTrigger>
           <TabTrigger name="group" href="/group" asChild>
             <TabButton>Group</TabButton>
-          </TabTrigger>
-          <TabTrigger name="history" href="/history" asChild>
-            <TabButton>History</TabButton>
           </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
             <TabButton>Settings</TabButton>
