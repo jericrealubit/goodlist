@@ -7,6 +7,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 're
 import { MonthGrid, type DayState } from '@/components/calendar/month-grid';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
+import { formatSlotTime, STATUS_LABEL } from '@/components/meds/dose-format';
 import { PrimaryButton } from '@/components/primary-button';
 import { RoundActionButton } from '@/components/round-action-button';
 import { TaskRow } from '@/components/task-row';
@@ -17,6 +18,8 @@ import { READ_ONLY_MESSAGE } from '@/constants/premium';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useGroupsQuery } from '@/hooks/use-group-query';
+import { useDosesQuery, useMedicationsQuery } from '@/hooks/use-medications-query';
+import { useRealtimeMedications } from '@/hooks/use-realtime-medications';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
@@ -26,12 +29,24 @@ import { bucketByDay } from '@/lib/calendar/bucket';
 import { addMonths, fromDayKey, isOverdue, startOfLocalDay, toDayKey, withDueTime, type DayKey } from '@/lib/calendar/day';
 import { buildMonthGrid, monthLabel } from '@/lib/calendar/month';
 import { getErrorMessage } from '@/lib/errors';
-import type { Task } from '@/lib/types';
+import { indexDoses, slotKey, slotStatus, type SlotStatus } from '@/lib/medications/adherence';
+import { summarizeDay, type DaySummary } from '@/lib/medications/day-summary';
+import { slotsForDayAll } from '@/lib/medications/schedule';
+import type { MedicationDose, Task } from '@/lib/types';
 import { displayTitle } from '@/lib/url';
 import { validateTaskTitle } from '@/lib/validation/task';
 
 /** Weeks start on Sunday, matching `Date.getDay()`. A preference is a later concern. */
 const WEEK_START = 0;
+
+/** The same shapes as the grid's corner mark, plus the two states a day can be in before it has a verdict. */
+const STATUS_GLYPH: Record<SlotStatus, IconName> = {
+  taken: ActionIcons.doseTaken,
+  missed: ActionIcons.doseMissed,
+  skipped: ActionIcons.doseSkipped,
+  due: ActionIcons.doseDue,
+  upcoming: ActionIcons.time,
+};
 
 /** How much of the unscheduled pile to show before it stops being a hint and becomes a list. */
 const UNSCHEDULED_PREVIEW = 4;
@@ -128,6 +143,7 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
   const [armed, setArmed] = useState<Task | null>(null);
 
   useRealtimeTasks();
+  useRealtimeMedications();
 
   const buckets = useMemo(() => bucketByDay(data ?? [], now), [data, now]);
   const grid = useMemo(() => buildMonthGrid(anchor, WEEK_START), [anchor]);
@@ -144,6 +160,33 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
   }, [buckets, now]);
 
   const todayKey = toDayKey(now);
+
+  // Medicines: your own only — anything shared with you lives on the Meds tab.
+  // Doses are fetched for exactly the 42 cells on screen, so paging back a
+  // month fetches that month rather than widening one ever-growing window.
+  const { data: meds } = useMedicationsQuery();
+  const myMeds = useMemo(() => (meds ?? []).filter((m) => m.owner_id === user?.id), [meds, user?.id]);
+  const gridFrom = grid.cells[0].key;
+  const gridTo = grid.cells[grid.cells.length - 1].key;
+  // Nothing on screen can have a verdict when the whole grid is in the future.
+  const wantsDoses = myMeds.length > 0 && gridFrom <= todayKey;
+  const { data: gridDoses } = useDosesQuery(gridFrom, gridTo, wantsDoses);
+  const doseIndex = useMemo(() => indexDoses<MedicationDose>(gridDoses ?? []), [gridDoses]);
+
+  const medsByDay = useMemo(() => {
+    const map = new Map<DayKey, DaySummary>();
+    if (!wantsDoses) return map;
+    for (const cell of grid.cells) {
+      if (cell.key > todayKey) break;
+      const summary = summarizeDay(myMeds, doseIndex, cell.key, now);
+      if (summary) map.set(cell.key, summary);
+    }
+    return map;
+  }, [wantsDoses, grid, todayKey, myMeds, doseIndex, now]);
+
+  const daySlots = useMemo(() => slotsForDayAll(myMeds, selectedKey), [myMeds, selectedKey]);
+  const medsById = useMemo(() => new Map(myMeds.map((m) => [m.id, m])), [myMeds]);
+
   const dayTasks = buckets.byDay.get(selectedKey) ?? [];
   const selectedDate = fromDayKey(selectedKey);
   const error = isError && !data ? getErrorMessage(queryError, 'Could not load your tasks.') : null;
@@ -284,6 +327,12 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
     );
   }
 
+  function statusColor(status: SlotStatus): string {
+    if (status === 'taken') return theme.primary;
+    if (status === 'missed') return theme.danger;
+    return theme.textSecondary;
+  }
+
   const selectedHeading = selectedDate
     ? selectedDate.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
     : 'That day';
@@ -352,6 +401,7 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
             todayKey={todayKey}
             onSelectDay={handleSelectDay}
             labelSuffix={armed ? 'tap to move here' : undefined}
+            medsByDay={medsByDay}
           />
 
           {buckets.overdue.length > 0 ? (
@@ -412,6 +462,31 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
               </ThemedText>
             )}
           </ThemedView>
+
+          {daySlots.length > 0 ? (
+            <ThemedView style={[styles.section, { gap: tokens.spacing.two }]}>
+              <ThemedText type="smallBold">Medicines</ThemedText>
+              {daySlots.map((slot) => {
+                const med = medsById.get(slot.medicationId);
+                if (!med) return null;
+                const status = slotStatus(slot, doseIndex.get(slotKey(slot.medicationId, slot.day, slot.time)), now);
+                return (
+                  <ThemedView key={slotKey(slot.medicationId, slot.day, slot.time)} style={styles.doseLine}>
+                    <Ionicons name={STATUS_GLYPH[status]} size={16} color={statusColor(status)} />
+                    <ThemedText type="small" style={styles.doseText}>
+                      {formatSlotTime(slot.time)} · {med.name}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {STATUS_LABEL[status]}
+                    </ThemedText>
+                  </ThemedView>
+                );
+              })}
+              <Pressable onPress={() => router.navigate('/meds')} accessibilityRole="link">
+                <ThemedText type="linkPrimary">Log doses in Meds</ThemedText>
+              </Pressable>
+            </ThemedView>
+          ) : null}
 
           {buckets.unscheduled.length > 0 ? (
             <ThemedView style={[styles.section, { gap: tokens.spacing.two }]}>
@@ -476,6 +551,15 @@ const styles = StyleSheet.create({
   },
   overdueLine: {
     alignSelf: 'center',
+  },
+  doseLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: 'transparent',
+  },
+  doseText: {
+    flex: 1,
   },
   section: {
     backgroundColor: 'transparent',

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -13,7 +14,6 @@ import { ActionIcons, type IconName } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
-import { useTabScreenInsets } from '@/hooks/use-tab-screen-insets';
 import { useTheme } from '@/hooks/use-theme';
 import { useDeleteAllHistoryMutation, useDeleteTaskMutation, useReopenTaskMutation } from '@/hooks/use-task-mutations';
 import { useHistoryQuery } from '@/hooks/use-tasks-query';
@@ -50,7 +50,9 @@ function RowIconButton({
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { topInset, bottomInset } = useTabScreenInsets();
+  // A stack screen now (the Meds tab took its place in the tab bar), so the
+  // navigator draws the header and only the bottom edge needs clearing.
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const theme = useTheme();
   const { user } = useSession();
   const { data, isLoading, isError, error: queryError, refetch } = useHistoryQuery();
@@ -94,10 +96,6 @@ export default function HistoryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { paddingTop: topInset + Spacing.two }]}>
-        <ThemedText type="header">Completed tasks</ThemedText>
-      </ThemedView>
-
       {tasks && tasks.length > 0 ? (
         <ThemedView style={styles.deleteAllZone}>
           {actionError ? (
@@ -219,15 +217,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.two,
-    gap: Spacing.half,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: MaxContentWidth,
-  },
   deleteAllZone: {
+    paddingTop: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.three,
     gap: Spacing.two,

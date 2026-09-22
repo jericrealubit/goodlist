@@ -138,3 +138,71 @@ export type UserStats = {
    *  screen's caption can't drift from the query. */
   live_window_seconds: number;
 };
+
+export type DoseStatus = 'taken' | 'skipped';
+
+export type Medication = {
+  id: string;
+  owner_id: string;
+  name: string;
+  /** Free text, e.g. "500 mg · 1 tablet". */
+  dose: string | null;
+  instructions: string | null;
+  /** Local wall-clock times, `HH:MM`, 24-hour, earliest first. */
+  times: string[];
+  /** 0 = Sunday … 6 = Saturday, as `Date.getDay()`. Null means every day. */
+  days_of_week: number[] | null;
+  /** `YYYY-MM-DD`, local. */
+  start_date: string;
+  end_date: string | null;
+  /** The owner's IANA zone when last saved — whose clock `times` are on. */
+  time_zone: string | null;
+  reminders_enabled: boolean;
+  archived_at: string | null;
+  /** Set only while shared with a group; sharing needs Premium. */
+  shared_family_id: string | null;
+  created_at: string;
+  updated_at: string;
+  owner?: Pick<Profile, 'display_name'> | null;
+};
+
+export type MedicationInput = {
+  name: string;
+  dose: string | null;
+  instructions: string | null;
+  times: string[];
+  days_of_week: number[] | null;
+  start_date: string;
+  end_date: string | null;
+  reminders_enabled: boolean;
+  shared_family_id: string | null;
+};
+
+export type NewMedicationInput = MedicationInput & {
+  id: string;
+  ownerId: string;
+  timeZone: string | null;
+};
+
+export type MedicationDose = {
+  id: string;
+  medication_id: string;
+  owner_id: string;
+  /** The slot this answers: its local day and `HH:MM`. */
+  slot_date: string;
+  slot_time: string;
+  status: DoseStatus;
+  logged_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LogDoseInput = {
+  id: string;
+  medicationId: string;
+  ownerId: string;
+  slotDate: string;
+  slotTime: string;
+  status: DoseStatus;
+  loggedAt: string;
+};

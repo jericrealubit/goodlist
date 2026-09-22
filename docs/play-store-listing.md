@@ -134,7 +134,7 @@ all ages (e.g. "Everyone" / PEGI 3 equivalent).
 | Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | Yes |
-| Data collected | Email address (account), User-generated content (task titles/notes/due dates, display name, group name), App activity → Other actions (a single overwritten "last seen" timestamp, used only for the live active-user count), Approximate location (country + time zone — see note below), Financial info → Purchase history (Premium trial/subscription status — see note below) |
+| Data collected | Email address (account), User-generated content (task titles/notes/due dates, display name, group name), **Health and fitness → Health info** (medicine names, doses, schedules and taken/skipped log — optional; see the medicines note below), App activity → Other actions (a single overwritten "last seen" timestamp, used only for the live active-user count), Approximate location (country + time zone — see note below), Financial info → Purchase history (Premium trial/subscription status — see note below) |
 | Is data encrypted in transit? | Yes |
 | Can users request data deletion? | Yes — in-app (Settings → Delete account), immediate and permanent. The country/time zone alone can also be cleared on its own via Settings → Privacy |
 | Is data shared with third parties? | No — Supabase and RevenueCat are service providers processing data on our behalf, which Play does not count as sharing |
@@ -143,6 +143,24 @@ all ages (e.g. "Everyone" / PEGI 3 equivalent).
 | Does the app collect audio (voice or sound recordings)? | **No** — the microphone is used, but the audio never reaches Goodlist. See the voice-input note below |
 | Purpose of location collection | Analytics only — an aggregate count of users per country. Never used for advertising, personalisation, or locating an individual |
 | Is collection required or optional? | Email required for account creation; display name optional; task content is whatever the user chooses to enter; **country/time zone is optional** and can be switched off in Settings → Privacy |
+
+### Note on medicines and the "Health info" declaration
+
+The Meds tab stores medicine names, doses, instructions, schedules and a taken/skipped log in
+Supabase. Declare **Health and fitness → Health info**: collected, **optional**, purpose **App
+functionality**, **not shared** (a medicine is shown to a group only when its owner chooses to share
+it, which is user-initiated transfer and not "sharing" in Play's sense), deletable in-app (delete the
+medicine, or Settings → Delete account).
+
+Reminders are **local notifications** scheduled on the device by `expo-notifications`; no push
+token is registered and nothing is sent by a server. The app requests `POST_NOTIFICATIONS` (asked in
+context, the first time a medicine is saved with reminders on) and does **not** request
+`SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, so there is no exact-alarm declaration to make.
+
+Before submitting: confirm the merged manifest carries no push-related permission you don't intend
+(`npx expo prebuild --platform android --no-install`, then inspect `AndroidManifest.xml`), and
+regenerate the public privacy page (`npm run legal:site`) in the same release so the policy Google
+fetches already mentions medicines.
 
 ### Note on the "Approximate location" declaration
 

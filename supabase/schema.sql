@@ -2144,3 +2144,207 @@ $$;
 
 revoke all on function public.touch_last_seen() from public, anon;
 grant execute on function public.touch_last_seen() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- medicines (see docs/superpowers/specs/2026-09-23-medicine-reminders-design.md)
+--
+-- A medication is a schedule of local wall-clock times; a dose row records
+-- what happened to one slot of it. Only 'taken' and 'skipped' are stored —
+-- "missed" is derived on the client from a slot with no row once its grace
+-- window has passed, so no server job has to write anything on a timer.
+--
+-- Tracking is free and private. Sharing a medication with a group is Premium:
+-- the trigger below refuses to *start* sharing without it, and the visibility
+-- helper stops showing a shared medication the moment the owner's Premium
+-- lapses — the same shape as a group going read-only.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.medication_times_valid(p_times text[])
+returns boolean
+language sql
+immutable
+as $$
+  select coalesce(bool_and(t ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'), false)
+  from unnest(p_times) as t;
+$$;
+
+create table if not exists public.medications (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  name text not null check (char_length(btrim(name)) between 1 and 120),
+  dose text check (dose is null or char_length(dose) <= 120),
+  instructions text check (instructions is null or char_length(instructions) <= 1000),
+  times text[] not null
+    check (cardinality(times) between 1 and 12 and public.medication_times_valid(times)),
+  -- 0 = Sunday … 6 = Saturday, as JavaScript's Date.getDay(). Null = every day.
+  days_of_week smallint[]
+    check (days_of_week is null
+           or (cardinality(days_of_week) between 1 and 7
+               and days_of_week <@ array[0, 1, 2, 3, 4, 5, 6]::smallint[])),
+  start_date date not null default current_date,
+  end_date date,
+  -- The owner's IANA zone when last saved, so a caregiver reading "08:00"
+  -- knows whose clock it is.
+  time_zone text,
+  reminders_enabled boolean not null default true,
+  archived_at timestamptz,
+  shared_family_id uuid references public.families (id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint medications_dates_ordered check (end_date is null or end_date >= start_date),
+  -- Lets PostgREST embed owner:profiles(display_name) for a shared medication.
+  constraint medications_owner_profile_fk foreign key (owner_id) references public.profiles (id) on delete cascade
+);
+
+create index if not exists medications_owner_id_idx on public.medications (owner_id);
+create index if not exists medications_shared_family_id_idx
+  on public.medications (shared_family_id) where shared_family_id is not null;
+
+drop trigger if exists medications_set_updated_at on public.medications;
+create trigger medications_set_updated_at
+  before update on public.medications
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.medication_doses (
+  id uuid primary key default gen_random_uuid(),
+  medication_id uuid not null references public.medications (id) on delete cascade,
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  slot_date date not null,
+  slot_time text not null check (slot_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+  status text not null check (status in ('taken', 'skipped')),
+  logged_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  -- One answer per slot: logging from a notification and from the app, or
+  -- replaying a queued offline log, lands on the same row.
+  constraint medication_doses_slot_unique unique (medication_id, slot_date, slot_time)
+);
+
+create index if not exists medication_doses_owner_date_idx on public.medication_doses (owner_id, slot_date);
+
+drop trigger if exists medication_doses_set_updated_at on public.medication_doses;
+create trigger medication_doses_set_updated_at
+  before update on public.medication_doses
+  for each row execute function public.set_updated_at();
+
+-- SECURITY DEFINER: it reads user_has_premium(), which clients can't call, and
+-- it must not re-enter medications' own RLS.
+create or replace function public.can_view_medication(p_medication_id uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.medications m
+    where m.id = p_medication_id
+      and (
+        m.owner_id = auth.uid()
+        or (
+          m.shared_family_id is not null
+          and public.is_household_member(m.shared_family_id)
+          -- Leaving the group stops sharing without anyone editing the row.
+          and public.family_has_member(m.shared_family_id, m.owner_id)
+          and public.user_has_premium(m.owner_id)
+        )
+      )
+  );
+$$;
+
+revoke all on function public.can_view_medication(uuid) from public, anon;
+grant execute on function public.can_view_medication(uuid) to authenticated;
+
+alter table public.medications enable row level security;
+alter table public.medication_doses enable row level security;
+
+drop policy if exists "Owners and their shared groups can view medications" on public.medications;
+create policy "Owners and their shared groups can view medications"
+  on public.medications for select
+  using (owner_id = auth.uid() or public.can_view_medication(id));
+
+drop policy if exists "Owners can add medications" on public.medications;
+create policy "Owners can add medications"
+  on public.medications for insert
+  with check (owner_id = auth.uid());
+
+drop policy if exists "Owners can update their medications" on public.medications;
+create policy "Owners can update their medications"
+  on public.medications for update
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+drop policy if exists "Owners can delete their medications" on public.medications;
+create policy "Owners can delete their medications"
+  on public.medications for delete
+  using (owner_id = auth.uid());
+
+-- Caregivers read; only the person taking the medicine logs it (v1).
+drop policy if exists "Owners and their shared groups can view doses" on public.medication_doses;
+create policy "Owners and their shared groups can view doses"
+  on public.medication_doses for select
+  using (owner_id = auth.uid() or public.can_view_medication(medication_id));
+
+drop policy if exists "Owners can log doses of their medications" on public.medication_doses;
+create policy "Owners can log doses of their medications"
+  on public.medication_doses for insert
+  with check (
+    owner_id = auth.uid()
+    and exists (select 1 from public.medications m where m.id = medication_id and m.owner_id = auth.uid())
+  );
+
+drop policy if exists "Owners can update their doses" on public.medication_doses;
+create policy "Owners can update their doses"
+  on public.medication_doses for update
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+drop policy if exists "Owners can delete their doses" on public.medication_doses;
+create policy "Owners can delete their doses"
+  on public.medication_doses for delete
+  using (owner_id = auth.uid());
+
+-- Starting to share needs Premium (or the trial) and a group you're in. Only
+-- checked when sharing *begins or moves*, so an owner whose Premium lapsed can
+-- still edit or un-share a medication that is already shared; it just stops
+-- being visible to the group (see can_view_medication).
+create or replace function public.enforce_medication_sharing()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.shared_family_id is not null
+     and (tg_op = 'INSERT' or new.shared_family_id is distinct from old.shared_family_id) then
+    if not public.family_has_member(new.shared_family_id, new.owner_id) then
+      raise exception 'You can only share a medicine with a group you belong to.';
+    end if;
+    if not public.user_has_premium(new.owner_id) then
+      raise exception 'PREMIUM_REQUIRED: Sharing medicines with a group needs Premium.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists medications_enforce_sharing on public.medications;
+create trigger medications_enforce_sharing
+  before insert or update on public.medications
+  for each row execute function public.enforce_medication_sharing();
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'medications'
+  ) then
+    alter publication supabase_realtime add table public.medications;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'medication_doses'
+  ) then
+    alter publication supabase_realtime add table public.medication_doses;
+  end if;
+end $$;

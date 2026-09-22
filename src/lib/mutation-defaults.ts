@@ -1,5 +1,6 @@
 import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
 
+import { medicationMutationOptionsByKey } from '@/hooks/use-medication-mutations';
 import { markAllReadMutationOptions } from '@/hooks/use-notifications-mutations';
 import {
   syncDeviceLocaleMutationOptions,
@@ -38,4 +39,9 @@ export function registerMutationDefaults(queryClient: QueryClient) {
   register(queryClient, syncDeviceLocaleMutationOptions);
   register(queryClient, updateLocaleSharingMutationOptions);
   register(queryClient, markAllReadMutationOptions);
+  register(queryClient, medicationMutationOptionsByKey.create);
+  register(queryClient, medicationMutationOptionsByKey.update);
+  register(queryClient, medicationMutationOptionsByKey.delete);
+  register(queryClient, medicationMutationOptionsByKey.logDose);
+  register(queryClient, medicationMutationOptionsByKey.clearDose);
 }

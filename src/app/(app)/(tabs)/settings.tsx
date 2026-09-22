@@ -166,6 +166,11 @@ export default function SettingsScreen() {
           <ThemedText type="smallBold" themeColor="textSecondary">
             Help
           </ThemedText>
+          <Pressable onPress={() => router.push('/history')}>
+            <ThemedText type="link" themeColor="textSecondary">
+              Completed tasks
+            </ThemedText>
+          </Pressable>
           <Pressable onPress={() => router.push('/guide')}>
             <ThemedText type="link" themeColor="textSecondary">
               How to use Goodlist

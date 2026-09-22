@@ -12,6 +12,10 @@ export type DueDatePickerProps = {
   value: Date | null;
   onChange: (date: Date | null) => void;
   disabled?: boolean;
+  /** What the field is, for its button and clear labels. Defaults to "due date". */
+  name?: string;
+  /** Shown when there is no value. Defaults to "No due date". */
+  placeholder?: string;
 };
 
 function pad(n: number): string {
@@ -31,7 +35,7 @@ function fromYMD(value: string): Date | null {
   return new Date(y, m - 1, d);
 }
 
-export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps) {
+export function DueDatePicker({ value, onChange, disabled, name = 'due date' }: DueDatePickerProps) {
   const theme = useTheme();
   const tokens = useTokens();
 
@@ -41,6 +45,7 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
           DOM <input> is valid here. Themed to match TextField. */}
       <input
         type="date"
+        aria-label={name}
         value={value ? toYMD(value) : ''}
         disabled={disabled}
         onChange={(event) => {
@@ -72,11 +77,11 @@ export function DueDatePicker({ value, onChange, disabled }: DueDatePickerProps)
         <Pressable
           onPress={() => onChange(null)}
           accessibilityRole="button"
-          accessibilityLabel="Clear due date"
+          accessibilityLabel={`Clear ${name}`}
           style={styles.clearRow}>
           <Ionicons name={ActionIcons.clear} size={16} color={theme.danger} />
           <ThemedText type="link" themeColor="danger">
-            Clear due date
+            Clear {name}
           </ThemedText>
         </Pressable>
       ) : null}

@@ -13,7 +13,7 @@
 // built-in type stripping.
 
 export const CONTACT_EMAIL = 'jericrealubit@gmail.com';
-export const EFFECTIVE_DATE = 'September 18, 2026';
+export const EFFECTIVE_DATE = 'September 23, 2026';
 
 /** An inline run of text: plain, bold, or the contact email as a mailto link. */
 export type Span = string | { bold: string } | { email: true };
@@ -74,6 +74,15 @@ export const privacyPolicy: LegalDoc = {
           spans: [
             { bold: 'Task & group content.' },
             ' Anything you enter to use the app: task titles, notes, due dates, completion status, group names, invite codes, and member roles. This is the content the app exists to store.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'Medicines.' },
+            ' If you use the Meds tab: the name, dose and instructions you enter for each medicine, the times and days you take it, your time zone (so the times read correctly), and each dose you mark as taken or skipped. This is health information, so it is ',
+            { bold: 'private to you by default' },
+            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with.',
           ],
         },
         {
@@ -157,6 +166,12 @@ export const privacyPolicy: LegalDoc = {
           kind: 'para',
           spans: [
             'Goodlist is built around small, invite-only groups — Family or Team mode, up to two per account. If you join or create one, your display name and any tasks marked as shared or requested within that group become visible to the other members — that visibility is the point of the feature, and it’s limited to people who joined using your group’s invite code.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            'Medicines are never shared automatically. A medicine you choose to share with a group shows its members its schedule and which doses you took, skipped or missed; they can’t change it. Sharing is a Premium feature, and it pauses on its own if your Premium ends or you leave the group.',
           ],
         },
         {
@@ -450,6 +465,13 @@ export const termsOfService: LegalDoc = {
             'Goodlist is provided “as is,” without warranties of any kind, express or implied, including uninterrupted availability. To the fullest extent permitted by law, we aren’t liable for indirect, incidental, or consequential damages arising from your use of the app.',
           ],
         },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'Medicines are not medical advice.' },
+            ' The Meds tab is a reminder and a record-keeper. It doesn’t check doses, interactions or schedules, and a reminder can fail to arrive — for example if notifications are turned off, the phone is off, or the operating system delays it. Always follow your doctor or pharmacist, and don’t rely on Goodlist alone for a medicine where a missed dose matters.',
+          ],
+        },
       ],
     },
     {
@@ -556,6 +578,7 @@ export const accountDeletion: LegalDoc = {
             ['Your account and sign-in credentials.'],
             ['Your display name and profile.'],
             ['All of your personal tasks, notes, and due dates.'],
+            ['Your medicines and every dose you logged, including any shared with a group.'],
             ['Your completion and cancellation history.'],
             ['Your notifications.'],
             ['Your group memberships, and any country/time-zone value stored for community stats.'],

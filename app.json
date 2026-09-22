@@ -48,6 +48,12 @@
         }
       ],
       "./plugins/with-optional-microphone",
+      [
+        "expo-notifications",
+        {
+          "color": "#072655"
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

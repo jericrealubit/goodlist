@@ -55,14 +55,16 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} md="calendar_month" />
       </NativeTabs.Trigger>
 
+      {/* Took History's slot: five is the ceiling for a tab bar, and a dose is
+          something you check daily, where history is something you visit. */}
+      <NativeTabs.Trigger name="meds">
+        <NativeTabs.Trigger.Label>Meds</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="medication" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="group">
         <NativeTabs.Trigger.Label>Group</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="history">
-        <NativeTabs.Trigger.Label>History</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'clock', selected: 'clock.fill' }} md="history" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="settings">
