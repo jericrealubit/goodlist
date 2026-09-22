@@ -28,10 +28,12 @@
  * its 1080px-per-side threshold for promotion eligibility. finishShot() below
  * upscales each capture ~1.5x (high-quality resampling — these are flat-color
  * CSS mockups, not photos, so upscale softness is minimal) then widens the
- * canvas to a 2:1 ratio with side bars in the mockup's own background color,
- * which already fills 100% of every screen — so the padding is invisible as
- * "padding" and no UI is ever clipped. Applies to all three output sets
- * (docs/user-guide/images, assets/images/guide, docs/screenshots).
+ * canvas to a 2:1 ratio with side bars in the color the capture itself ends
+ * on, sampled from its own edge — so the padding is invisible as "padding"
+ * and no UI is ever clipped. Sampled rather than fixed to the theme
+ * background because 18-voice dims the whole screen behind the listening
+ * panel, and cream bars around that read as a frame. Applies to all three
+ * output sets (docs/user-guide/images, assets/images/guide, docs/screenshots).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -48,10 +50,20 @@ const OUT_DIR = join(ROOT, 'docs', 'user-guide', 'images');
 // the bundle cost down (flat UI colors, so it's visually lossless here).
 const APP_DIR = join(ROOT, 'assets', 'images', 'guide');
 const APP_PALETTE_COLORS = 256;
-// Product shots for README.md: the same screens re-rendered with the teaching
-// callouts suppressed, so they read as the app rather than as a tutorial.
+// Product shots for README.md and the Play Store listing: the same screens
+// re-rendered with the teaching callouts suppressed, so they read as the app
+// rather than as a tutorial. The order is the upload order — Play shows the
+// first two or three in search results, so this opens on what the app is and
+// follows with the two things that set it apart. Play accepts at most 8.
 const SHOWCASE_DIR = join(ROOT, 'docs', 'screenshots');
-const SHOWCASE = ['05-my-list', '16-their-inbox', '11-invite-code', '17-settings'];
+const SHOWCASE = [
+  '05-my-list',
+  '19-calendar',
+  '18-voice',
+  '16-their-inbox',
+  '11-invite-code',
+  '17-settings',
+];
 
 // ---------------------------------------------------------------------------
 // Design tokens — mirrored from src/constants/themes.ts (minimalSage) and
@@ -737,8 +749,14 @@ async function finishShot(path) {
   const extra = Math.max(0, targetWidth - width);
   const left = Math.floor(extra / 2);
   const right = extra - left;
+  // Sampled halfway down the left edge: every screen runs its background to
+  // the edge there, and on 18-voice that background is the dimmed scrim.
+  const [r, g, b] = await sharp(upscaled)
+    .extract({ left: 0, top: Math.floor(height / 2), width: 1, height: 1 })
+    .raw()
+    .toBuffer();
   const out = await sharp(upscaled)
-    .extend({ left, right, top: 0, bottom: 0, background: C.background })
+    .extend({ left, right, top: 0, bottom: 0, background: { r, g, b } })
     .png()
     .toBuffer();
   writeFileSync(path, out);

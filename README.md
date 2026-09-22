@@ -6,13 +6,15 @@ and a realtime [Supabase](https://supabase.com) backend. It runs on Android and 
 <https://goodlist.expo.app>.
 
 <p align="center">
-  <img src="docs/screenshots/05-my-list.png" width="195" alt="The Tasks screen in Solo mode, showing four task cards">
-  <img src="docs/screenshots/16-their-inbox.png" width="195" alt="The Requested tab showing two tasks a group member asked for, with an unread badge on Tasks">
-  <img src="docs/screenshots/11-invite-code.png" width="195" alt="A group card showing the group name, invite code and member list">
-  <img src="docs/screenshots/17-settings.png" width="195" alt="Settings, showing the display name field and the theme picker">
+  <img src="docs/screenshots/05-my-list.png" width="130" alt="The Tasks screen in Solo mode, showing four task cards">
+  <img src="docs/screenshots/19-calendar.png" width="130" alt="A month grid with dots under the days that have tasks due, and the selected day's tasks listed below it">
+  <img src="docs/screenshots/18-voice.png" width="130" alt="The listening panel over the task list, showing the words &quot;Buy milk tomorrow&quot; it heard">
+  <img src="docs/screenshots/16-their-inbox.png" width="130" alt="The Requested tab showing two tasks a group member asked for, with an unread badge on Tasks">
+  <img src="docs/screenshots/11-invite-code.png" width="130" alt="A group card showing the group name, invite code and member list">
+  <img src="docs/screenshots/17-settings.png" width="130" alt="Settings, showing the display name field and the theme picker">
 </p>
 <p align="center">
-  <sub>Your own list · What your group asked of you · Invite code · Nine themes</sub>
+  <sub>Your own list · What is due when · Say it instead of typing · What your group asked of you · Invite code · Nine themes</sub>
 </p>
 
 ## Using the app
@@ -101,7 +103,7 @@ src/
   app/            Expo Router screens (file-based routing)
     (auth)/        Sign in, sign up, forgot/reset password
     (app)/
-      (tabs)/       Tasks, Group, History, Settings
+      (tabs)/       Tasks, Calendar, Group, History, Settings
       group/        Create / join a group
       task/[id]     Task detail / edit
       about, guide, premium, privacy, terms, stats, distribution
@@ -109,6 +111,8 @@ src/
                   guide-document, ...)
   hooks/          Data-fetching and mutation hooks (React Query)
   lib/            Supabase client, queries, mutations, types, validation;
+                  calendar/ and voice/ — pure, dependency-free modules (no React,
+                  no Expo, no @/ aliases) so `npm test` can run them directly;
                   purchases.ts / purchases.web.ts — RevenueCat on Android / web,
                   same exports, picked by Metro's platform extensions
   constants/      Theme definitions, group role/mode options, Premium prices
@@ -122,6 +126,9 @@ docs/
   legal/
   user-guide/     The same walkthrough as Markdown, for reading on GitHub
   screenshots/    Callout-free product shots used by this README
+plugins/          Local Expo config plugins. with-optional-microphone.js declares
+                  android.hardware.microphone optional, so devices without one
+                  still appear in the listing and keep receiving updates
 scripts/
   lib/            site-shell.mjs (shared site chrome), distribution-report.mjs
 supabase/

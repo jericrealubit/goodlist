@@ -17,9 +17,13 @@ Goodlist
 
 **Short description** (max 80 characters)
 ```
-Personal tasks that stay simple solo, and work together with your household.
+Personal tasks you can speak, see on a calendar, and share with your household.
 ```
-(78 characters)
+(79 characters)
+
+This leads on the two newest features because they are what a search result has to earn a tap
+with. If you would rather keep the solo-to-household framing, the previous line still fits:
+`Personal tasks that stay simple solo, and work together with your household.` (78 characters).
 
 **Full description** (max 4000 characters)
 ```
@@ -27,6 +31,15 @@ Goodlist is a personal task list that starts simple and grows with you.
 
 Sign up and start adding tasks in seconds — no household, no setup, no
 friction. Every task you create is private to you by default.
+
+Type a task, or tap the microphone and just say it: "Buy milk tomorrow"
+becomes a task, due tomorrow. You see the words it heard before anything is
+saved, and nothing is ever recorded — your own phone turns speech into text,
+and Goodlist only ever receives the text.
+
+Give a task a day and it turns up on the calendar, so you can see what's
+coming instead of scrolling a list. Tap a day to see what is on it, and move
+a task to another day with two taps.
 
 When you're ready, create or join a household with a partner. You can then
 send each other Requested tasks — clear, visible asks with a name attached,
@@ -36,8 +49,10 @@ changes what you already had.
 
 FEATURES
 • Personal tasks with optional notes and due dates
-• A calendar view — see what's due when, and move a task to another day
+• A calendar view — a dot on every day with something due, red if it's overdue
+• Move a task to another day with two taps
 • Add tasks by speaking, including dates like "buy milk tomorrow"
+• Tick off, undo or delete a task by voice — deleting always asks first
 • A history of everything you've completed
 • Optional household collaboration — create or join with an invite code
 • Request tasks from another household member; they see your name on it
@@ -51,6 +66,13 @@ group, and it starts with a 90-day free trial, no card needed.
 Goodlist doesn't show ads, doesn't track you for advertising, and doesn't
 sell your data. See our Privacy Policy for the specifics.
 ```
+
+> **The published listing does not currently match the block above.** The live description
+> opens "Goodlist is a simple, fast to-do list for your own tasks", is organised under CAPS
+> section headings, and mentions neither voice nor the calendar — an older draft that predates
+> this file. Pasting the block above replaces it wholesale, which is the intended direction:
+> this file is the one that gets checked against the privacy policy. Replace it in one edit
+> rather than patching the live copy, so the two stop diverging.
 
 **Category**
 ```
@@ -89,37 +111,33 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Release notes — the voice release
+## Release notes — the calendar release
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
-set these, so they are typed into the Console by hand for each release.
+set these, so they are typed into the Console by hand, and rewritten for each release — the note
+below replaces the voice one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is inside that; check it
-again if you edit it.
-
-The two things it has to do are tell testers what to try and pre-empt the microphone prompt. A new
-permission appearing with no explanation is the fastest way to lose a tester, and a tester who
-uninstalls restarts their own 14-day clock.
+Play caps this field at **500 characters per language**. The note below is 362; check it again if
+you edit it.
 
 ```
-What's new: you can talk to Goodlist.
+What's new: a Calendar tab.
 
-Tap the microphone beside the send button and say things like:
-• "Buy milk tomorrow"
-• "Ask Sam to take the bins out"
-• "Finish the laundry"
-• "Undo"
-• "Open history"
+Everything with a due date now shows up on the month it falls in. Tap a day to see what's on it, or to add something to that day.
 
-It shows what it heard before saving, and always asks before deleting anything.
+To move a task to a different day: tap the calendar button on it, then tap the day you want.
 
-Your phone will ask for microphone access the first time — that's expected. Nothing is recorded: your phone turns speech into text, and Goodlist only ever receives the text.
+Tasks with no date sit at the bottom — tap the calendar button on one to give it a day.
+
+No new permissions.
 ```
 
-Two things deliberately left out. There is no mention of the commands that are *not* wired up,
-because every verb in the guide now works — that was true of an earlier draft and is not any more.
-And there is no apology for it being rough: testers who are told a feature is unfinished report
-less, not more.
+Three deliberate choices. **The microphone is not mentioned** — that release's note existed largely
+to pre-empt a permission prompt, and this one adds no permission, so the last line says so plainly
+instead. **The unscheduled tray gets its own line**, because most existing tasks have no due date
+and a tester who opens the calendar to an empty month will assume it is broken rather than empty.
+And **there is no "nothing else has changed"**, because whether the voice build ever reached these
+testers is not something this document can know.
 
 ## Content rating questionnaire (IARC)
 
@@ -206,6 +224,21 @@ collect*, plus the speech-service entry under *Sharing & service providers* — 
 `src/content/legal.ts`. Google fetches that policy and cross-checks it against this form, so the two
 must ship together.
 
+### Note on the calendar view
+
+The Calendar tab plots the due dates already stored on the user's own tasks. It does **not** read,
+write, or sync the device calendar: there is no `expo-calendar` dependency, no `READ_CALENDAR` or
+`WRITE_CALENDAR` in the manifest, and no calendar permission is requested. Nothing new is
+collected, so **no Data Safety answer changes for it** — the due dates are already declared under
+User-generated content. Verify before answering rather than trusting this paragraph:
+
+```bash
+grep -rn "expo-calendar\|READ_CALENDAR\|WRITE_CALENDAR" package.json app.json src   # expect no matches
+```
+
+If a reviewer asks, the accurate description is: *an in-app month view of the user's own task due
+dates; the device calendar is neither read nor written.*
+
 ### Note on the "Purchase history" declaration
 
 Premium is sold through Google Play Billing, via RevenueCat's SDK. Card and bank details never
@@ -246,7 +279,7 @@ instruction set:
 | Name | Full app access |
 | Username | *(a real Supabase account created for this purpose)* |
 | Password | *(its password)* |
-| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. |
+| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. |
 
 Create that account on the production Supabase project, seed it with a handful of tasks, a group,
 and at least one requested task, and **do not delete it** — Play re-uses it for every future update

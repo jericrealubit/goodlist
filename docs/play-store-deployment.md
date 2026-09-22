@@ -96,17 +96,52 @@ EAS environment variables from B1 actually resolve, and an explicit Android `bui
 
 ```jsonc
 "submit": {
-  "internal":   { "android": { "serviceAccountKeyPath": "...", "track": "internal",   "releaseStatus": "completed" } },
-  "closed":     { "android": { "serviceAccountKeyPath": "...", "track": "alpha",      "releaseStatus": "completed" } },
-  "production": { "android": { "serviceAccountKeyPath": "...", "track": "internal",   "releaseStatus": "draft"     } }
+  "internal":   { "android": { "track": "internal", "releaseStatus": "completed" } },
+  "closed":     { "android": { "track": "alpha",    "releaseStatus": "completed" } },
+  "production": { "android": { "track": "internal", "releaseStatus": "draft"     } }
 }
 ```
 
-You still have to **put the key file there**: create a Google Cloud service account with the
-*Service Account User* role, grant it access in Play Console under Users and permissions, download
-its JSON key, and save it as `credentials/play-service-account.json`. `.gitignore` already excludes
-`*service-account*.json` and `credentials/`, so it will not be committed — but keeping it outside
-the repo and using an absolute path is safer still.
+**There is deliberately no `serviceAccountKeyPath`.** It used to point at
+`credentials/play-service-account.json`, which cannot work anywhere but the one machine that
+downloaded the key: the path is git-ignored (correctly — it is a secret), so a fresh clone, a CI
+runner, or a cloud session has no such file and `eas submit` fails before it starts.
+
+Instead the key lives **on EAS servers**, encrypted at rest with KMS, and is reused for every later
+submission. Upload it once, either way:
+
+- **CLI** — run `npx eas-cli submit -p android --profile internal --latest` and answer *Google
+  Service Account → Upload a Google Service Account Key* when prompted; or
+- **Dashboard** — expo.dev → the project → Credentials → Android → `com.goodlist.app` → Service
+  Credentials → *Add a Google Service Account Key* → Upload new key.
+
+To create the key: Google Cloud → IAM & Admin → Service Accounts → Create (no IAM role needed —
+its power comes from Play Console, not from Cloud), then Keys → Add key → Create new key → JSON.
+Invite that account's email under Play Console → Users and permissions, and give it, on Goodlist:
+
+- View app information (read-only)
+- Release apps to testing tracks
+- Manage testing tracks and edit tester lists
+- Release to production, exclude devices, and use Play App Signing
+- Manage store presence
+- Edit and delete draft apps — on the *Account permissions* tab; the first upload of an app that is
+  still a draft fails without it
+
+That is [Expo's own required set](https://github.com/expo/fyi/blob/main/creating-google-service-account.md).
+Play auto-selects a few read-only extras (app quality, policy declarations, deep links) alongside them,
+which cannot be unticked. Leave everything else off, in particular:
+
+- **Play Games Services** (*Edit* / *Publish … projects*) — Goodlist is not a game, and both grant
+  across *all* apps rather than just this one.
+- **Register and manage package names for Android developer verification** — that is a different
+  system (the Android Developer Console, for registering package names and signing keys against a
+  verified developer identity). `eas submit` only calls the Play Android Developer API, and this
+  permission can delete those registrations.
+- **Reply to reviews** — nothing automated should be able to speak publicly as you.
+
+Keep the downloaded JSON out of the repo entirely once EAS has it — there is no longer any reason
+for a copy to sit in the working tree. `.gitignore` still excludes `*service-account*.json` and
+`credentials/` as a backstop.
 
 > This is **not** the same service account RevenueCat needs. That one carries financial and
 > order permissions instead of release permissions, and lives in Google Cloud with Pub/Sub roles
@@ -165,15 +200,21 @@ account (email + password) on your Supabase project, seeded with a few tasks and
 Reviewers who cannot get past a login screen reject the submission. Create this account now and do
 not delete it.
 
-### B6. Screenshots — the existing images cannot be used as-is
+### B6. ~~Screenshots — the existing images cannot be used as-is~~ — **fixed**
 
 Play needs 2–8 phone screenshots (aim for 4–6), JPEG or **24-bit PNG with no alpha**, min dimension
 320px, max 3840px, and **no side more than twice the other (2:1 max)**.
 
-`docs/user-guide/images/*.png` are 780×1688 — that is 1:2.16, past the 2:1 cap, so Play Console will
-reject them on upload. They are also illustrations rather than captures of the running app. Take real
-screenshots from a device or emulator at 1080×2160 or 1080×1920 (both exactly ≤ 2:1). Good candidates:
-the task list with a few tasks, task detail, a group screen, history, and appearance/themes.
+The guide illustrations in `docs/user-guide/images/` are 780×1688 — 1:2.16, past the 2:1 cap, so
+those would still be rejected on upload. Do not reach for them. `npm run guide:screens` now also
+writes six callout-free product shots to `docs/screenshots/` at **1266×2532, exactly 2:1, 24-bit
+with no alpha**, which Play accepts as they are: it upscales each capture and pads the canvas to
+2:1 in the shot's own edge colour, so nothing is clipped and the padding does not read as padding.
+
+Which six, in which upload order, and what each one is for:
+[`play-store-listing.md` § Screenshots](./play-store-listing.md#screenshots). Real device captures
+are still welcome if you want them — these are faithful mockups, not captures of the running app —
+but they are no longer blocking anything.
 
 ### B7. ~~The feature graphic has an alpha channel~~ — **fixed**
 
@@ -242,7 +283,8 @@ applies operations in a fixed pipeline order rather than call order.
 7. Turn on GitHub Pages (Settings → Pages → `main` / `/docs`) so the privacy, terms, and
    account-deletion pages go live (B3, B4), and check all three load in a private window.
 8. Fill the **Store listing**: copy from `play-store-listing.md`, `assets/images/play-store-icon.png`,
-   `assets/images/feature-graphic.png`, and the new screenshots (B6).
+   `assets/images/feature-graphic.png`, and the six shots in `docs/screenshots/` — upload order and
+   captions are in that file's Screenshots section.
 9. Complete **App content** end to end — it all must be green before production:
    privacy policy URL · App access (B5 demo credentials) · Ads: No · Content rating questionnaire ·
    Target audience: 13+, not designed for children · Data safety (matching the policy, including the
