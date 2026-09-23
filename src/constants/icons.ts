@@ -54,4 +54,5 @@ export const ActionIcons = {
   doseSkipped: 'remove',
   doseDue: 'ellipse-outline',
   remindersOff: 'notifications-off-outline',
+  systemStatus: 'information-circle-outline',
 } as const satisfies Record<string, IconName>;

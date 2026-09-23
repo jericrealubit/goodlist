@@ -30,6 +30,7 @@ import type { PremiumPlan } from '@/lib/types';
 const FEATURES = [
   'Own a second group — say, one for family and one for a team.',
   'Keep every group you own fully editable: requests, renames and new members.',
+  'Share a medicine with your group, so they can see its schedule and doses.',
   'Your group members never pay. Premium is per owner, not per person.',
 ];
 

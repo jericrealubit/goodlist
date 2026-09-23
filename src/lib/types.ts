@@ -134,9 +134,19 @@ export type UserStats = {
   solo_users: number;
   one_group_users: number;
   two_group_users: number;
+  med_users: number;
+  med_sharing_users: number;
+  premium_users: number;
   /** The window `live_users` was counted over; returned by the server so the
    *  screen's caption can't drift from the query. */
   live_window_seconds: number;
+};
+
+// The singleton `system_status` row — see docs/system-status-notice.md.
+// `message` is null when there's nothing to show.
+export type SystemStatus = {
+  message: string | null;
+  updated_at: string;
 };
 
 export type DoseStatus = 'taken' | 'skipped';

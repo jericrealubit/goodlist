@@ -27,38 +27,40 @@ and ask them to do things too.
 6. [Tick something off](#step-6--tick-something-off)
 7. [Change a task](#step-7--change-a-task)
 8. [See it all on a calendar](#step-8--see-it-all-on-a-calendar)
-9. [Find things you finished](#step-9--find-things-you-finished)
+9. [Keep track of a medicine](#step-9--keep-track-of-a-medicine)
+10. [Find things you finished](#step-10--find-things-you-finished)
 
 **Part 2 — You and other people**
 
-10. [Open the Group page](#step-10--open-the-group-page)
-11. [Make your group](#step-11--make-your-group)
-12. [Give out your code](#step-12--give-out-your-code)
-13. [They type in the code](#step-13--they-type-in-the-code)
-14. [They pick who they are](#step-14--they-pick-who-they-are)
-15. [Your list now has two parts](#step-15--your-list-now-has-two-parts)
-16. [Ask someone to do something](#step-16--ask-someone-to-do-something)
-17. [What they see](#step-17--what-they-see)
+11. [Open the Group page](#step-11--open-the-group-page)
+12. [Make your group](#step-12--make-your-group)
+13. [Give out your code](#step-13--give-out-your-code)
+14. [They type in the code](#step-14--they-type-in-the-code)
+15. [They pick who they are](#step-15--they-pick-who-they-are)
+16. [Your list now has two parts](#step-16--your-list-now-has-two-parts)
+17. [Ask someone to do something](#step-17--ask-someone-to-do-something)
+18. [What they see](#step-18--what-they-see)
 
 **Also useful**
 
-- [The four buttons at the bottom](#the-four-buttons-at-the-bottom)
+- [The five buttons at the bottom](#the-five-buttons-at-the-bottom)
 - [Small things that are nice to know](#small-things-that-are-nice-to-know)
 - [If something goes wrong](#if-something-goes-wrong)
 - [Words we used](#words-we-used)
 
 ---
 
-## The four buttons at the bottom
+## The five buttons at the bottom
 
-Look at the very bottom of the app. There are four buttons. They never change.
+Look at the very bottom of the app. There are five buttons. They never change.
 
 | Button | What it is for |
 | --- | --- |
 | **Tasks** | Your list of things to do. This is the main page. |
+| **Calendar** | Everything with a day, laid out by month. |
+| **Meds** | Medicines to take, and when. |
 | **Group** | The people you share with. Empty at first — that is fine. |
-| **History** | Everything you have already finished. |
-| **Settings** | Your name, the colours, and signing out. |
+| **Settings** | Your name, the colours, signing out, and where History moved to. |
 
 Tap one and the page changes. That's all they do. You cannot break anything by tapping them.
 
@@ -211,9 +213,32 @@ you want. Two taps, and it has moved.
 > Tasks you never gave a day to are gathered at the bottom, under **no date**. Tap the calendar
 > button on one of those to put it on a day.
 
-## Step 9 — Find things you finished
+## Step 9 — Keep track of a medicine
 
-Tap **History** at the bottom.
+Tap **Meds** at the bottom. Add a medicine, how often you take it, and what time — Goodlist
+reminds you at each dose and keeps a record.
+
+<img src="images/20-meds.png" alt="The Medicines screen showing today's dose with Taken and Skip buttons, and a list of medicines with their weekly adherence" width="270">
+
+1. Tap the **+** button and fill in the name, the dose, and the times you take it.
+2. The first time you turn a reminder on, your phone asks whether Goodlist may send
+   notifications — tap **Allow**, or the reminder cannot arrive.
+3. When a dose is due, tap **Taken** or **Skip** right from the list.
+
+Each medicine shows how many of this week's doses you took, and the calendar marks every past
+day taken, missed, or skipped.
+
+> **Tracking and reminders are free.** Sharing a medicine with a group — once you have one
+> (Part 2) — so they can see its schedule and whether doses were taken, needs Premium: a 90-day
+> free trial, no card needed, the first time you share one or own a second group.
+
+> Goodlist is a reminder and a record, not medical advice. It does not check doses or
+> interactions, and a reminder can fail to arrive — for example if notifications are off or the
+> phone is off. Always follow your doctor or pharmacist.
+
+## Step 10 — Find things you finished
+
+Tap **Settings** at the bottom, then **History**.
 
 <img src="images/08-history.png" alt="The Completed tasks page listing finished tasks, each with an undo arrow and a bin icon" width="270">
 
@@ -240,7 +265,7 @@ one, you can ask each other to do things.
 > see your own list, ever. The only things anybody else sees are the ones you specifically
 > ask them to do.
 
-## Step 10 — Open the Group page
+## Step 11 — Open the Group page
 
 Tap **Group** at the bottom of the screen.
 
@@ -253,7 +278,7 @@ There are two buttons, and you only need one of them:
 
 This guide shows **Create a group** first, then what the other person does.
 
-## Step 11 — Make your group
+## Step 12 — Make your group
 
 <img src="images/10-create-group.png" alt="The create group form with a name box, Family and Team buttons, a list of roles, and a Create group button" width="270">
 
@@ -266,7 +291,7 @@ This guide shows **Create a group** first, then what the other person does.
 
 Done. The group exists, and right now you are the only one in it.
 
-## Step 12 — Give out your code
+## Step 13 — Give out your code
 
 Your group now has a card with a **code** on it — eight letters and numbers.
 
@@ -280,7 +305,7 @@ Or just read it out loud — that works too.
 > The code never uses a **zero**, an **O**, a **one**, or an **I**. That's on purpose,
 > so nobody mixes them up.
 
-## Step 13 — They type in the code
+## Step 14 — They type in the code
 
 **The next two steps happen on the other person's phone, not yours.**
 
@@ -291,7 +316,7 @@ They install Goodlist, make their own account (Step 1), and tap **Group** → **
 1. They type the code you gave them.
 2. They tap **Continue**.
 
-## Step 14 — They pick who they are
+## Step 15 — They pick who they are
 
 The app shows them the group name so they know it's the right one.
 
@@ -303,7 +328,7 @@ The app shows them the group name so they know it's the right one.
 That's it. You're now in a group together. Both of you will see the other person's name
 on the Group page.
 
-## Step 15 — Your list now has two parts
+## Step 16 — Your list now has two parts
 
 Go back to **Tasks**. Something has changed: there are two words at the top now.
 
@@ -315,7 +340,7 @@ Go back to **Tasks**. Something has changed: there are two words at the top now.
 The name at the very top has changed too. Instead of **Solo mode** it now shows your
 group's name.
 
-## Step 16 — Ask someone to do something
+## Step 17 — Ask someone to do something
 
 Tap **Requested**, then use the same typing box as always.
 
@@ -332,7 +357,7 @@ Your request appears with **To Alex** under it — that's who you asked.
 Tap the task to add a note or a due date, just like before. If you change your mind, open
 it and tap **Cancel request**.
 
-## Step 17 — What they see
+## Step 18 — What they see
 
 On the other person's phone, the same task looks like this:
 
@@ -385,8 +410,8 @@ Check every character. Try typing it again slowly. Remember there is never a zer
 letter O in a code. If it still won't work, ask for a fresh copy — you may have an old one.
 
 **I tapped the circle by accident.**
-Tap it again. It comes straight back. If you already left the page, go to **History**
-and tap **↺**.
+Tap it again. It comes straight back. If you already left the page, go to **Settings** →
+**History** and tap **↺**.
 
 **I can't see my friend's tasks.**
 That's correct — you're not meant to. Personal lists are private. You only ever see the
@@ -399,6 +424,11 @@ It only shows up once you're in a group. Go to **Group** and create or join one.
 Not every phone and not every web browser can listen. When yours can't, Goodlist hides the
 button rather than offering one that wouldn't work. Everything else carries on exactly as
 normal — just type instead.
+
+**A medicine reminder never showed up.**
+Check that your phone allows Goodlist to send notifications (your phone's own Settings app,
+not Goodlist's). A reminder can also be delayed if the phone was off or in a deep sleep at
+the time.
 
 **I can't delete my account.**
 If you own a group that still has other people in it, Goodlist stops you — otherwise
@@ -426,6 +456,8 @@ and cannot be undone.
 | **Invite code** | The eight characters somebody needs to join your group. |
 | **Owner** | The person who made the group and looks after it. |
 | **Role** | Who you are in the group — Mother, Child, Leader, and so on. |
+| **Dose** | One time you take a medicine — 8:00 AM, say. |
+| **Adherence** | How many of this week's doses you actually took. |
 | **History** | The list of everything you've already finished. |
 | **Theme** | The set of colours the app uses. |
 

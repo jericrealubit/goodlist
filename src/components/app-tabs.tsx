@@ -59,12 +59,13 @@ export default function AppTabs() {
           something you check daily, where history is something you visit. */}
       <NativeTabs.Trigger name="meds">
         <NativeTabs.Trigger.Label>Meds</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="medication" />
+        <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="pill" />
       </NativeTabs.Trigger>
 
+      {/* "house" read as Home, not Group — people.2 is what "Group" means everywhere else in the app. */}
       <NativeTabs.Trigger name="group">
         <NativeTabs.Trigger.Label>Group</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="groups" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="settings">

@@ -40,6 +40,10 @@ export const distributionKeys = {
   isAdmin: ['distribution', 'isAdmin'] as const,
 };
 
+export const systemStatusKeys = {
+  current: ['system-status', 'current'] as const,
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

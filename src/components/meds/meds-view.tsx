@@ -273,6 +273,7 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
           message="Add one to get a reminder at the right time and a record of every dose."
           actionLabel="Add a medicine"
           actionIcon={ActionIcons.addMedicine}
+          actionVariant="primary"
           onAction={() => router.push({ pathname: '/medication/[id]', params: { id: 'new' } })}
         />
       </ThemedView>

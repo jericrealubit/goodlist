@@ -36,7 +36,8 @@ export type ShotName =
   | '16-their-inbox'
   | '17-settings'
   | '18-voice'
-  | '19-calendar';
+  | '19-calendar'
+  | '20-meds';
 
 export type GuideBlock =
   | { kind: 'para'; spans: GuideSpan[] }
@@ -86,7 +87,7 @@ export const userGuide: GuideDoc = {
     {
       kind: 'para',
       spans: [
-        { bold: 'The four buttons at the bottom.' },
+        { bold: 'The five buttons at the bottom.' },
         ' They never change. Tap one and the page changes — that is all they do, and you cannot break anything by tapping them.',
       ],
     },
@@ -94,9 +95,10 @@ export const userGuide: GuideDoc = {
       kind: 'bullets',
       items: [
         [{ bold: 'Tasks' }, ' — your list of things to do. This is the main page.'],
+        [{ bold: 'Calendar' }, ' — everything with a day, laid out by month.'],
+        [{ bold: 'Meds' }, ' — medicines to take, and when.'],
         [{ bold: 'Group' }, ' — the people you share with. Empty at first, and that is fine.'],
-        [{ bold: 'History' }, ' — everything you have already finished.'],
-        [{ bold: 'Settings' }, ' — your name, the colours, and signing out.'],
+        [{ bold: 'Settings' }, ' — your name, the colours, signing out, and where History moved to.'],
       ],
     },
   ],
@@ -389,6 +391,54 @@ export const userGuide: GuideDoc = {
       ],
     },
     {
+      id: 'meds',
+      title: 'Keep track of a medicine',
+      blocks: [
+        {
+          kind: 'para',
+          spans: [
+            'Tap ',
+            { bold: 'Meds' },
+            ' at the bottom. Add a medicine, how often you take it, and what time — Goodlist reminds you at each dose and keeps a record.',
+          ],
+        },
+        {
+          kind: 'bullets',
+          items: [
+            ['Tap the ', { bold: '+' }, ' button and fill in the name, the dose, and the times you take it.'],
+            [
+              'The first time you turn a reminder on, your phone asks whether Goodlist may send notifications — tap ',
+              { bold: 'Allow' },
+              ', or the reminder cannot arrive.',
+            ],
+            ['When a dose is due, tap ', { bold: 'Taken' }, ' or ', { bold: 'Skip' }, ' right from the list.'],
+          ],
+        },
+        { kind: 'image', shot: '20-meds', caption: 'Today’s doses, with Taken and Skip right there.' },
+        {
+          kind: 'para',
+          spans: [
+            'Each medicine shows how many of this week’s doses you took, and the calendar marks every past day taken, missed, or skipped.',
+          ],
+        },
+        {
+          kind: 'callout',
+          variant: 'info',
+          spans: [
+            { bold: 'Tracking and reminders are free.' },
+            ' Sharing a medicine with a group — once you have one (Part 2) — so they can see its schedule and whether doses were taken, needs Premium: a 90-day free trial, no card needed, the first time you share one or own a second group.',
+          ],
+        },
+        {
+          kind: 'callout',
+          variant: 'warn',
+          spans: [
+            'Goodlist is a reminder and a record, not medical advice. It does not check doses or interactions, and a reminder can fail to arrive — for example if notifications are off or the phone is off. Always follow your doctor or pharmacist.',
+          ],
+        },
+      ],
+    },
+    {
       id: 'history',
       title: 'Find things you finished',
       blocks: [
@@ -396,8 +446,10 @@ export const userGuide: GuideDoc = {
           kind: 'para',
           spans: [
             'Tap ',
+            { bold: 'Settings' },
+            ' at the bottom, then ',
             { bold: 'History' },
-            ' at the bottom. Everything you have finished lives here, newest first, with the day and time you did it.',
+            '. Everything you have finished lives here, newest first, with the day and time you did it.',
           ],
         },
         {
@@ -684,7 +736,7 @@ export const userGuide: GuideDoc = {
           kind: 'para',
           spans: [
             { bold: 'You tapped a circle by accident.' },
-            ' Tap it again and it comes back. If you already left the page, go to History and tap ↺.',
+            ' Tap it again and it comes back. If you already left the page, go to Settings → History and tap ↺.',
           ],
         },
         {
@@ -706,6 +758,13 @@ export const userGuide: GuideDoc = {
           spans: [
             { bold: 'There is no microphone button.' },
             ' Not every phone and not every web browser can listen. When yours cannot, Goodlist hides the button rather than offering one that would not work — everything else carries on exactly as normal, and you can always type instead.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'A medicine reminder never showed up.' },
+            ' Check that your phone allows Goodlist to send notifications (your phone’s own Settings app, not Goodlist’s). A reminder can also be delayed if the phone was off or in a deep sleep at the time.',
           ],
         },
         {

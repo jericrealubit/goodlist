@@ -59,6 +59,7 @@ const SHOWCASE_DIR = join(ROOT, 'docs', 'screenshots');
 const SHOWCASE = [
   '05-my-list',
   '19-calendar',
+  '20-meds',
   '18-voice',
   '16-their-inbox',
   '11-invite-code',
@@ -240,6 +241,7 @@ const ICONS = {
   arrowUp: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`,
   mic: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>`,
   calendar: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>`,
+  meds: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="9.5" width="15" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M9.5 14.5l5-5"/></svg>`,
 };
 
 // ---------------------------------------------------------------------------
@@ -261,7 +263,7 @@ const tabBar = (active = 'tasks', badge = 0) => {
   const tab = (id, label) => `<div class="tab ${active === id ? 'on' : ''}">
     ${badge && id === 'tasks' ? `<span class="badge">${badge}</span>` : ''}
     ${ICONS[id]}<span>${label}</span></div>`;
-  return `<div class="tabs">${tab('tasks', 'Tasks')}${tab('calendar', 'Calendar')}${tab('group', 'Group')}${tab('history', 'History')}${tab('settings', 'Settings')}</div>`;
+  return `<div class="tabs">${tab('tasks', 'Tasks')}${tab('calendar', 'Calendar')}${tab('meds', 'Meds')}${tab('group', 'Group')}${tab('settings', 'Settings')}</div>`;
 };
 
 const navHead = (title) =>
@@ -456,9 +458,10 @@ const SCREENS = [
       </div></div>`,
   },
   {
-    // src/app/(app)/(tabs)/history.tsx
+    // src/app/(app)/history.tsx — a stack screen now, opened from Settings,
+    // since the Meds tab took History's old slot in the tab bar.
     name: '08-history',
-    html: `<div class="screen">${statusBar()}${pageHead('Completed tasks')}
+    html: `<div class="screen">${statusBar()}${navHead('Completed tasks')}
       <div class="body">
         <div style="padding-bottom:${S.two}px">${btn('Delete all', 'secondary')}</div>
         ${taskRow({
@@ -475,8 +478,7 @@ const SCREENS = [
           trailing: `<div style="display:flex;gap:8px"><div style="width:34px;height:34px;border-radius:10px;border:1px solid ${C.border};display:flex;align-items:center;justify-content:center;font-size:16px">↺</div><div style="width:34px;height:34px;border-radius:10px;border:1px solid ${C.border};display:flex;align-items:center;justify-content:center;font-size:15px;color:${C.danger}">🗑</div></div>`,
         })}
       </div>
-      ${note('↺ puts a task back on your list. 🗑 removes it for good.', 130)}
-      ${tabBar('history')}</div>`,
+      ${note('↺ puts a task back on your list. 🗑 removes it for good.', 20)}</div>`,
   },
   {
     // src/app/(app)/(tabs)/group.tsx — no groups yet
@@ -691,6 +693,52 @@ const SCREENS = [
       </div>
       ${note('Tap a day to see it. Tap the calendar button on a task to move it.', 150)}
       ${tabBar('calendar')}</div>`,
+  },
+  {
+    // src/components/meds/meds-view.tsx
+    name: '20-meds',
+    html: `<div class="screen">${statusBar()}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:${S.two}px ${S.four}px ${S.two}px">
+        <div class="header">Medicines</div>
+        <div class="send hi" data-step="1" style="width:40px;height:40px;font-size:24px;line-height:24px;color:#fff">+</div>
+      </div>
+      <div class="body pad" style="gap:${S.three}px">
+        <div class="stack tight">
+          <div class="small bold muted">Today</div>
+          <div class="card" style="padding:${S.three}px;display:flex;flex-direction:column;gap:${S.two}px">
+            <div class="row" style="padding:0">
+              <div style="width:14px;height:14px;border-radius:7px;border:2px solid ${C.primary};flex:none"></div>
+              <div class="tasktext">
+                <div class="line">8:00 AM · Amoxicillin</div>
+                <div class="small muted">500mg · Due now</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:${S.two}px;justify-content:flex-end">
+              <div class="btn secondary" style="flex:none;padding:${S.one}px ${S.three}px;min-height:0">Skip</div>
+              <div class="btn primary hi" data-step="2" style="flex:none;padding:${S.one}px ${S.three}px;min-height:0">Taken</div>
+            </div>
+          </div>
+        </div>
+        <div class="stack tight">
+          <div class="small bold muted">Your medicines</div>
+          <div class="card row hi" data-step="3">
+            <div class="tasktext">
+              <div class="line">Amoxicillin</div>
+              <div class="small muted">Twice a day</div>
+              <div class="small muted">100% taken this week · 3-day streak</div>
+            </div>
+          </div>
+          <div class="card row">
+            <div class="tasktext">
+              <div class="line">Vitamin D</div>
+              <div class="small muted">Once a day, mornings</div>
+              <div class="small muted">86% taken this week</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ${note('Skip or Taken right from the list. Tap a medicine to edit it or share it with your group.', 150)}
+      ${tabBar('meds')}</div>`,
   },
 ];
 

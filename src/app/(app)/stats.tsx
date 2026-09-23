@@ -130,7 +130,16 @@ export default function StatsScreen() {
 
         <View style={styles.tileRow}>
           <StatTile label="Registered" value={data.total_users} caption="Accounts created" />
-          <StatTile label="Sharing" value={grouped} caption="In at least one group" />
+          <StatTile label="In a group" value={grouped} caption="In at least one group" />
+        </View>
+
+        <View style={styles.tileRow}>
+          <StatTile label="Premium" value={data.premium_users} caption="Active trial or paid" />
+          <StatTile label="Tracking meds" value={data.med_users} caption="Have at least one medicine" />
+        </View>
+
+        <View style={styles.tileRow}>
+          <StatTile label="Sharing meds" value={data.med_sharing_users} caption="Shared with a group" />
         </View>
 
         <ThemedView style={styles.section}>

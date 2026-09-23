@@ -13,9 +13,18 @@ type EmptyStateProps = {
   /** Defaults to the retry glyph, which is what every caller wants today. */
   actionIcon?: IconName;
   onAction?: () => void;
+  /** 'secondary' (default) suits a quiet Retry; a first-run "add" CTA wants 'primary' to stand out. */
+  actionVariant?: 'primary' | 'secondary';
 };
 
-export function EmptyState({ title, message, actionLabel, actionIcon = ActionIcons.retry, onAction }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  message,
+  actionLabel,
+  actionIcon = ActionIcons.retry,
+  onAction,
+  actionVariant = 'secondary',
+}: EmptyStateProps) {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="subtitle" style={styles.centerText}>
@@ -31,7 +40,7 @@ export function EmptyState({ title, message, actionLabel, actionIcon = ActionIco
           title={actionLabel}
           icon={actionIcon}
           onPress={onAction}
-          variant="secondary"
+          variant={actionVariant}
           style={styles.action}
         />
       ) : null}
@@ -52,6 +61,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   action: {
+    // Full-width, like the Create/Join buttons on the Group screen — a
+    // shrink-wrapped pill leaves the label hugging its rounded edges.
+    alignSelf: 'stretch',
     marginTop: Spacing.two,
   },
 });

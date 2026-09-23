@@ -17,13 +17,15 @@ Goodlist
 
 **Short description** (max 80 characters)
 ```
-Personal tasks you can speak, see on a calendar, and share with your household.
+Personal tasks, medicine reminders, and a calendar — share with your household.
 ```
 (79 characters)
 
-This leads on the two newest features because they are what a search result has to earn a tap
-with. If you would rather keep the solo-to-household framing, the previous line still fits:
-`Personal tasks that stay simple solo, and work together with your household.` (78 characters).
+This leads on the newest feature (medicine reminders) alongside the calendar, because they are
+what a search result has to earn a tap with. Older lines that still fit, if voice or the
+solo-to-household framing should lead instead: `Personal tasks you can speak, see on a calendar,
+and share with your household.` (79 characters) or `Personal tasks that stay simple solo, and
+work together with your household.` (78 characters).
 
 **Full description** (max 4000 characters)
 ```
@@ -41,6 +43,10 @@ Give a task a day and it turns up on the calendar, so you can see what's
 coming instead of scrolling a list. Tap a day to see what is on it, and move
 a task to another day with two taps.
 
+Add a medicine and Goodlist reminds you at every dose, right on your phone.
+Mark each one taken or skipped with one tap, and see the week's adherence
+at a glance. It's a reminder and a record, not medical advice.
+
 When you're ready, create or join a household with a partner. You can then
 send each other Requested tasks — clear, visible asks with a name attached,
 so it's always obvious who asked for what and who's doing it. Your personal
@@ -51,17 +57,22 @@ FEATURES
 • Personal tasks with optional notes and due dates
 • A calendar view — a dot on every day with something due, red if it's overdue
 • Move a task to another day with two taps
+• Track medicines and get a reminder at each dose, with Taken and Snooze
+• Log every dose taken or skipped, and see your week's adherence
 • Add tasks by speaking, including dates like "buy milk tomorrow"
 • Tick off, undo or delete a task by voice — deleting always asks first
 • A history of everything you've completed
 • Optional household collaboration — create or join with an invite code
 • Request tasks from another household member; they see your name on it
+• Share a medicine with your household so they can see its schedule too
 • Live updates — no need to refresh to see what's changed
 • Delete your account and all of your data at any time, right from Settings
-• Also on the web at goodlist.expo.app, with the same account
+• Also on the web at goodlist.expo.app, with the same account (medicine
+  reminders are phone-only — a browser can't schedule them)
 
 Goodlist is free. An optional Premium subscription lets you own a second
-group, and it starts with a 90-day free trial, no card needed.
+group or share a medicine with one. Whichever you do first starts a 90-day
+free trial, no card needed.
 
 Goodlist doesn't show ads, doesn't track you for advertising, and doesn't
 sell your data. See our Privacy Policy for the specifics.
@@ -111,14 +122,36 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Release notes — the calendar release
+## Release notes — the medicine reminders release
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
-below replaces the voice one, which is in git history if it is ever wanted.
+below replaces the calendar one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is 362; check it again if
+Play caps this field at **500 characters per language**. The note below is 430; check it again if
 you edit it.
+
+```
+What's new: Meds.
+
+Track a medicine and Goodlist reminds you at every dose, right on your phone. Tap Taken or Snooze right on the reminder, or open the app to log it.
+
+See the week's adherence on each medicine, and one mark per day on the calendar: taken, missed, or skipped.
+
+Sharing a medicine with your household is a Premium feature. Tracking and reminders are free.
+
+New permission: notifications, to remind you at dose time.
+```
+
+**The new permission is called out on its own line**, the same reason past releases named the
+microphone: a permission prompt a tester wasn't warned about reads as suspicious. **"Taken or
+Snooze right on the reminder"** matters because those two actions live on the notification itself,
+not only inside the app — worth saying since it's the more surprising half of "a reminder" (Skip is
+in-app only, so it's left out here rather than crowding the note). And **the Premium line is short
+and separate**, so it reads as a boundary (what needs a subscription) rather than a sales pitch
+buried in a feature list.
+
+Previous release, for reference:
 
 ```
 What's new: a Calendar tab.
@@ -131,13 +164,6 @@ Tasks with no date sit at the bottom — tap the calendar button on one to give 
 
 No new permissions.
 ```
-
-Three deliberate choices. **The microphone is not mentioned** — that release's note existed largely
-to pre-empt a permission prompt, and this one adds no permission, so the last line says so plainly
-instead. **The unscheduled tray gets its own line**, because most existing tasks have no due date
-and a tester who opens the calendar to an empty month will assume it is broken rather than empty.
-And **there is no "nothing else has changed"**, because whether the voice build ever reached these
-testers is not something this document can know.
 
 ## Content rating questionnaire (IARC)
 
@@ -279,7 +305,7 @@ instruction set:
 | Name | Full app access |
 | Username | *(a real Supabase account created for this purpose)* |
 | Password | *(its password)* |
-| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. |
+| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. The Meds tab tracks medicines — this account already has one with reminders on, so the phone will ask for notification access the first time that screen loads; tap a dose's Taken/Skip buttons to see logging, and open the medicine to see the Premium-gated group-sharing picker. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. History moved under Settings → History. |
 
 Create that account on the production Supabase project, seed it with a handful of tasks, a group,
 and at least one requested task, and **do not delete it** — Play re-uses it for every future update

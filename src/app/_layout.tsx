@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { SystemStatusBanner } from '@/components/system-status-banner';
 import { ThemeProvider as AppThemeProvider } from '@/contexts/theme-context';
 import { SessionProvider, useSession } from '@/contexts/session-context';
 import { registerMutationDefaults } from '@/lib/mutation-defaults';
@@ -68,6 +69,7 @@ export default function RootLayout() {
               <AppThemeProvider>
                 <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                   <SessionProvider>
+                    <SystemStatusBanner />
                     <RootNavigator />
                   </SessionProvider>
                 </ThemeProvider>

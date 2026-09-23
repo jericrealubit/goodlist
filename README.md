@@ -8,13 +8,14 @@ and a realtime [Supabase](https://supabase.com) backend. It runs on Android and 
 <p align="center">
   <img src="docs/screenshots/05-my-list.png" width="130" alt="The Tasks screen in Solo mode, showing four task cards">
   <img src="docs/screenshots/19-calendar.png" width="130" alt="A month grid with dots under the days that have tasks due, and the selected day's tasks listed below it">
+  <img src="docs/screenshots/20-meds.png" width="130" alt="The Meds screen showing today's dose with Taken and Skip buttons, and a list of medicines with their weekly adherence">
   <img src="docs/screenshots/18-voice.png" width="130" alt="The listening panel over the task list, showing the words &quot;Buy milk tomorrow&quot; it heard">
   <img src="docs/screenshots/16-their-inbox.png" width="130" alt="The Requested tab showing two tasks a group member asked for, with an unread badge on Tasks">
   <img src="docs/screenshots/11-invite-code.png" width="130" alt="A group card showing the group name, invite code and member list">
   <img src="docs/screenshots/17-settings.png" width="130" alt="Settings, showing the display name field and the theme picker">
 </p>
 <p align="center">
-  <sub>Your own list · What is due when · Say it instead of typing · What your group asked of you · Invite code · Nine themes</sub>
+  <sub>Your own list · What is due when · Never miss a dose · Say it instead of typing · What your group asked of you · Invite code · Nine themes</sub>
 </p>
 
 ## Using the app
@@ -46,16 +47,27 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
   a different day, or clear its date entirely. Tasks with no date sit in an "Unscheduled" tray so the
   calendar is useful on the first open rather than empty. Reads from the same offline-first cache as
   the task list, so it works with no connection, and adds no permission of any kind.
+- **Medicines** — a Meds tab for tracking one or more medicines: name, dose, instructions, and the
+  wall-clock times you take it. Reminders are repeating local notifications (`expo-notifications`)
+  that reconcile themselves whenever a schedule changes, with Taken and Snooze actions right on the
+  notification — phone-only, since a browser can't schedule a local notification; the web app still
+  logs every dose, it just can't nudge you. Each dose is logged taken or skipped; a missed dose is
+  derived, never stored. The calendar gains one corner mark per past day — taken, missed, or skipped.
+  Tracking and reminders are free; sharing a medicine with a group (so its members see the schedule
+  and the dose record, but can't change it) is a Premium feature, enforced in the database, and
+  pauses on its own if Premium lapses.
 - **Links** — a task that's just a pasted URL reads as its domain (`play.google.com`, not a truncated
   URL) and carries a button that opens it: an in-app browser on Android, a new tab on the web. A link
   in a task's notes gets the same button, and the editor still holds the full URL.
 - **Groups** — create or join up to two groups per account, in Family mode (roles: father, mother,
   guardian, child, other) or Team mode (roles: leader, member). Join with an invite code; the owner can
   rename the group, remove members, or transfer ownership.
-- **Premium** — owning one group is free; owning a second one needs Premium ($1.99/month or
-  $14.99/year). Creating that second group starts a 90-day free trial with no card needed. When the
-  trial or subscription lapses, the owner's oldest group stays fully usable and any other group they
-  own goes read-only (visible, not editable) until they subscribe again. These rules are enforced in
+- **Premium** — owning one group is free, as is tracking your own medicines; owning a second group,
+  or sharing a medicine with a group, needs Premium ($1.99/month or $14.99/year). Whichever of those
+  two you do first starts a 90-day free trial, no card needed — one trial per account, so the other
+  action doesn't get a second one. When the trial or subscription lapses, the owner's oldest group
+  stays fully usable and any other group they own goes read-only (visible, not editable) until they
+  subscribe again. These rules are enforced in
   the database (`supabase/schema.sql`, "Premium" section), not just in the UI. Purchases run through
   [RevenueCat](https://www.revenuecat.com): Google Play Billing on Android, RevenueCat Web Billing
   (Stripe) on the web.
@@ -93,8 +105,9 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 React Native · Expo · Expo Router · TypeScript · Supabase (Postgres, Auth, Realtime, RLS, Edge
 Functions) · TanStack Query (with an AsyncStorage persister for offline/local-first caching) ·
 Reanimated · `react-native-sortables` (drag-to-reorder) · `react-native-gesture-handler` (swipe
-actions) · RevenueCat (`react-native-purchases` on Android, `@revenuecat/purchases-js` on the web) ·
-EAS Build and EAS Hosting.
+actions) · `expo-notifications` (local, repeating medicine reminders — no push token, nothing sent
+by a server) · RevenueCat (`react-native-purchases` on Android, `@revenuecat/purchases-js` on the
+web) · EAS Build and EAS Hosting.
 
 ## Project structure
 
@@ -103,16 +116,22 @@ src/
   app/            Expo Router screens (file-based routing)
     (auth)/        Sign in, sign up, forgot/reset password
     (app)/
-      (tabs)/       Tasks, Calendar, Group, History, Settings
+      (tabs)/       Tasks, Calendar, Meds, Group, Settings
       group/        Create / join a group
       task/[id]     Task detail / edit
+      medication/[id]  Add / edit a medicine, its schedule, and sharing
+      history       Completed tasks — a stack screen linked from Settings,
+                    since Meds took its old tab-bar slot
       about, guide, premium, privacy, terms, stats, distribution
   components/     Shared UI (TaskRow, ComposeBar, GroupCard, legal-document,
-                  guide-document, ...)
+                  guide-document, meds/ (dose rows, time picker, reminder
+                  status banner), ...)
   hooks/          Data-fetching and mutation hooks (React Query)
   lib/            Supabase client, queries, mutations, types, validation;
-                  calendar/ and voice/ — pure, dependency-free modules (no React,
-                  no Expo, no @/ aliases) so `npm test` can run them directly;
+                  calendar/, voice/ and medications/ — pure, dependency-free
+                  modules (no React, no Expo, no @/ aliases) so `npm test` can
+                  run them directly; reminders.ts / reminders.web.ts —
+                  expo-notifications scheduling on native, a no-op on the web;
                   purchases.ts / purchases.web.ts — RevenueCat on Android / web,
                   same exports, picked by Metro's platform extensions
   constants/      Theme definitions, group role/mode options, Premium prices

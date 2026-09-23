@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
@@ -32,6 +33,8 @@ import { useTokens } from '@/hooks/use-tokens';
 import { fromDayKey, toDayKey } from '@/lib/calendar/day';
 import { getErrorMessage } from '@/lib/errors';
 import { normalizeTimes, parseTime, formatTime } from '@/lib/medications/schedule';
+import { startPremiumTrial } from '@/lib/mutations/premium';
+import { groupKeys, premiumKeys } from '@/lib/query-client';
 import { remindersSupported, requestReminderPermission } from '@/lib/reminders';
 import type { MedicationInput } from '@/lib/types';
 
@@ -78,12 +81,14 @@ export default function EditMedicationScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useSession();
+  const queryClient = useQueryClient();
   const { data: existing, isLoading } = useMedicationDetailQuery(isNew ? '' : id);
   const { data: groups } = useGroupsQuery();
   const { status: premium } = usePremiumStatus();
   const createMutation = useCreateMedicationMutation();
   const updateMutation = useUpdateMedicationMutation();
   const deleteMutation = useDeleteMedicationMutation();
+  const [startingTrial, setStartingTrial] = useState(false);
 
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
@@ -163,6 +168,26 @@ export default function EditMedicationScreen() {
         ? 'Sharing medicines with a group needs Premium.'
         : getErrorMessage(err, 'Could not save this medicine.'),
     );
+  }
+
+  // The database grants this same trial the moment a share actually goes
+  // through (start_premium_trial_if_unused), so this only makes the link feel
+  // immediate: tap it, the block clears, and Save works on the first try.
+  async function handleStartTrial() {
+    if (startingTrial) return;
+    setError(null);
+    setStartingTrial(true);
+    try {
+      await startPremiumTrial();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: premiumKeys.mine }),
+        queryClient.invalidateQueries({ queryKey: groupKeys.mine }),
+      ]);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not start your trial.'));
+    } finally {
+      setStartingTrial(false);
+    }
   }
 
   // Optimistic like the task editor: the cache updates instantly and the
@@ -349,8 +374,11 @@ export default function EditMedicationScreen() {
               {shareBlocked ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   Sharing with a group is part of Premium.{' '}
-                  <ThemedText type="linkPrimary" onPress={() => router.push('/premium')}>
-                    {premium.trialUsed ? 'See Premium' : 'Start your free trial'}
+                  <ThemedText
+                    type="linkPrimary"
+                    onPress={premium.trialUsed ? () => router.push('/premium') : handleStartTrial}
+                    accessibilityState={{ disabled: startingTrial }}>
+                    {premium.trialUsed ? 'See Premium' : startingTrial ? 'Starting…' : 'Start your free trial'}
                   </ThemedText>
                 </ThemedText>
               ) : null}

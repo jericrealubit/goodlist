@@ -82,7 +82,7 @@ export const privacyPolicy: LegalDoc = {
             { bold: 'Medicines.' },
             ' If you use the Meds tab: the name, dose and instructions you enter for each medicine, the times and days you take it, your time zone (so the times read correctly), and each dose you mark as taken or skipped. This is health information, so it is ',
             { bold: 'private to you by default' },
-            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with.',
+            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with. The first time you turn on a reminder, your device asks permission to show notifications — Goodlist uses that permission only for medicine reminders.',
           ],
         },
         {
@@ -145,6 +145,7 @@ export const privacyPolicy: LegalDoc = {
             ['To sync your Personal tasks across your own devices.'],
             ['To share Requested tasks and group task lists with the members you’ve chosen to invite.'],
             ['To send in-app notifications — for example, when someone requests a task from you.'],
+            ['To schedule medicine reminders on your own device, and to show a medicine’s schedule and dose record to a group you’ve chosen to share it with.'],
             ['To run the Premium free trial and subscription, and unlock Premium features while it’s active.'],
             [
               'To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.',
@@ -332,7 +333,7 @@ export const termsOfService: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, a calendar view of what is due when, adding and managing tasks by voice, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
+            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, a calendar view of what is due when, tracking medicines with reminders and a taken/skipped record, adding and managing tasks by voice, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group and lets you share a medicine with a group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
           ],
         },
       ],
@@ -379,11 +380,15 @@ export const termsOfService: LegalDoc = {
           items: [
             [
               { bold: 'What’s free.' },
-              ' Everything in Goodlist except owning a second group: your personal tasks, one group of your own, and joining someone else’s group.',
+              ' Everything in Goodlist except owning a second group and sharing a medicine with a group: your personal tasks, one group of your own, joining someone else’s group, and tracking your own medicines with reminders.',
+            ],
+            [
+              { bold: 'Sharing a medicine.' },
+              ' Tracking medicines and getting reminders is free for everyone. Sharing a medicine with a group — so its members can see the schedule and whether doses were taken — needs Premium, the same as owning a second group.',
             ],
             [
               { bold: 'Free trial.' },
-              ' The first time you create a second group of your own, a 90-day Premium trial starts automatically. It’s one trial per account, no payment details are needed, and nothing is charged when it ends.',
+              ' The first time you create a second group of your own, or share a medicine with a group, a 90-day Premium trial starts automatically — whichever you do first. It’s one trial per account, so doing the other thing afterward doesn’t start a second one. No payment details are needed, and nothing is charged when it ends.',
             ],
             [
               { bold: 'When Premium ends.' },

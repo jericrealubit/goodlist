@@ -970,6 +970,16 @@ $$;
 -- `live_window_seconds` is returned rather than hardcoded in the client so the
 -- screen's "active in the last N minutes" caption can never drift out of sync
 -- with the window actually used here.
+-- References public.medications and public.entitlements, both defined later
+-- in this file. Safe: plpgsql function bodies aren't resolved against the
+-- catalog until the function runs, only parsed for syntax at create time,
+-- and this file is always applied in full before the app runs.
+--
+-- The OUT columns changed (3 new counts added), and Postgres refuses to
+-- CREATE OR REPLACE a RETURNS TABLE function across a column change — drop
+-- it first. Grants are reapplied unconditionally right below, so the brief
+-- gap is harmless.
+drop function if exists public.app_user_stats();
 create or replace function public.app_user_stats()
 returns table (
   total_users int,
@@ -977,6 +987,9 @@ returns table (
   solo_users int,
   one_group_users int,
   two_group_users int,
+  med_users int,
+  med_sharing_users int,
+  premium_users int,
   live_window_seconds int
 )
 language plpgsql
@@ -993,19 +1006,33 @@ begin
     raise exception 'Sign in to view user statistics.';
   end if;
 
-  -- Aggregate the memberships once and join, rather than a correlated
-  -- count(*) per profile: one pass over each table instead of one index
-  -- lookup per registered user.
+  -- Aggregate the memberships/medications once and join, rather than a
+  -- correlated count(*) per profile: one pass over each table instead of one
+  -- index lookup per registered user.
   return query
   with group_counts as (
     select fm.user_id, count(*) as group_count
     from public.family_members fm
     group by fm.user_id
   ),
+  med_counts as (
+    select m.owner_id as user_id, bool_or(m.shared_family_id is not null) as has_shared_med
+    from public.medications m
+    where m.archived_at is null
+    group by m.owner_id
+  ),
   per_user as (
-    select p.last_seen_at, coalesce(g.group_count, 0) as group_count
+    select
+      p.last_seen_at,
+      coalesce(g.group_count, 0) as group_count,
+      (mc.user_id is not null) as has_med,
+      coalesce(mc.has_shared_med, false) as has_shared_med,
+      (e.user_id is not null) as is_premium
     from public.profiles p
     left join group_counts g on g.user_id = p.id
+    left join med_counts mc on mc.user_id = p.id
+    left join public.entitlements e
+      on e.user_id = p.id and (e.trial_ends_at > now() or e.premium_until > now())
   )
   select
     count(*)::int,
@@ -1016,6 +1043,9 @@ begin
     -- enforce the cap), but count >= 2 rather than = 2 so a future cap raise
     -- can't silently drop users out of every bucket.
     count(*) filter (where per_user.group_count >= 2)::int,
+    count(*) filter (where per_user.has_med)::int,
+    count(*) filter (where per_user.has_shared_med)::int,
+    count(*) filter (where per_user.is_premium)::int,
     (extract(epoch from v_window))::int
   from per_user;
 end;
@@ -1848,10 +1878,60 @@ revoke all on function public.is_app_admin() from public, anon;
 grant execute on function public.is_app_admin() to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- system_status — developer-controlled maintenance/status notice.
+--
+-- A singleton row: `id` is always `true` (the check blocks any other value,
+-- the primary key blocks a second row). `message` doubles as both the
+-- on/off switch and the content — null means "nothing to show", any text is
+-- shown verbatim in the app's status banner. No severity field, no client
+-- write path. This is a manual lever for communicating Supabase usage/
+-- capacity issues to users instead of letting them hit silent failures.
+-- See docs/system-status-notice.md for the runbook.
+--
+-- Unlike app_admins/timezone_locations above, this is exposed directly via
+-- RLS rather than a SECURITY DEFINER RPC: it must be readable by signed-out
+-- clients on the auth screens too (a Supabase outage can affect sign-in
+-- itself), and there is nothing sensitive in it, so the usual admin-data
+-- indirection is unneeded ceremony for this one table.
+--
+-- Seed it by hand, once, in the SQL editor:
+--   insert into public.system_status (id, message) values (true, null)
+--   on conflict (id) do nothing;
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.system_status (
+  id boolean primary key default true,
+  message text,
+  updated_at timestamptz not null default now(),
+  constraint system_status_singleton check (id)
+);
+
+alter table public.system_status enable row level security;
+
+drop policy if exists "Anyone can view the system status notice" on public.system_status;
+create policy "Anyone can view the system status notice"
+  on public.system_status for select
+  using (true);
+
+-- No insert/update/delete policy for any client role — the developer sets
+-- the notice by hand in the Supabase SQL editor (see
+-- docs/system-status-notice.md), which runs as the table owner and bypasses
+-- RLS entirely.
+grant select on public.system_status to anon, authenticated;
+
+drop trigger if exists system_status_set_updated_at on public.system_status;
+create trigger system_status_set_updated_at
+  before update on public.system_status
+  for each row execute function public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
 -- Premium (Phase 7 — see "Goodlist — Project Plan.md" section 17)
 --
 -- Owning one group is free. Creating a second owned group needs Premium: the
--- first time, it silently starts a 90-day trial (no card). Once the trial or
+-- first time a user hits *any* Premium-gated action — a second group, or
+-- sharing a medicine with a group (see "Medicines" below) — it silently
+-- starts a 90-day trial (no card), whichever action comes first; one trial
+-- per account, never reset or extended by the other action. Once the trial or
 -- a paid period lapses, every group beyond the owner's oldest owned one goes
 -- read-only — visible, but no new requests, edits, joins or renames. Leaving,
 -- removing members and transferring ownership stay open so nobody is trapped.
@@ -1895,6 +1975,51 @@ as $$
       and (trial_ends_at > now() or premium_until > now())
   );
 $$;
+
+-- Shared by create_household() and enforce_medication_sharing(): grants the
+-- one-per-account 90-day trial the first time a user hits a Premium-gated
+-- action, whichever comes first. A no-op once a trial has already been
+-- granted (used up or not), so neither path can reset or extend it.
+create or replace function public.start_premium_trial_if_unused(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (select 1 from public.entitlements where user_id = p_user_id and trial_started_at is not null) then
+    return;
+  end if;
+
+  insert into public.entitlements (user_id, trial_started_at, trial_ends_at, source)
+  values (p_user_id, now(), now() + interval '90 days', 'trial')
+  on conflict (user_id) do update
+    set trial_started_at = excluded.trial_started_at,
+        trial_ends_at = excluded.trial_ends_at
+    where public.entitlements.trial_started_at is null;
+end;
+$$;
+
+revoke all on function public.start_premium_trial_if_unused(uuid) from public, anon, authenticated;
+
+-- User-facing entry point: starts the caller's own trial, if they haven't had
+-- one yet. Called directly by the app (the "Start your free trial" link on
+-- the medicine-sharing picker), and hit indirectly the moment either
+-- Premium-gated action succeeds, so a client that skips the link still gets
+-- the trial the first time sharing or a second group actually goes through.
+create or replace function public.start_premium_trial()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.start_premium_trial_if_unused(auth.uid());
+end;
+$$;
+
+revoke all on function public.start_premium_trial() from public, anon;
+grant execute on function public.start_premium_trial() to authenticated;
 
 -- Keyed to the *current* owner (not families.created_by), so a transfer that
 -- leaves the new owner holding two groups locks the newer one for them too.
@@ -1967,11 +2092,7 @@ begin
       raise exception 'PREMIUM_REQUIRED: A second group needs Goodlist Premium.';
     end if;
 
-    insert into public.entitlements (user_id, trial_started_at, trial_ends_at, source)
-    values (auth.uid(), now(), now() + interval '90 days', 'trial')
-    on conflict (user_id) do update
-      set trial_started_at = excluded.trial_started_at,
-          trial_ends_at = excluded.trial_ends_at;
+    perform public.start_premium_trial_if_unused(auth.uid());
   end if;
 
   insert into public.families (name, created_by, mode)
@@ -2320,6 +2441,9 @@ begin
     if not public.family_has_member(new.shared_family_id, new.owner_id) then
       raise exception 'You can only share a medicine with a group you belong to.';
     end if;
+    -- Sharing is a Premium-gated action too: it can start the one-per-account
+    -- trial, exactly like a second group does (see start_premium_trial_if_unused).
+    perform public.start_premium_trial_if_unused(new.owner_id);
     if not public.user_has_premium(new.owner_id) then
       raise exception 'PREMIUM_REQUIRED: Sharing medicines with a group needs Premium.';
     end if;
