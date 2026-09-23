@@ -14,9 +14,13 @@ import { useTokens } from '@/hooks/use-tokens';
 
 const FEATURES = [
   'Keep a personal to-do list that syncs across your devices, even offline.',
+  'Add a task by speaking — dates like "tomorrow" or "at 5" are understood, and nothing you say is ever recorded or stored.',
+  'See everything with a due date on a calendar, with an alarm on your phone at the exact time for the tasks you choose.',
+  'Track your medicines: name, dose, schedule, and a reminder with Taken and Snooze right on the notification. Each dose is logged, and the calendar marks the day.',
   'Create or join up to two groups — Family or Team mode, each with its own member roles. A second group of your own is a Premium feature, free for the first 90 days.',
   'Request a task from a group member, and jump straight to that task’s group.',
   'Drag to reorder, tap or swipe to complete, and reopen anything you finish by mistake.',
+  'A pasted link reads as its site, not a wall of URL, and opens with one tap.',
   'Browse a full history of finished and cancelled tasks, each timestamped with when it was completed.',
   'Get notified the moment someone requests a task from you — updates arrive live across every device.',
   'Works offline: changes queue up and sync automatically once you’re back online.',

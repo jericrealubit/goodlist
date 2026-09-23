@@ -17,15 +17,15 @@ Goodlist
 
 **Short description** (max 80 characters)
 ```
-Personal tasks, medicine reminders, and a calendar — share with your household.
+Personal tasks, alarms, medicine reminders, and a calendar for your household.
 ```
-(79 characters)
+(78 characters)
 
-This leads on the newest feature (medicine reminders) alongside the calendar, because they are
-what a search result has to earn a tap with. Older lines that still fit, if voice or the
-solo-to-household framing should lead instead: `Personal tasks you can speak, see on a calendar,
-and share with your household.` (79 characters) or `Personal tasks that stay simple solo, and
-work together with your household.` (78 characters).
+This leads on the newest feature (task alarms) alongside medicine reminders and the calendar,
+because they are what a search result has to earn a tap with. Older lines that still fit, if voice
+or the solo-to-household framing should lead instead: `Personal tasks you can speak, see on a
+calendar, and share with your household.` (79 characters) or `Personal tasks that stay simple
+solo, and work together with your household.` (78 characters).
 
 **Full description** (max 4000 characters)
 ```
@@ -41,7 +41,9 @@ and Goodlist only ever receives the text.
 
 Give a task a day and it turns up on the calendar, so you can see what's
 coming instead of scrolling a list. Tap a day to see what is on it, and move
-a task to another day with two taps.
+a task to another day with two taps. Turn on a task's alarm and your phone
+rings at the exact time — say "remind me to call the vet at 5pm" and it's
+already on.
 
 Add a medicine and Goodlist reminds you at every dose, right on your phone.
 Mark each one taken or skipped with one tap, and see the week's adherence
@@ -57,6 +59,7 @@ FEATURES
 • Personal tasks with optional notes and due dates
 • A calendar view — a dot on every day with something due, red if it's overdue
 • Move a task to another day with two taps
+• An optional alarm on any task, right at its due time
 • Track medicines and get a reminder at each dose, with Taken and Snooze
 • Log every dose taken or skipped, and see your week's adherence
 • Add tasks by speaking, including dates like "buy milk tomorrow"
@@ -68,7 +71,7 @@ FEATURES
 • Live updates — no need to refresh to see what's changed
 • Delete your account and all of your data at any time, right from Settings
 • Also on the web at goodlist.expo.app, with the same account (medicine
-  reminders are phone-only — a browser can't schedule them)
+  reminders and task alarms are phone-only — a browser can't schedule them)
 
 Goodlist is free. An optional Premium subscription lets you own a second
 group or share a medicine with one. Whichever you do first starts a 90-day
@@ -122,14 +125,34 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Release notes — the medicine reminders release
+## Release notes — the task alarms release
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
-below replaces the calendar one, which is in git history if it is ever wanted.
+below replaces the Meds one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is 430; check it again if
+Play caps this field at **500 characters per language**. The note below is 349; check it again if
 you edit it.
+
+```
+What's new: alarms for tasks.
+
+Give any task a due date and time, then turn on Alarm — your phone rings at that exact moment, the same as a medicine reminder.
+
+Say "remind me to call the vet at 5pm" and the alarm is already on, no extra tap needed.
+
+Uses the same notification permission as medicine reminders, asked the first time you turn one on.
+```
+
+**No "New permission" line, unlike the Meds release** — `POST_NOTIFICATIONS` is already in the
+manifest from that release, so nothing new appears for a tester who's already granted it. The last
+line still says so, for the tester who skipped Meds and meets the prompt here for the first time —
+the same "don't let a permission prompt arrive unexplained" reasoning as every past release, just
+phrased as reassurance rather than a bolded new-permission callout since the permission itself
+isn't new. **The spoken example** carries the "remind me" phrasing verbatim so a tester can copy it
+and see the alarm land on, not just read that it can.
+
+Previous release, for reference:
 
 ```
 What's new: Meds.
@@ -141,28 +164,6 @@ See the week's adherence on each medicine, and one mark per day on the calendar:
 Sharing a medicine with your household is a Premium feature. Tracking and reminders are free.
 
 New permission: notifications, to remind you at dose time.
-```
-
-**The new permission is called out on its own line**, the same reason past releases named the
-microphone: a permission prompt a tester wasn't warned about reads as suspicious. **"Taken or
-Snooze right on the reminder"** matters because those two actions live on the notification itself,
-not only inside the app — worth saying since it's the more surprising half of "a reminder" (Skip is
-in-app only, so it's left out here rather than crowding the note). And **the Premium line is short
-and separate**, so it reads as a boundary (what needs a subscription) rather than a sales pitch
-buried in a feature list.
-
-Previous release, for reference:
-
-```
-What's new: a Calendar tab.
-
-Everything with a due date now shows up on the month it falls in. Tap a day to see what's on it, or to add something to that day.
-
-To move a task to a different day: tap the calendar button on it, then tap the day you want.
-
-Tasks with no date sit at the bottom — tap the calendar button on one to give it a day.
-
-No new permissions.
 ```
 
 ## Content rating questionnaire (IARC)
@@ -197,9 +198,13 @@ it, which is user-initiated transfer and not "sharing" in Play's sense), deletab
 medicine, or Settings → Delete account).
 
 Reminders are **local notifications** scheduled on the device by `expo-notifications`; no push
-token is registered and nothing is sent by a server. The app requests `POST_NOTIFICATIONS` (asked in
-context, the first time a medicine is saved with reminders on) and does **not** request
-`SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, so there is no exact-alarm declaration to make.
+token is registered and nothing is sent by a server. The app requests `POST_NOTIFICATIONS` (asked
+in context — the first time a medicine is saved with reminders on, **or** the first time a task's
+Alarm switch is turned on and saved, whichever a user reaches first) and does **not** request
+`SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, so there is no exact-alarm declaration to make. Task
+alarms are a one-shot local notification at the task's own due date/time (same mechanism, no new
+permission, no new Data Safety category — the title/note/due date it uses is already declared
+under User-generated content); see the note below on task content generally.
 
 Before submitting: confirm the merged manifest carries no push-related permission you don't intend
 (`npx expo prebuild --platform android --no-install`, then inspect `AndroidManifest.xml`), and
@@ -305,7 +310,7 @@ instruction set:
 | Name | Full app access |
 | Username | *(a real Supabase account created for this purpose)* |
 | Password | *(its password)* |
-| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. The Meds tab tracks medicines — this account already has one with reminders on, so the phone will ask for notification access the first time that screen loads; tap a dose's Taken/Skip buttons to see logging, and open the medicine to see the Premium-gated group-sharing picker. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. History moved under Settings → History. |
+| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. Open any task and set a due date to see the optional Alarm switch — turning it on and saving is one of two places the app asks for notification access (the other is below). The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. The Meds tab tracks medicines — this account already has one with reminders on, so the phone will ask for notification access the first time that screen loads if it hasn't already been granted; tap a dose's Taken/Skip buttons to see logging, and open the medicine to see the Premium-gated group-sharing picker. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. History moved under Settings → History. |
 
 Create that account on the production Supabase project, seed it with a handful of tasks, a group,
 and at least one requested task, and **do not delete it** — Play re-uses it for every future update

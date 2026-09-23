@@ -233,6 +233,10 @@ export const userGuide: GuideDoc = {
           kind: 'bullets',
           items: [
             [{ bold: '“Add call the vet on Friday”' }, ' — makes a task, due that day.'],
+            [
+              { bold: '“Remind me to take out the bins at 8pm”' },
+              ' — makes a task with the alarm already turned on, so your phone rings at that time.',
+            ],
             [{ bold: '“Finish the laundry”' }, ' — ticks that one off for you.'],
             [{ bold: '“Undo”' }, ' — puts back the last thing you ticked.'],
             [{ bold: '“Delete the milk one”' }, ' — asks you first, then deletes it.'],
@@ -318,10 +322,17 @@ export const userGuide: GuideDoc = {
           spans: [
             'Tap the ',
             { bold: 'words' },
-            ' of a task — not the circle — to open it. Here you can add a note, add a due date, and tap Save changes.',
+            ' of a task — not the circle — to open it. Here you can add a note, add a due date, turn on an alarm, and tap Save changes.',
           ],
         },
         { kind: 'image', shot: '07-task-details', caption: 'Notes and due dates are optional.' },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'Alarm' },
+            ' only shows up once a task has a due date — it rings your phone at that exact time, on top of the task showing on the calendar. It stays off unless you turn it on.',
+          ],
+        },
         {
           kind: 'para',
           spans: [

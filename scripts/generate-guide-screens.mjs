@@ -59,6 +59,7 @@ const SHOWCASE_DIR = join(ROOT, 'docs', 'screenshots');
 const SHOWCASE = [
   '05-my-list',
   '19-calendar',
+  '07-task-details',
   '20-meds',
   '18-voice',
   '16-their-inbox',
@@ -235,7 +236,9 @@ const CLEAN_CSS = `
 // --- tiny inline icons (stroke-only, matched to the tab bar's SF/Material set)
 const ICONS = {
   tasks: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l2 2 3-3"/><path d="M3 14l2 2 3-3"/><path d="M11 6h10"/><path d="M11 14h10"/><path d="M11 20h10"/><path d="M3 20l2 2 3-3"/></svg>`,
-  group: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>`,
+  // Two people, not a house — "Group" is about who's in it, and this now
+  // matches the real app's tab bar (src/components/app-tabs.tsx).
+  group: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   history: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
   settings: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>`,
   arrowUp: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`,
@@ -452,6 +455,11 @@ const SCREENS = [
         ${field('Title', 'Buy milk')}
         ${field('Note (optional)', 'Whole milk, 2 litres', { tall: true, step: '1' })}
         ${field('Due date (optional)', 'Sep 9, 2026', { step: '2' })}
+        <div style="display:flex;align-items:center;gap:${S.three}px">
+          <div style="flex:1"><div class="small">Alarm</div>
+          <div class="small muted">A phone alert at the due time.</div></div>
+          <div class="switch"></div>
+        </div>
         ${btn('Save changes', 'primary', '3')}
         ${btn('Mark complete', 'secondary')}
         ${btn('Delete task', 'dangerbtn')}

@@ -79,10 +79,17 @@ export const privacyPolicy: LegalDoc = {
         {
           kind: 'para',
           spans: [
+            { bold: 'Task alarms.' },
+            ' If you turn on the Alarm switch for a task, its title, note and due date/time are used to schedule a one-time notification on your own device at that time — the same way a task shows on the calendar, just with a phone alert added. We don’t send it; nothing leaves your device to make it happen. Turning the alarm off, changing the due date, or completing or deleting the task cancels it.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
             { bold: 'Medicines.' },
             ' If you use the Meds tab: the name, dose and instructions you enter for each medicine, the times and days you take it, your time zone (so the times read correctly), and each dose you mark as taken or skipped. This is health information, so it is ',
             { bold: 'private to you by default' },
-            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with. The first time you turn on a reminder, your device asks permission to show notifications — Goodlist uses that permission only for medicine reminders.',
+            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with. The first time you turn on a reminder or a task alarm, your device asks permission to show notifications — Goodlist uses that permission only for medicine reminders and task alarms.',
           ],
         },
         {
@@ -145,7 +152,7 @@ export const privacyPolicy: LegalDoc = {
             ['To sync your Personal tasks across your own devices.'],
             ['To share Requested tasks and group task lists with the members you’ve chosen to invite.'],
             ['To send in-app notifications — for example, when someone requests a task from you.'],
-            ['To schedule medicine reminders on your own device, and to show a medicine’s schedule and dose record to a group you’ve chosen to share it with.'],
+            ['To schedule medicine reminders and task alarms on your own device, and to show a medicine’s schedule and dose record to a group you’ve chosen to share it with.'],
             ['To run the Premium free trial and subscription, and unlock Premium features while it’s active.'],
             [
               'To show community totals — how many accounts exist, how many are active right now, and how many people use Goodlist solo or in a group. These are counts only; no one is identifiable from them.',
@@ -475,6 +482,13 @@ export const termsOfService: LegalDoc = {
           spans: [
             { bold: 'Medicines are not medical advice.' },
             ' The Meds tab is a reminder and a record-keeper. It doesn’t check doses, interactions or schedules, and a reminder can fail to arrive — for example if notifications are turned off, the phone is off, or the operating system delays it. Always follow your doctor or pharmacist, and don’t rely on Goodlist alone for a medicine where a missed dose matters.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'Task alarms aren’t guaranteed either.' },
+            ' The same notification limits apply: an alarm can fail to arrive if notifications are turned off, the phone is off or in a restricted power mode, or the operating system delays it. Don’t rely on a task alarm alone for anything time-critical.',
           ],
         },
       ],

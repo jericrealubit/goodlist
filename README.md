@@ -8,6 +8,7 @@ and a realtime [Supabase](https://supabase.com) backend. It runs on Android and 
 <p align="center">
   <img src="docs/screenshots/05-my-list.png" width="130" alt="The Tasks screen in Solo mode, showing four task cards">
   <img src="docs/screenshots/19-calendar.png" width="130" alt="A month grid with dots under the days that have tasks due, and the selected day's tasks listed below it">
+  <img src="docs/screenshots/07-task-details.png" width="130" alt="A task's edit screen with a due date set and the Alarm switch turned on">
   <img src="docs/screenshots/20-meds.png" width="130" alt="The Meds screen showing today's dose with Taken and Skip buttons, and a list of medicines with their weekly adherence">
   <img src="docs/screenshots/18-voice.png" width="130" alt="The listening panel over the task list, showing the words &quot;Buy milk tomorrow&quot; it heard">
   <img src="docs/screenshots/16-their-inbox.png" width="130" alt="The Requested tab showing two tasks a group member asked for, with an unread badge on Tasks">
@@ -15,7 +16,7 @@ and a realtime [Supabase](https://supabase.com) backend. It runs on Android and 
   <img src="docs/screenshots/17-settings.png" width="130" alt="Settings, showing the display name field and the theme picker">
 </p>
 <p align="center">
-  <sub>Your own list · What is due when · Never miss a dose · Say it instead of typing · What your group asked of you · Invite code · Nine themes</sub>
+  <sub>Your own list · What is due when · An alarm at the exact time · Never miss a dose · Say it instead of typing · What your group asked of you · Invite code · Nine themes</sub>
 </p>
 
 ## Using the app
@@ -35,6 +36,12 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 
 - **Personal tasks** — a to-do list that's yours alone: add, edit, complete, reopen, delete, add notes
   and due dates, and drag to reorder.
+- **Task alarms** — an opt-in phone alert at a task's exact due date and time, alongside it showing
+  on the calendar. A one-shot local notification (`expo-notifications`), scheduled and cancelled on
+  the device — not sent by a server — and cancelled the moment the task is completed, cancelled or
+  deleted. Saying *"remind me to X at 5pm"* turns the alarm on automatically; a plain *"add X"* never
+  does. Phone-only, like medicine reminders; the web app still shows the due date, it just can't alert
+  you.
 - **Voice input** — add a task, ask a group member for one, finish, cancel, delete or undo, by
   speaking: *"add milk tomorrow"*, *"ask Sam to take the bins out"*, *"finish the laundry"*, *"undo"*,
   *"open history"*. Spoken dates are understood (*"tomorrow"*, *"on Friday"*, *"at 5"*), an
@@ -48,10 +55,11 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
   calendar is useful on the first open rather than empty. Reads from the same offline-first cache as
   the task list, so it works with no connection, and adds no permission of any kind.
 - **Medicines** — a Meds tab for tracking one or more medicines: name, dose, instructions, and the
-  wall-clock times you take it. Reminders are repeating local notifications (`expo-notifications`)
-  that reconcile themselves whenever a schedule changes, with Taken and Snooze actions right on the
-  notification — phone-only, since a browser can't schedule a local notification; the web app still
-  logs every dose, it just can't nudge you. Each dose is logged taken or skipped; a missed dose is
+  wall-clock times you take it. Reminders are repeating local notifications (`expo-notifications`,
+  the same scheduling infrastructure task alarms use, above) that reconcile themselves whenever a
+  schedule changes, with Taken and Snooze actions right on the notification — phone-only, since a
+  browser can't schedule a local notification; the web app still logs every dose, it just can't nudge
+  you. Each dose is logged taken or skipped; a missed dose is
   derived, never stored. The calendar gains one corner mark per past day — taken, missed, or skipped.
   Tracking and reminders are free; sharing a medicine with a group (so its members see the schedule
   and the dose record, but can't change it) is a Premium feature, enforced in the database, and
@@ -105,8 +113,8 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 React Native · Expo · Expo Router · TypeScript · Supabase (Postgres, Auth, Realtime, RLS, Edge
 Functions) · TanStack Query (with an AsyncStorage persister for offline/local-first caching) ·
 Reanimated · `react-native-sortables` (drag-to-reorder) · `react-native-gesture-handler` (swipe
-actions) · `expo-notifications` (local, repeating medicine reminders — no push token, nothing sent
-by a server) · RevenueCat (`react-native-purchases` on Android, `@revenuecat/purchases-js` on the
+actions) · `expo-notifications` (local reminders and alarms, both on-device — no push token, nothing
+sent by a server) · RevenueCat (`react-native-purchases` on Android, `@revenuecat/purchases-js` on the
 web) · EAS Build and EAS Hosting.
 
 ## Project structure
@@ -118,7 +126,7 @@ src/
     (app)/
       (tabs)/       Tasks, Calendar, Meds, Group, Settings
       group/        Create / join a group
-      task/[id]     Task detail / edit
+      task/[id]     Task detail / edit, including its alarm toggle
       medication/[id]  Add / edit a medicine, its schedule, and sharing
       history       Completed tasks — a stack screen linked from Settings,
                     since Meds took its old tab-bar slot
@@ -128,10 +136,12 @@ src/
                   status banner), ...)
   hooks/          Data-fetching and mutation hooks (React Query)
   lib/            Supabase client, queries, mutations, types, validation;
-                  calendar/, voice/ and medications/ — pure, dependency-free
-                  modules (no React, no Expo, no @/ aliases) so `npm test` can
-                  run them directly; reminders.ts / reminders.web.ts —
-                  expo-notifications scheduling on native, a no-op on the web;
+                  calendar/, voice/, medications/ and tasks/ (reminder-plan.ts,
+                  the task-alarm equivalent of medications/reminder-plan.ts) —
+                  pure, dependency-free modules (no React, no Expo, no @/
+                  aliases) so `npm test` can run them directly; reminders.ts /
+                  reminders.web.ts and task-reminders.ts / task-reminders.web.ts
+                  — expo-notifications scheduling on native, a no-op on the web;
                   purchases.ts / purchases.web.ts — RevenueCat on Android / web,
                   same exports, picked by Metro's platform extensions
   constants/      Theme definitions, group role/mode options, Premium prices

@@ -134,6 +134,8 @@ instead of typing it.
 It understands a few other things too:
 
 - *"Add call the vet on Friday"* — makes a task, due that day.
+- *"Remind me to take out the bins at 8pm"* — makes a task with the alarm already turned on,
+  so your phone rings at that time.
 - *"Finish the laundry"* — ticks that one off for you.
 - *"Undo"* — puts back the last thing you ticked.
 - *"Delete the milk one"* — asks you first, then deletes it.
@@ -180,13 +182,14 @@ The circle fills in green, and a line goes through the words.
 
 Tap the **words** of a task (not the circle) to open it.
 
-<img src="images/07-task-details.png" alt="The task page with a Title box, a Note box, a Due date box, and Save changes, Mark complete and Delete task buttons" width="270">
+<img src="images/07-task-details.png" alt="The task page with a Title box, a Note box, a Due date box, an Alarm switch, and Save changes, Mark complete and Delete task buttons" width="270">
 
 Here you can:
 
 1. Add a **Note** — anything extra you want to remember. `Whole milk, 2 litres`.
 2. Add a **Due date** — the day it needs doing by.
-3. Tap **Save changes** when you're happy.
+3. Turn on **Alarm** — your phone rings at that exact time. It only shows up once there's a due date, and it stays off unless you turn it on.
+4. Tap **Save changes** when you're happy.
 
 The other two buttons:
 
@@ -449,6 +452,7 @@ and cannot be undone.
 | Word | What it really means |
 | --- | --- |
 | **Task** | One thing you want to do. |
+| **Alarm** | An optional phone ring at a task's exact due time. Off unless you turn it on. |
 | **Solo mode** | You're using Goodlist on your own, with no group. |
 | **Personal** | Your own private list. Nobody else can see it. |
 | **Requested** | Something you asked another person to do, or they asked you. |
