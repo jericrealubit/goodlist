@@ -39,6 +39,8 @@ export type Task = {
   title: string;
   notes: string | null;
   due_at: string | null;
+  /** A phone alarm at due_at. Opt-in, off by default; meaningless without a due date. */
+  alarm_enabled: boolean;
   origin: TaskOrigin;
   status: TaskStatus;
   sort_order: number;
@@ -56,12 +58,14 @@ export type NewTaskInput = {
   title: string;
   notes?: string | null;
   due_at?: string | null;
+  alarm_enabled?: boolean;
 };
 
 export type UpdateTaskInput = {
   title?: string;
   notes?: string | null;
   due_at?: string | null;
+  alarm_enabled?: boolean;
 };
 
 export type NewRequestInput = {
@@ -71,6 +75,7 @@ export type NewRequestInput = {
   title: string;
   notes?: string | null;
   due_at?: string | null;
+  alarm_enabled?: boolean;
   assigneeId: string;
   familyId: string;
 };

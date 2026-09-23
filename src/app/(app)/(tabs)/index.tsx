@@ -40,6 +40,7 @@ import { useVoiceInput } from '@/hooks/use-voice-input';
 import { getErrorMessage } from '@/lib/errors';
 import { tapLight } from '@/lib/haptics';
 import { taskKeys } from '@/lib/query-client';
+import { remindersSupported, requestReminderPermission } from '@/lib/reminders';
 import { validateTaskTitle } from '@/lib/validation/task';
 import { matchTask } from '@/lib/voice/match-task';
 import { parseVoiceCommand } from '@/lib/voice/parse-command';
@@ -211,14 +212,18 @@ export default function TasksScreen() {
     setComposeError(getErrorMessage(err, fallback));
   }
 
-  function commitSpokenTask(title: string, dueAt: Date | null) {
+  function commitSpokenTask(title: string, dueAt: Date | null, wantsAlarm: boolean) {
     if (validateTaskTitle(title)) {
       fallBackToCompose(title);
       return;
     }
-    createTaskMutation.mutate(buildNewTaskInput({ title, due_at: dueAt?.toISOString() ?? null }, user!.id), {
-      onError: (err) => failVoice(err, 'Could not add this task.'),
-    });
+    createTaskMutation.mutate(
+      buildNewTaskInput({ title, due_at: dueAt?.toISOString() ?? null, alarm_enabled: wantsAlarm }, user!.id),
+      { onError: (err) => failVoice(err, 'Could not add this task.') },
+    );
+    // Same contextual ask as the manual Alarm toggle: only when it means
+    // something, never at launch.
+    if (wantsAlarm && remindersSupported) requestReminderPermission().catch(() => {});
     showVoiceNotice(describeCommit('Added', title, dueAt));
   }
 
@@ -347,7 +352,7 @@ export default function TasksScreen() {
     });
     switch (command.kind) {
       case 'addTask':
-        commitSpokenTask(command.title, command.dueAt);
+        commitSpokenTask(command.title, command.dueAt, command.wantsAlarm);
         return;
       case 'requestTask':
         commitSpokenRequest(command.assignee, command.title, command.dueAt);

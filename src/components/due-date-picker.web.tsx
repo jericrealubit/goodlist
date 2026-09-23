@@ -16,6 +16,12 @@ export type DueDatePickerProps = {
   name?: string;
   /** Shown when there is no value. Defaults to "No due date". */
   placeholder?: string;
+  /**
+   * Also shows a time-of-day control alongside the date. Off by default —
+   * most due dates ("Friday") don't need a time, only fields whose exact
+   * instant matters (an alarm) do.
+   */
+  includeTime?: boolean;
 };
 
 function pad(n: number): string {
@@ -35,44 +41,81 @@ function fromYMD(value: string): Date | null {
   return new Date(y, m - 1, d);
 }
 
-export function DueDatePicker({ value, onChange, disabled, name = 'due date' }: DueDatePickerProps) {
+function toHM(date: Date): string {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function withTime(day: Date, hm: string): Date {
+  const [h, m] = hm.split(':').map(Number);
+  const result = new Date(day);
+  result.setHours(h ?? 0, m ?? 0, 0, 0);
+  return result;
+}
+
+const inputStyle = (theme: ReturnType<typeof useTheme>, tokens: ReturnType<typeof useTokens>, disabled?: boolean) => ({
+  color: theme.text,
+  backgroundColor: theme.backgroundElement,
+  borderColor: theme.border,
+  borderWidth: tokens.borderWidth,
+  borderStyle: 'solid' as const,
+  borderRadius: tokens.radii.sm,
+  paddingLeft: Spacing.three,
+  paddingRight: Spacing.three,
+  paddingTop: Spacing.three,
+  paddingBottom: Spacing.three,
+  fontSize: 16,
+  fontFamily: 'inherit',
+  opacity: disabled ? 0.5 : 1,
+  boxSizing: 'border-box' as const,
+});
+
+export function DueDatePicker({
+  value,
+  onChange,
+  disabled,
+  name = 'due date',
+  includeTime,
+}: DueDatePickerProps) {
   const theme = useTheme();
   const tokens = useTokens();
 
   return (
     <View style={styles.group}>
-      {/* Native browser date input — Expo web renders through react-dom, so a
-          DOM <input> is valid here. Themed to match TextField. */}
-      <input
-        type="date"
-        aria-label={name}
-        value={value ? toYMD(value) : ''}
-        disabled={disabled}
-        onChange={(event) => {
-          // fromYMD gives local midnight; normalising is what makes every
-          // writer — this picker, the native one, and the voice parser — agree
-          // on the same hour.
-          const picked = fromYMD(event.target.value);
-          onChange(picked ? withDueTime(picked) : null);
-        }}
-        style={{
-          color: theme.text,
-          backgroundColor: theme.backgroundElement,
-          borderColor: theme.border,
-          borderWidth: tokens.borderWidth,
-          borderStyle: 'solid',
-          borderRadius: tokens.radii.sm,
-          paddingLeft: Spacing.three,
-          paddingRight: Spacing.three,
-          paddingTop: Spacing.three,
-          paddingBottom: Spacing.three,
-          fontSize: 16,
-          fontFamily: 'inherit',
-          opacity: disabled ? 0.5 : 1,
-          width: '100%',
-          boxSizing: 'border-box',
-        }}
-      />
+      <View style={styles.row}>
+        {/* Native browser date input — Expo web renders through react-dom, so a
+            DOM <input> is valid here. Themed to match TextField. */}
+        <input
+          type="date"
+          aria-label={name}
+          value={value ? toYMD(value) : ''}
+          disabled={disabled}
+          onChange={(event) => {
+            const picked = fromYMD(event.target.value);
+            if (!picked) {
+              onChange(null);
+              return;
+            }
+            // A date input can never carry time information, so an existing
+            // value's time-of-day has to be explicitly re-applied onto the
+            // newly picked day — otherwise a time set via the button below
+            // would silently reset every time the date changes.
+            onChange(value ? withTime(picked, toHM(value)) : withDueTime(picked));
+          }}
+          style={{ ...inputStyle(theme, tokens, disabled), flex: 1, width: '100%' }}
+        />
+        {includeTime && value ? (
+          <input
+            type="time"
+            aria-label={`${name} time`}
+            value={toHM(value)}
+            disabled={disabled}
+            onChange={(event) => {
+              if (event.target.value) onChange(withTime(value, event.target.value));
+            }}
+            style={inputStyle(theme, tokens, disabled)}
+          />
+        ) : null}
+      </View>
       {value && !disabled ? (
         <Pressable
           onPress={() => onChange(null)}
@@ -91,6 +134,10 @@ export function DueDatePicker({ value, onChange, disabled, name = 'due date' }: 
 
 const styles = StyleSheet.create({
   group: {
+    gap: Spacing.two,
+  },
+  row: {
+    flexDirection: 'row',
     gap: Spacing.two,
   },
   clearRow: {

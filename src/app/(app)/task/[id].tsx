@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { DueDatePicker } from '@/components/due-date-picker';
@@ -25,6 +25,8 @@ import {
 } from '@/hooks/use-task-mutations';
 import { useTaskDetailQuery } from '@/hooks/use-tasks-query';
 import { getErrorMessage } from '@/lib/errors';
+import { remindersSupported, requestReminderPermission } from '@/lib/reminders';
+import { cancelTaskReminder } from '@/lib/task-reminders';
 import { validateTaskTitle } from '@/lib/validation/task';
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
@@ -45,6 +47,7 @@ export default function EditTaskScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useSession();
+  const theme = useTheme();
   const { data: task } = useTaskDetailQuery(id);
   const { data: groups } = useGroupsQuery();
   const updateMutation = useUpdateTaskMutation();
@@ -56,6 +59,7 @@ export default function EditTaskScreen() {
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [dueAt, setDueAt] = useState<Date | null>(null);
+  const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initializedRef = useRef(false);
 
@@ -65,6 +69,7 @@ export default function EditTaskScreen() {
     setTitle(task.title);
     setNotes(task.notes ?? '');
     setDueAt(task.due_at ? new Date(task.due_at) : null);
+    setAlarmEnabled(task.alarm_enabled);
   }, [task]);
 
   // The title field wraps so a long title is fully readable while editing, but
@@ -86,11 +91,41 @@ export default function EditTaskScreen() {
       return;
     }
     setError(null);
+    // No due date means nothing to alarm on — never let a stale `true`
+    // round-trip to the server without one.
+    const nextAlarmEnabled = dueAt ? alarmEnabled : false;
     updateMutation.mutate(
-      { id, title, notes, due_at: dueAt ? dueAt.toISOString() : null },
+      { id, title, notes, due_at: dueAt ? dueAt.toISOString() : null, alarm_enabled: nextAlarmEnabled },
       { onError: (err) => setError(getErrorMessage(err, 'Could not save this task.')) },
     );
+    if (nextAlarmEnabled) {
+      // Asked here — the moment the alarm means something — and never at
+      // launch. The layout's sync hook picks the schedule up once permission
+      // lands.
+      if (remindersSupported) requestReminderPermission().catch(() => {});
+    } else if (task?.alarm_enabled) {
+      // Turned off (or the due date was cleared): cancel immediately rather
+      // than waiting for the next foreground resync to notice the diff.
+      cancelTaskReminder(id).catch(() => {});
+    }
     router.back();
+  }
+
+  // The assignee's Alarm switch is the one control on their read-only view —
+  // it's scoped to this device, has nothing to do with the creator's ability
+  // to edit the rest of the task, and commits immediately rather than
+  // waiting on a "Save" that this view doesn't have.
+  function handleAssigneeAlarmToggle(next: boolean) {
+    setAlarmEnabled(next);
+    updateMutation.mutate(
+      { id, alarm_enabled: next },
+      { onError: (err) => setError(getErrorMessage(err, 'Could not update the alarm.')) },
+    );
+    if (next && remindersSupported) {
+      requestReminderPermission().catch(() => {});
+    } else if (!next) {
+      cancelTaskReminder(id).catch(() => {});
+    }
   }
 
   function handleToggleComplete() {
@@ -150,6 +185,22 @@ export default function EditTaskScreen() {
               <ReadOnlyField label="Title" value={task.title} />
               {task.notes ? <ReadOnlyField label="Note" value={task.notes} /> : null}
               <ReadOnlyField label="Due date" value={task.due_at ? new Date(task.due_at).toLocaleDateString() : 'No due date'} />
+              {task.due_at ? (
+                <View style={styles.switchRow}>
+                  <View style={styles.flex}>
+                    <ThemedText>Alarm</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {remindersSupported ? 'A phone alert at the due time.' : 'Alarms arrive on the Goodlist phone app.'}
+                    </ThemedText>
+                  </View>
+                  <Switch
+                    value={alarmEnabled}
+                    onValueChange={handleAssigneeAlarmToggle}
+                    trackColor={{ true: theme.primary, false: theme.border }}
+                    accessibilityLabel="Alarm"
+                  />
+                </View>
+              ) : null}
             </>
           ) : (
             <>
@@ -180,8 +231,31 @@ export default function EditTaskScreen() {
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   Due date (optional)
                 </ThemedText>
-                <DueDatePicker value={dueAt} onChange={setDueAt} disabled={isRequested && !canEditRequest} />
+                <DueDatePicker
+                  value={dueAt}
+                  onChange={setDueAt}
+                  disabled={isRequested && !canEditRequest}
+                  includeTime
+                />
               </ThemedView>
+
+              {dueAt ? (
+                <View style={styles.switchRow}>
+                  <View style={styles.flex}>
+                    <ThemedText>Alarm</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {remindersSupported ? 'A phone alert at the due time.' : 'Alarms arrive on the Goodlist phone app.'}
+                    </ThemedText>
+                  </View>
+                  <Switch
+                    value={alarmEnabled}
+                    onValueChange={setAlarmEnabled}
+                    disabled={isRequested && !canEditRequest}
+                    trackColor={{ true: theme.primary, false: theme.border }}
+                    accessibilityLabel="Alarm"
+                  />
+                </View>
+              ) : null}
 
               {isCreator && !isOpen ? (
                 <ThemedText themeColor="textSecondary">This request is {task.status}.</ThemedText>
@@ -270,6 +344,11 @@ const styles = StyleSheet.create({
   },
   dueDateGroup: {
     gap: Spacing.two,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
   },
   dueDateButton: {
     borderWidth: 1,

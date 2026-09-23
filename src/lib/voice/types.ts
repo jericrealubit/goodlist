@@ -7,7 +7,7 @@
  * forgiving instead of a command line you have to memorize.
  */
 export type VoiceCommand =
-  | { kind: 'addTask'; title: string; dueAt: Date | null }
+  | { kind: 'addTask'; title: string; dueAt: Date | null; wantsAlarm: boolean }
   | { kind: 'requestTask'; assignee: string; title: string; dueAt: Date | null }
   | { kind: 'completeTask'; titleHint: string }
   | { kind: 'cancelRequest'; titleHint: string }

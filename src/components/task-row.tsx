@@ -14,8 +14,14 @@ import { useTokens } from '@/hooks/use-tokens';
 import type { Task } from '@/lib/types';
 import { displayTitle, extractUrl, urlHost } from '@/lib/url';
 
-function formatDueDate(dueAt: string) {
-  return new Date(dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+// Time only shows for an alarmed task — every other (the overwhelming
+// majority, since alarms are opt-in and off by default) row looks exactly
+// as it always has.
+function formatDueDate(dueAt: string, includeTime: boolean) {
+  const date = new Date(dueAt);
+  const day = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (!includeTime) return day;
+  return `${day}, ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 }
 
 function formatCompletedAt(completedAt: string) {
@@ -168,7 +174,7 @@ export function TaskRow({
       ) : null}
       {task.due_at ? (
         <ThemedText type="small" themeColor="textSecondary">
-          Due {formatDueDate(task.due_at)}
+          Due {formatDueDate(task.due_at, task.alarm_enabled)}
         </ThemedText>
       ) : null}
       {isCompleted && task.completed_at ? (

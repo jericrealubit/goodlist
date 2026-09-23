@@ -13,6 +13,7 @@ import {
   updateTask,
 } from '@/lib/mutations/tasks';
 import { groupKeys, queryClient, taskKeys } from '@/lib/query-client';
+import { cancelTaskReminder } from '@/lib/task-reminders';
 import type { GroupSummary, NewRequestInput, NewTaskInput, Task, UpdateTaskInput } from '@/lib/types';
 
 // Every task mutation shares one scope so TanStack Query replays paused
@@ -27,14 +28,21 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 export function buildNewTaskInput(
-  input: { title: string; notes?: string | null; due_at?: string | null },
+  input: { title: string; notes?: string | null; due_at?: string | null; alarm_enabled?: boolean },
   creatorId: string,
 ): NewTaskInput {
   return { id: Crypto.randomUUID(), creatorId, sortOrder: -Date.now() / 1000, ...input };
 }
 
 export function buildNewRequestInput(
-  input: { title: string; notes?: string | null; due_at?: string | null; assigneeId: string; familyId: string },
+  input: {
+    title: string;
+    notes?: string | null;
+    due_at?: string | null;
+    alarm_enabled?: boolean;
+    assigneeId: string;
+    familyId: string;
+  },
   creatorId: string,
 ): NewRequestInput {
   return { id: Crypto.randomUUID(), creatorId, sortOrder: -Date.now() / 1000, ...input };
@@ -64,6 +72,7 @@ const createTaskMutationOptions: UseMutationOptions<Task, Error, NewTaskInput, {
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
+      alarm_enabled: input.alarm_enabled ?? false,
       origin: 'personal',
       status: 'open',
       sort_order: input.sortOrder,
@@ -101,6 +110,7 @@ const createRequestMutationOptions: UseMutationOptions<Task, Error, NewRequestIn
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
+      alarm_enabled: input.alarm_enabled ?? false,
       origin: 'requested',
       status: 'open',
       sort_order: input.sortOrder,
@@ -141,6 +151,7 @@ const updateTaskMutationOptions: UseMutationOptions<Task, Error, UpdateVariables
       ...(input.title !== undefined ? { title: input.title.trim() } : {}),
       ...(input.notes !== undefined ? { notes: input.notes?.trim() || null } : {}),
       ...(input.due_at !== undefined ? { due_at: input.due_at } : {}),
+      ...(input.alarm_enabled !== undefined ? { alarm_enabled: input.alarm_enabled } : {}),
     });
     queryClient.setQueryData<Task[]>(taskKeys.open, (old) => old?.map((t) => (t.id === id ? patch(t) : t)));
     queryClient.setQueryData<Task>(taskKeys.detail(id), (old) => (old ? patch(old) : old));
@@ -162,6 +173,10 @@ const completeTaskMutationOptions: UseMutationOptions<Task, Error, Task, OpenHis
   scope: TASKS_QUEUE_SCOPE,
   mutationFn: (task) => completeTask(task.id),
   onMutate: async (task) => {
+    // Fire-and-forget, not awaited: a completed task's alarm shouldn't still
+    // be armed on this device, but nothing here should wait on the OS call to
+    // cancel it before the optimistic UI update below proceeds.
+    cancelTaskReminder(task.id).catch(() => {});
     await Promise.all([
       queryClient.cancelQueries({ queryKey: taskKeys.open }),
       queryClient.cancelQueries({ queryKey: taskKeys.history }),
@@ -224,6 +239,7 @@ const cancelTaskMutationOptions: UseMutationOptions<Task, Error, Task, OpenHisto
   scope: TASKS_QUEUE_SCOPE,
   mutationFn: (task) => cancelTask(task.id),
   onMutate: async (task) => {
+    cancelTaskReminder(task.id).catch(() => {});
     await Promise.all([
       queryClient.cancelQueries({ queryKey: taskKeys.open }),
       queryClient.cancelQueries({ queryKey: taskKeys.history }),
@@ -249,6 +265,7 @@ const deleteTaskMutationOptions: UseMutationOptions<void, Error, Task, OpenHisto
   scope: TASKS_QUEUE_SCOPE,
   mutationFn: (task) => deleteTask(task.id),
   onMutate: async (task) => {
+    cancelTaskReminder(task.id).catch(() => {});
     await Promise.all([
       queryClient.cancelQueries({ queryKey: taskKeys.open }),
       queryClient.cancelQueries({ queryKey: taskKeys.history }),

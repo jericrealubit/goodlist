@@ -13,6 +13,7 @@ export async function createTask(input: NewTaskInput): Promise<Task> {
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
+      alarm_enabled: input.alarm_enabled ?? false,
       creator_id: input.creatorId,
       assignee_id: input.creatorId,
       origin: 'personal',
@@ -33,6 +34,7 @@ export async function createRequest(input: NewRequestInput): Promise<Task> {
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
+      alarm_enabled: input.alarm_enabled ?? false,
       creator_id: input.creatorId,
       assignee_id: input.assigneeId,
       family_id: input.familyId,
@@ -65,6 +67,7 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
       ...(input.title !== undefined ? { title: input.title.trim() } : {}),
       ...(input.notes !== undefined ? { notes: input.notes?.trim() || null } : {}),
       ...(input.due_at !== undefined ? { due_at: input.due_at } : {}),
+      ...(input.alarm_enabled !== undefined ? { alarm_enabled: input.alarm_enabled } : {}),
     })
     .eq('id', id)
     .select('*')

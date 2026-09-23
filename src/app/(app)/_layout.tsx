@@ -4,6 +4,7 @@ import { useMedicationReminders } from '@/hooks/use-medication-reminders';
 import { usePresenceHeartbeat } from '@/hooks/use-presence-heartbeat';
 import { usePurchasesIdentity } from '@/hooks/use-purchases-identity';
 import { useSyncDeviceLocale } from '@/hooks/use-sync-device-locale';
+import { useTaskReminders } from '@/hooks/use-task-reminders';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function AppLayout() {
@@ -19,6 +20,7 @@ export default function AppLayout() {
   // Here, not on the Meds tab: a reminder must be answerable whichever screen
   // the app opens on, and an edit from another device must reschedule here.
   useMedicationReminders();
+  useTaskReminders();
 
   return (
     <Stack

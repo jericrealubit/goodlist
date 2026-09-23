@@ -81,6 +81,11 @@ alter table public.tasks alter column sort_order set default (-extract(epoch fro
 alter table public.tasks alter column sort_order set not null;
 create index if not exists tasks_sort_order_idx on public.tasks (sort_order);
 
+-- A phone alarm at due_at, opt-in per task. Row-level RLS below already lets
+-- an assignee update a task they didn't create, which is what lets them turn
+-- this on for something requested of them.
+alter table public.tasks add column if not exists alarm_enabled boolean not null default false;
+
 alter table public.tasks enable row level security;
 
 drop policy if exists "Owners can view their own tasks" on public.tasks;

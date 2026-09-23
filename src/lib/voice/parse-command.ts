@@ -103,7 +103,10 @@ export function parseVoiceCommand(transcript: string, ctx: VoiceContext): VoiceC
     /^i\s+(?:need|have|want|ought|got)\s+to\s+(.+)$/i.exec(text);
   if (selfReminder) {
     const { title, dueAt } = withWhen(selfReminder[1], ctx.now);
-    return { kind: 'addTask', title, dueAt };
+    // Saying "remind me" is asking for the alarm, not just a due date — but
+    // there's nothing to alarm on if no time was actually resolved ("remind
+    // me to breathe" has no dueAt, so no alarm to enable).
+    return { kind: 'addTask', title, dueAt, wantsAlarm: dueAt !== null };
   }
 
   const askSomeone = /^(?:ask|tell|get|remind)\s+(.+?)\s+to\s+(.+)$/i.exec(text);
@@ -150,7 +153,9 @@ export function parseVoiceCommand(transcript: string, ctx: VoiceContext): VoiceC
     );
   if (added) {
     const { title, dueAt } = withWhen(added[1], ctx.now);
-    return { kind: 'addTask', title, dueAt };
+    // A generic "add"/"create" never implies an alarm, even with a date said —
+    // only the "remind me" phrasing above does that.
+    return { kind: 'addTask', title, dueAt, wantsAlarm: false };
   }
 
   // No verb matched. Usually that is a task title exactly as spoken — but a
@@ -162,7 +167,7 @@ export function parseVoiceCommand(transcript: string, ctx: VoiceContext): VoiceC
   // stump: a sentence that merely mentions a day — "the meeting is on Friday",
   // "call mum about Friday's party" — finds no date here and stays dictation.
   const { dueAt, rest } = parseWhen(text, ctx.now);
-  if (dueAt && rest) return { kind: 'addTask', title: rest, dueAt };
+  if (dueAt && rest) return { kind: 'addTask', title: rest, dueAt, wantsAlarm: false };
 
   return { kind: 'dictation', text };
 }

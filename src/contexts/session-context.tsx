@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type PropsWithChildren 
 import { queryClient } from '@/lib/query-client';
 import { cancelAllReminders } from '@/lib/reminders';
 import { supabase } from '@/lib/supabase';
+import { cancelAllTaskReminders } from '@/lib/task-reminders';
 
 type SessionContextValue = {
   session: Session | null;
@@ -44,8 +45,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         queryClient.getMutationCache().clear();
         // Reminders are scheduled on the device, not the account: without
         // this, the next person to sign in here gets the last one's medicine
-        // names on their lock screen.
+        // names — or task alarms — on their lock screen.
         cancelAllReminders().catch(() => {});
+        cancelAllTaskReminders().catch(() => {});
       } else if (nextSession) {
         setSession(nextSession);
       }

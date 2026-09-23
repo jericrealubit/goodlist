@@ -25,12 +25,12 @@ test('anything unrecognized comes back as dictation, not an error', () => {
 });
 
 test('the recognizer’s punctuation and spoken politeness are dropped', () => {
-  assert.deepEqual(parse('Please add milk.'), { kind: 'addTask', title: 'milk', dueAt: null });
-  assert.deepEqual(parse('  add    milk  '), { kind: 'addTask', title: 'milk', dueAt: null });
+  assert.deepEqual(parse('Please add milk.'), { kind: 'addTask', title: 'milk', dueAt: null, wantsAlarm: false });
+  assert.deepEqual(parse('  add    milk  '), { kind: 'addTask', title: 'milk', dueAt: null, wantsAlarm: false });
 });
 
 test('every way of saying "add"', () => {
-  const expected = { kind: 'addTask', title: 'call the vet', dueAt: null };
+  const expected = { kind: 'addTask', title: 'call the vet', dueAt: null, wantsAlarm: false };
   assert.deepEqual(parse('add call the vet'), expected);
   assert.deepEqual(parse('add a task called call the vet'), expected);
   assert.deepEqual(parse('create a new reminder to call the vet'), expected);
@@ -46,6 +46,30 @@ test('a task that creates one reads its due date off the end', () => {
     kind: 'addTask',
     title: 'call the vet',
     dueAt: new Date(2026, 8, 19, 9, 0, 0, 0),
+    wantsAlarm: true,
+  });
+});
+
+test('"remind me" with a resolved time turns the alarm on; without one, or a plain "add", it stays off', () => {
+  // 8am has already passed on NOW's clock (10:00), so — same rule as any
+  // other time-with-no-day phrase — this resolves to tomorrow.
+  assert.deepEqual(parse('remind me to take pills at 8am'), {
+    kind: 'addTask',
+    title: 'take pills',
+    dueAt: new Date(2026, 8, 19, 8, 0, 0, 0),
+    wantsAlarm: true,
+  });
+  assert.deepEqual(parse('remind me to breathe'), {
+    kind: 'addTask',
+    title: 'breathe',
+    dueAt: null,
+    wantsAlarm: false,
+  });
+  assert.deepEqual(parse('add buy milk tomorrow'), {
+    kind: 'addTask',
+    title: 'buy milk',
+    dueAt: new Date(2026, 8, 19, 9, 0, 0, 0),
+    wantsAlarm: false,
   });
 });
 
@@ -108,7 +132,12 @@ test('an ambiguous first name picks nobody rather than the wrong person', () => 
 });
 
 test('"remind me to" is a note to self, not a request to someone called "me"', () => {
-  assert.deepEqual(parse('remind me to buy milk'), { kind: 'addTask', title: 'buy milk', dueAt: null });
+  assert.deepEqual(parse('remind me to buy milk'), {
+    kind: 'addTask',
+    title: 'buy milk',
+    dueAt: null,
+    wantsAlarm: false,
+  });
 });
 
 test('finishing a task', () => {
@@ -164,6 +193,7 @@ test('titles keep their original casing', () => {
     kind: 'addTask',
     title: 'Email Dr Rivera',
     dueAt: null,
+    wantsAlarm: false,
   });
 });
 
@@ -174,16 +204,19 @@ test('a sentence ending in a time is a task due then, verb or no verb', () => {
     kind: 'addTask',
     title: 'buy milk',
     dueAt: new Date(2026, 8, 19, 9, 0, 0, 0),
+    wantsAlarm: false,
   });
   assert.deepEqual(parse('call the vet on Friday'), {
     kind: 'addTask',
     title: 'call the vet',
     dueAt: new Date(2026, 8, 25, 9, 0, 0, 0),
+    wantsAlarm: false,
   });
   assert.deepEqual(parse('dinner at 7'), {
     kind: 'addTask',
     title: 'dinner',
     dueAt: new Date(2026, 8, 19, 7, 0, 0, 0),
+    wantsAlarm: false,
   });
 });
 
