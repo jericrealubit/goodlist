@@ -460,6 +460,7 @@ const SCREENS = [
           <div class="small muted">A phone alert at the due time.</div></div>
           <div class="switch"></div>
         </div>
+        ${field('Repeat', 'Every week on Wednesday')}
         ${btn('Save changes', 'primary', '3')}
         ${btn('Mark complete', 'secondary')}
         ${btn('Delete task', 'dangerbtn')}

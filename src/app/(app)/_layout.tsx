@@ -4,6 +4,7 @@ import { useMedicationReminders } from '@/hooks/use-medication-reminders';
 import { usePresenceHeartbeat } from '@/hooks/use-presence-heartbeat';
 import { usePurchasesIdentity } from '@/hooks/use-purchases-identity';
 import { useSyncDeviceLocale } from '@/hooks/use-sync-device-locale';
+import { useTaskRecurrenceSync } from '@/hooks/use-task-recurrences';
 import { useTaskReminders } from '@/hooks/use-task-reminders';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -21,6 +22,9 @@ export default function AppLayout() {
   // the app opens on, and an edit from another device must reschedule here.
   useMedicationReminders();
   useTaskReminders();
+  // Same reasoning: a repeating task's window has to move forward as days
+  // pass, whichever screen the app opens on.
+  useTaskRecurrenceSync();
 
   return (
     <Stack
@@ -31,6 +35,7 @@ export default function AppLayout() {
       }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="task/[id]" options={{ title: 'Edit task', presentation: 'modal' }} />
+      <Stack.Screen name="task/series/[id]" options={{ title: 'Repeating task', presentation: 'modal' }} />
       <Stack.Screen name="group/create" options={{ title: 'Create group', presentation: 'modal' }} />
       <Stack.Screen name="group/join" options={{ title: 'Join group', presentation: 'modal' }} />
       <Stack.Screen name="medication/[id]" options={{ title: 'Medicine', presentation: 'modal' }} />

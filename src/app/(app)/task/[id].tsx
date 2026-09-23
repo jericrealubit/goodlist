@@ -7,6 +7,13 @@ import { DueDatePicker } from '@/components/due-date-picker';
 import { HeaderAction, HeaderActionSlot } from '@/components/header-action';
 import { LoadingState } from '@/components/loading-state';
 import { PrimaryButton } from '@/components/primary-button';
+import {
+  NO_REPEAT,
+  RecurrencePicker,
+  toRecurrenceInput,
+  validateRepeat,
+  type RepeatValue,
+} from '@/components/recurrence-picker';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -23,10 +30,17 @@ import {
   useReopenTaskMutation,
   useUpdateTaskMutation,
 } from '@/hooks/use-task-mutations';
+import {
+  newRecurrenceId,
+  useCreateTaskRecurrenceMutation,
+  useTaskRecurrencesQuery,
+} from '@/hooks/use-task-recurrences';
 import { useTaskDetailQuery } from '@/hooks/use-tasks-query';
+import { fromDayKey } from '@/lib/calendar/day';
 import { getErrorMessage } from '@/lib/errors';
 import { remindersSupported, requestReminderPermission } from '@/lib/reminders';
 import { cancelTaskReminder } from '@/lib/task-reminders';
+import { describeRecurrence } from '@/lib/tasks/recurrence';
 import { validateTaskTitle } from '@/lib/validation/task';
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
@@ -55,11 +69,15 @@ export default function EditTaskScreen() {
   const reopenMutation = useReopenTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
   const cancelMutation = useCancelTaskMutation();
+  const createRecurrence = useCreateTaskRecurrenceMutation();
+  const { data: recurrences } = useTaskRecurrencesQuery();
+  const series = task?.recurrence_id ? recurrences?.find((r) => r.id === task.recurrence_id) : undefined;
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [dueAt, setDueAt] = useState<Date | null>(null);
   const [alarmEnabled, setAlarmEnabled] = useState(false);
+  const [repeat, setRepeat] = useState<RepeatValue>(NO_REPEAT);
   const [error, setError] = useState<string | null>(null);
   const initializedRef = useRef(false);
 
@@ -90,6 +108,17 @@ export default function EditTaskScreen() {
       setError(titleError);
       return;
     }
+    // Only a Personal task that isn't already part of a series can become
+    // one, and only with a day to count from.
+    const startsSeries =
+      !!dueAt && task?.origin === 'personal' && !task.recurrence_id && repeat.frequency !== 'none';
+    if (startsSeries) {
+      const repeatError = validateRepeat(repeat, dueAt);
+      if (repeatError) {
+        setError(repeatError);
+        return;
+      }
+    }
     setError(null);
     // No due date means nothing to alarm on — never let a stale `true`
     // round-trip to the server without one.
@@ -98,6 +127,19 @@ export default function EditTaskScreen() {
       { id, title, notes, due_at: dueAt ? dueAt.toISOString() : null, alarm_enabled: nextAlarmEnabled },
       { onError: (err) => setError(getErrorMessage(err, 'Could not save this task.')) },
     );
+    if (startsSeries) {
+      // Queued behind the update above (same scope), so the series is built
+      // from this task exactly as just saved. This task becomes its first
+      // occurrence; the layout's sync fills in the ones after it.
+      createRecurrence.mutate(
+        {
+          id: newRecurrenceId(),
+          taskId: id,
+          ...toRecurrenceInput({ title, notes, dueAt, alarmEnabled: nextAlarmEnabled, repeat }),
+        },
+        { onError: (err) => setError(getErrorMessage(err, 'Could not make this task repeat.')) },
+      );
+    }
     if (nextAlarmEnabled) {
       // Asked here — the moment the alarm means something — and never at
       // launch. The layout's sync hook picks the schedule up once permission
@@ -257,6 +299,42 @@ export default function EditTaskScreen() {
                 </View>
               ) : null}
 
+              {task.origin === 'personal' && task.recurrence_id ? (
+                <ThemedView style={styles.dueDateGroup}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    Repeats
+                  </ThemedText>
+                  <ThemedText>
+                    {series ? describeRecurrence(series) : 'Repeating task'}
+                    {series?.end_date ? `, until ${fromDayKey(series.end_date)?.toLocaleDateString()}` : ''}
+                    {series && !series.active ? ' — stopped' : ''}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Changes above apply to this one only. To change every one from today on — or stop it
+                    repeating — edit the series.
+                  </ThemedText>
+                  {series?.active ? (
+                    <PrimaryButton
+                      title="Edit series"
+                      icon={ActionIcons.repeat}
+                      variant="secondary"
+                      onPress={() =>
+                        // Replaced, not pushed: saving the series can remove this
+                        // very occurrence, so there'd be nothing to come back to.
+                        router.replace({ pathname: '/task/series/[id]', params: { id: task.recurrence_id! } })
+                      }
+                    />
+                  ) : null}
+                </ThemedView>
+              ) : task.origin === 'personal' && dueAt ? (
+                <ThemedView style={styles.dueDateGroup}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    Repeat
+                  </ThemedText>
+                  <RecurrencePicker value={repeat} onChange={setRepeat} anchor={dueAt} />
+                </ThemedView>
+              ) : null}
+
               {isCreator && !isOpen ? (
                 <ThemedText themeColor="textSecondary">This request is {task.status}.</ThemedText>
               ) : null}
@@ -289,7 +367,9 @@ export default function EditTaskScreen() {
                 variant="secondary"
               />
               <PrimaryButton
-                title="Delete task"
+                // For an occurrence, only this one goes — and it stays gone:
+                // the series remembers the day and won't recreate it.
+                title={task.recurrence_id ? 'Delete this one' : 'Delete task'}
                 icon={ActionIcons.delete}
                 onPress={handleDelete}
                 variant="danger"

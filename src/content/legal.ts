@@ -13,7 +13,7 @@
 // built-in type stripping.
 
 export const CONTACT_EMAIL = 'jericrealubit@gmail.com';
-export const EFFECTIVE_DATE = 'September 23, 2026';
+export const EFFECTIVE_DATE = 'September 24, 2026';
 
 /** An inline run of text: plain, bold, or the contact email as a mailto link. */
 export type Span = string | { bold: string } | { email: true };
@@ -81,6 +81,13 @@ export const privacyPolicy: LegalDoc = {
           spans: [
             { bold: 'Task alarms.' },
             ' If you turn on the Alarm switch for a task, its title, note and due date/time are used to schedule a one-time notification on your own device at that time — the same way a task shows on the calendar, just with a phone alert added. We don’t send it; nothing leaves your device to make it happen. Turning the alarm off, changing the due date, or completing or deleting the task cancels it.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
+            { bold: 'Repeating tasks.' },
+            ' If you make a Personal task repeat, we store how it repeats (every day, week, two weeks, month, or the days you chose), the time it’s due, an optional last day, and the title and note new copies are made from. Each copy is an ordinary task of yours, so it’s covered by everything above. Only you can see or change a repeating task; it isn’t shared with a group.',
           ],
         },
         {
@@ -596,7 +603,7 @@ export const accountDeletion: LegalDoc = {
           items: [
             ['Your account and sign-in credentials.'],
             ['Your display name and profile.'],
-            ['All of your personal tasks, notes, and due dates.'],
+            ['All of your personal tasks, notes, and due dates, including repeating tasks and how they repeat.'],
             ['Your medicines and every dose you logged, including any shared with a group.'],
             ['Your completion and cancellation history.'],
             ['Your notifications.'],

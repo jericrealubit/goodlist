@@ -128,6 +128,285 @@ create trigger tasks_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- task_recurrences — the series behind a repeating Personal task
+--
+-- A series is a template; each occurrence is an ordinary `tasks` row that
+-- points back at it. Occurrences are real rows, not computed on the fly the
+-- way medicine doses are, because a task occurrence carries real per-instance
+-- state — it can be renamed, noted, moved to another day, completed or deleted
+-- on its own — and every existing task path (lists, calendar, editor, alarms,
+-- the offline queue) already knows how to handle a `tasks` row.
+--
+-- The app keeps a rolling window of occurrences materialised ahead of time
+-- (src/lib/tasks/recurrence.ts decides which dates). `occurrence_date` is an
+-- occurrence's identity within its series — the slot it fills — while
+-- `due_at` is when it's actually due, which the user can move. Keeping them
+-- apart is what stops moving Monday's occurrence to Tuesday from making the
+-- next sync think Monday is missing.
+--
+-- Personal tasks only, for now: a series has one owner and no family.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.task_recurrences (
+  id uuid primary key default gen_random_uuid(),
+  creator_id uuid not null references auth.users (id) on delete cascade,
+  title text not null,
+  notes text,
+  frequency text not null check (frequency in ('daily', 'weekly', 'fortnightly', 'monthly', 'custom')),
+  -- 0 = Sunday … 6 = Saturday, as JavaScript's Date.getDay(). Only 'custom' uses it.
+  days_of_week smallint[]
+    check (days_of_week is null
+           or (cardinality(days_of_week) between 1 and 7
+               and days_of_week <@ array[0, 1, 2, 3, 4, 5, 6]::smallint[])),
+  -- The first occurrence's day. Weekly, fortnightly and monthly count from it.
+  start_date date not null,
+  -- Local wall-clock time each occurrence is due, HH:MM 24-hour.
+  due_time text not null default '09:00' check (due_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+  end_date date,
+  alarm_enabled boolean not null default false,
+  -- Occurrences someone deleted on their own. Without these, the next sync
+  -- would put a deleted occurrence straight back.
+  skipped_dates date[] not null default '{}',
+  -- False once someone chooses "Stop repeating": no new occurrences are made,
+  -- and the ones already made are left alone.
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint task_recurrences_custom_days check (frequency <> 'custom' or days_of_week is not null),
+  constraint task_recurrences_dates_ordered check (end_date is null or end_date >= start_date)
+);
+
+create index if not exists task_recurrences_creator_id_idx on public.task_recurrences (creator_id);
+
+alter table public.task_recurrences enable row level security;
+
+drop policy if exists "Owners can view their own recurrences" on public.task_recurrences;
+create policy "Owners can view their own recurrences"
+  on public.task_recurrences for select
+  using (creator_id = auth.uid());
+
+drop policy if exists "Owners can create their own recurrences" on public.task_recurrences;
+create policy "Owners can create their own recurrences"
+  on public.task_recurrences for insert
+  with check (creator_id = auth.uid());
+
+drop policy if exists "Owners can update their own recurrences" on public.task_recurrences;
+create policy "Owners can update their own recurrences"
+  on public.task_recurrences for update
+  using (creator_id = auth.uid())
+  with check (creator_id = auth.uid());
+
+drop policy if exists "Owners can delete their own recurrences" on public.task_recurrences;
+create policy "Owners can delete their own recurrences"
+  on public.task_recurrences for delete
+  using (creator_id = auth.uid());
+
+drop trigger if exists task_recurrences_set_updated_at on public.task_recurrences;
+create trigger task_recurrences_set_updated_at
+  before update on public.task_recurrences
+  for each row execute function public.set_updated_at();
+
+-- `set null`, not cascade: if a series ever goes away, what was already done
+-- stays in the task list and history as ordinary tasks.
+alter table public.tasks add column if not exists recurrence_id uuid
+  references public.task_recurrences (id) on delete set null;
+alter table public.tasks add column if not exists occurrence_date date;
+
+-- One occurrence per slot. A full constraint, not a partial index, so the
+-- app's insert can name it as its ON CONFLICT target; NULLs never collide, so
+-- ordinary tasks (both columns null) are unaffected.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'tasks_recurrence_occurrence_key') then
+    alter table public.tasks
+      add constraint tasks_recurrence_occurrence_key unique (recurrence_id, occurrence_date);
+  end if;
+end $$;
+
+-- A task can only be an occurrence of its own creator's series, and only a
+-- Personal one. The insert/update policies check who a task belongs to, not
+-- which series it claims — without this, anyone who learned a series id
+-- could park a task in one of its slots and quietly stop the real occurrence
+-- from being made. Security definer so the check sees the series whatever
+-- the caller's RLS lets them see.
+create or replace function public.check_task_recurrence_owner()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.recurrence_id is not null and (
+    new.origin <> 'personal'
+    or not exists (
+      select 1 from public.task_recurrences
+      where id = new.recurrence_id and creator_id = new.creator_id
+    )
+  ) then
+    raise exception 'A task can only repeat as part of its own series.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists tasks_check_recurrence_owner on public.tasks;
+create trigger tasks_check_recurrence_owner
+  before insert or update of recurrence_id on public.tasks
+  for each row execute function public.check_task_recurrence_owner();
+
+-- Deleting one occurrence remembers the slot, so the rolling window doesn't
+-- recreate it. Regenerating a series after an edit deletes future occurrences
+-- on purpose and sets goodlist.regenerating for the length of that
+-- transaction, so those deletes don't count as skips.
+--
+-- Security definer only so it can see auth.users: when an account is deleted,
+-- its tasks go by cascade after the user row is already gone, and there's no
+-- series left worth remembering anything on — so it skips that case rather
+-- than writing to a row the same cascade is about to delete.
+create or replace function public.remember_skipped_occurrence()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Only slots from today on can ever be regenerated (the window never looks
+  -- back), so clearing old history doesn't pile up skips that mean nothing.
+  -- A day's slack for time zones ahead of the server's.
+  if old.recurrence_id is not null
+     and old.occurrence_date is not null
+     and old.occurrence_date >= current_date - 1
+     and coalesce(current_setting('goodlist.regenerating', true), '') <> 'on'
+     and exists (select 1 from auth.users where id = old.creator_id) then
+    update public.task_recurrences
+      set skipped_dates = array_append(skipped_dates, old.occurrence_date)
+      where id = old.recurrence_id
+        and not (old.occurrence_date = any (skipped_dates));
+  end if;
+  return old;
+end;
+$$;
+
+drop trigger if exists tasks_remember_skipped_occurrence on public.tasks;
+create trigger tasks_remember_skipped_occurrence
+  after delete on public.tasks
+  for each row execute function public.remember_skipped_occurrence();
+
+-- Turns an existing Personal task into the first occurrence of a new series,
+-- atomically — two separate writes could leave a series whose first slot the
+-- next sync would fill with a duplicate of the task it was made from.
+-- Security invoker: the caller's own RLS already covers both writes. The id
+-- is client-generated so an offline retry is a no-op rather than a second
+-- series.
+create or replace function public.create_task_recurrence(
+  p_id uuid,
+  p_task_id uuid,
+  p_title text,
+  p_notes text,
+  p_frequency text,
+  p_days_of_week smallint[],
+  p_start_date date,
+  p_due_time text,
+  p_end_date date,
+  p_alarm_enabled boolean
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  insert into public.task_recurrences
+    (id, creator_id, title, notes, frequency, days_of_week, start_date, due_time, end_date, alarm_enabled)
+  values
+    (p_id, auth.uid(), p_title, p_notes, p_frequency, p_days_of_week, p_start_date, p_due_time, p_end_date,
+     p_alarm_enabled)
+  on conflict (id) do nothing;
+
+  update public.tasks
+    set recurrence_id = p_id, occurrence_date = p_start_date
+    where id = p_task_id
+      and creator_id = auth.uid()
+      and origin = 'personal'
+      and recurrence_id is null;
+end;
+$$;
+
+-- Edits a series and clears the way for its future: open occurrences from
+-- p_from on are deleted, and skips are forgotten (the future ones were
+-- exceptions to the old pattern; past ones never mattered, since the window
+-- doesn't look back). The app's next sync regenerates the window under the
+-- new pattern. Completed occurrences, and anything before p_from, are never
+-- touched.
+create or replace function public.update_task_recurrence(
+  p_id uuid,
+  p_title text,
+  p_notes text,
+  p_frequency text,
+  p_days_of_week smallint[],
+  p_start_date date,
+  p_due_time text,
+  p_end_date date,
+  p_alarm_enabled boolean,
+  p_from date
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  update public.task_recurrences
+    set title = p_title,
+        notes = p_notes,
+        frequency = p_frequency,
+        days_of_week = p_days_of_week,
+        start_date = p_start_date,
+        due_time = p_due_time,
+        end_date = p_end_date,
+        alarm_enabled = p_alarm_enabled,
+        skipped_dates = '{}'
+    where id = p_id and creator_id = auth.uid();
+
+  perform set_config('goodlist.regenerating', 'on', true);
+  delete from public.tasks
+    where recurrence_id = p_id
+      and creator_id = auth.uid()
+      and status = 'open'
+      and occurrence_date >= p_from;
+  perform set_config('goodlist.regenerating', 'off', true);
+end;
+$$;
+
+-- "Stop repeating": no more occurrences, and the not-yet-due open ones go.
+-- Today's (and anything overdue) stays — it's already on someone's list.
+create or replace function public.stop_task_recurrence(p_id uuid, p_after date)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  update public.task_recurrences set active = false where id = p_id and creator_id = auth.uid();
+
+  perform set_config('goodlist.regenerating', 'on', true);
+  delete from public.tasks
+    where recurrence_id = p_id
+      and creator_id = auth.uid()
+      and status = 'open'
+      and occurrence_date > p_after;
+  perform set_config('goodlist.regenerating', 'off', true);
+end;
+$$;
+
+revoke all on function public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean) from public;
+grant execute on function public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean) to authenticated;
+revoke all on function public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date) from public;
+grant execute on function public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date) to authenticated;
+revoke all on function public.stop_task_recurrence(uuid, date) from public;
+grant execute on function public.stop_task_recurrence(uuid, date) to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- households (Phase 3 — see "Goodlist — Project Plan.md" section 18)
 --
 -- Deliberately does not touch `tasks` or its RLS: Personal tasks stay

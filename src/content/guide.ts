@@ -336,6 +336,37 @@ export const userGuide: GuideDoc = {
         {
           kind: 'para',
           spans: [
+            { bold: 'Repeat' },
+            ' also appears once a task has a due date. Choose ',
+            { bold: 'Every day' },
+            ', ',
+            { bold: 'Every week' },
+            ', ',
+            { bold: 'Every 2 weeks' },
+            ', ',
+            { bold: 'Every month' },
+            ', or ',
+            { bold: 'Choose days' },
+            ' and tap the days you want. The next few show up on the calendar; on your list you see today’s, or just the next one.',
+          ],
+        },
+        {
+          kind: 'callout',
+          variant: 'info',
+          spans: [
+            { bold: 'Changing a repeating task.' },
+            ' Edits you make on one only change that one, and ',
+            { bold: 'Delete this one' },
+            ' removes just that day. To change all the ones still to come, tap ',
+            { bold: 'Edit series' },
+            '. To end it, tap ',
+            { bold: 'Stop repeating' },
+            ' there — today’s and anything you finished stays.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
             { bold: 'Mark complete' },
             ' is the same as ticking the circle. ',
             { bold: 'Delete task' },

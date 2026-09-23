@@ -4,6 +4,10 @@ export const taskKeys = {
   open: ['tasks', 'open'] as const,
   history: ['tasks', 'history'] as const,
   detail: (id: string) => ['tasks', 'detail', id] as const,
+  // Under the 'tasks' prefix on purpose: realtime task changes invalidate
+  // ['tasks'] wholesale, and deleting an occurrence changes its series
+  // (skipped_dates, via a trigger) — so the series refreshes along with it.
+  recurrences: ['tasks', 'recurrences'] as const,
 };
 
 // Everything under one prefix, which useRealtimeMedications invalidates wholesale.

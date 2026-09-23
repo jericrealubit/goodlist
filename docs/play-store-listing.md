@@ -42,7 +42,7 @@ and Goodlist only ever receives the text.
 Give a task a day and it turns up on the calendar, so you can see what's
 coming instead of scrolling a list. Tap a day to see what is on it, and move
 a task to another day with two taps. Turn on a task's alarm and your phone
-rings at the exact time — say "remind me to call the vet at 5pm" and it's
+rings at the exact time. Make a task repeat daily, weekly, monthly or on chosen days. Say "remind me to call the vet at 5pm" and it's
 already on.
 
 Add a medicine and Goodlist reminds you at every dose, right on your phone.
@@ -60,6 +60,7 @@ FEATURES
 • A calendar view — a dot on every day with something due, red if it's overdue
 • Move a task to another day with two taps
 • An optional alarm on any task, right at its due time
+• Repeating tasks — every day, week, two weeks, month, or the days you choose
 • Track medicines and get a reminder at each dose, with Taken and Snooze
 • Log every dose taken or skipped, and see your week's adherence
 • Add tasks by speaking, including dates like "buy milk tomorrow"
@@ -125,31 +126,30 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Release notes — the task alarms release
+## Release notes — the repeating tasks release
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
-below replaces the Meds one, which is in git history if it is ever wanted.
+below replaces the alarms one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is 349; check it again if
+Play caps this field at **500 characters per language**. The note below is 372; check it again if
 you edit it.
 
 ```
-What's new: alarms for tasks.
+What's new: repeating tasks, and alarms.
 
-Give any task a due date and time, then turn on Alarm — your phone rings at that exact moment, the same as a medicine reminder.
+Make any task with a due date repeat: every day, week, 2 weeks, month, or on the days you choose. The next few show on the calendar.
 
-Say "remind me to call the vet at 5pm" and the alarm is already on, no extra tap needed.
+Turn on Alarm and your phone rings at the due time. Say "remind me to call the vet at 5pm" and it's already on.
 
-Uses the same notification permission as medicine reminders, asked the first time you turn one on.
+No new permissions. Alarms use the notification permission from medicine reminders.
 ```
 
-**No "New permission" line, unlike the Meds release** — `POST_NOTIFICATIONS` is already in the
-manifest from that release, so nothing new appears for a tester who's already granted it. The last
-line still says so, for the tester who skipped Meds and meets the prompt here for the first time —
-the same "don't let a permission prompt arrive unexplained" reasoning as every past release, just
-phrased as reassurance rather than a bolded new-permission callout since the permission itself
-isn't new. **The spoken example** carries the "remind me" phrasing verbatim so a tester can copy it
+**No "New permission" line** — nothing new is asked for. `POST_NOTIFICATIONS` is already in the
+manifest from the Meds release, and repeating tasks need no permission at all. The last line still
+says so, for the tester who skipped Meds and meets the notification prompt here for the first
+time — the same "don't let a permission prompt arrive unexplained" reasoning as every past
+release. **The spoken example** carries the "remind me" phrasing verbatim so a tester can copy it
 and see the alarm land on, not just read that it can.
 
 Previous release, for reference:
@@ -254,6 +254,14 @@ The matching disclosure in the privacy policy is the **Voice input** paragraph u
 collect*, plus the speech-service entry under *Sharing & service providers* — both in
 `src/content/legal.ts`. Google fetches that policy and cross-checks it against this form, so the two
 must ship together.
+
+### Note on repeating tasks
+
+A repeating Personal task stores its pattern (frequency, chosen weekdays, due time, optional last
+day, and the title/note copies are made from) in `public.task_recurrences`, owned by the user and
+deleted with their account. Each copy is an ordinary task row. Nothing new is collected beyond what
+User-generated content already covers, no permission is requested, and **no Data Safety answer
+changes**. Repeating tasks are not shared with groups.
 
 ### Note on the calendar view
 

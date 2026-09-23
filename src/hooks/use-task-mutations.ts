@@ -21,7 +21,9 @@ import type { GroupSummary, NewRequestInput, NewTaskInput, Task, UpdateTaskInput
 // Without this, resumed mutations could run in parallel/out of order (e.g. a
 // complete followed by a reopen replaying reversed) and leave the server row
 // in the wrong final state even though the client believes it's consistent.
-const TASKS_QUEUE_SCOPE = { id: 'tasks-queue' } as const;
+// Exported for task_recurrences' mutations, which touch the same rows and
+// so must replay in the same queue.
+export const TASKS_QUEUE_SCOPE = { id: 'tasks-queue' } as const;
 
 function isUniqueViolation(err: unknown): boolean {
   return !!err && typeof err === 'object' && 'code' in err && (err as { code?: unknown }).code === '23505';
@@ -73,6 +75,8 @@ const createTaskMutationOptions: UseMutationOptions<Task, Error, NewTaskInput, {
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
       alarm_enabled: input.alarm_enabled ?? false,
+      recurrence_id: null,
+      occurrence_date: null,
       origin: 'personal',
       status: 'open',
       sort_order: input.sortOrder,
@@ -111,6 +115,8 @@ const createRequestMutationOptions: UseMutationOptions<Task, Error, NewRequestIn
       notes: input.notes?.trim() || null,
       due_at: input.due_at ?? null,
       alarm_enabled: input.alarm_enabled ?? false,
+      recurrence_id: null,
+      occurrence_date: null,
       origin: 'requested',
       status: 'open',
       sort_order: input.sortOrder,

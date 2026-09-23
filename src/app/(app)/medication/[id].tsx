@@ -8,13 +8,13 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { DueDatePicker } from '@/components/due-date-picker';
 import { HeaderAction, HeaderActionSlot } from '@/components/header-action';
 import { LoadingState } from '@/components/loading-state';
-import { WEEKDAY_SHORT } from '@/components/meds/dose-format';
 import { TimePicker } from '@/components/meds/time-picker';
 import { OptionPicker } from '@/components/option-picker';
 import { PrimaryButton } from '@/components/primary-button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ALL_DAYS, WeekdayChips } from '@/components/weekday-chips';
 import { ActionIcons } from '@/constants/icons';
 import { isPremiumRequiredError } from '@/constants/premium';
 import { Spacing } from '@/constants/theme';
@@ -29,7 +29,6 @@ import {
 import { useMedicationDetailQuery } from '@/hooks/use-medications-query';
 import { usePremiumStatus } from '@/hooks/use-premium-query';
 import { useTheme } from '@/hooks/use-theme';
-import { useTokens } from '@/hooks/use-tokens';
 import { fromDayKey, toDayKey } from '@/lib/calendar/day';
 import { getErrorMessage } from '@/lib/errors';
 import { normalizeTimes, parseTime, formatTime } from '@/lib/medications/schedule';
@@ -40,39 +39,12 @@ import type { MedicationInput } from '@/lib/types';
 
 const NEW_ID = 'new';
 const MAX_TIMES = 12;
-const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 /** A sensible next time to offer: four hours after the last one, else 08:00. */
 function nextTime(times: string[]): string {
   const last = parseTime(normalizeTimes(times).at(-1) ?? '');
   if (!last) return '08:00';
   return formatTime(Math.min(last.hour + 4, 23), last.minute);
-}
-
-function WeekdayChips({ value, onChange }: { value: number[]; onChange: (days: number[]) => void }) {
-  const tokens = useTokens();
-  return (
-    <View style={[styles.chips, { gap: tokens.spacing.one }]}>
-      {ALL_DAYS.map((day) => {
-        const selected = value.includes(day);
-        return (
-          <Pressable
-            key={day}
-            onPress={() => onChange(selected ? value.filter((d) => d !== day) : [...value, day].sort())}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: selected }}
-            accessibilityLabel={WEEKDAY_SHORT[day]}
-            style={({ pressed }) => [styles.chip, pressed && styles.pressed]}>
-            <ThemedView
-              type={selected ? 'backgroundSelected' : 'backgroundElement'}
-              style={[styles.chipInner, { borderRadius: tokens.radii.md, paddingVertical: tokens.spacing.two }]}>
-              <ThemedText type={selected ? 'smallBold' : 'small'}>{WEEKDAY_SHORT[day]}</ThemedText>
-            </ThemedView>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
 }
 
 export default function EditMedicationScreen() {
@@ -435,9 +407,6 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  pressed: {
-    opacity: 0.7,
-  },
   missing: {
     padding: Spacing.four,
   },
@@ -456,15 +425,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  chips: {
-    flexDirection: 'row',
-  },
-  chip: {
-    flex: 1,
-  },
-  chipInner: {
-    alignItems: 'center',
   },
   switchRow: {
     flexDirection: 'row',

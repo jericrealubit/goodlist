@@ -189,12 +189,15 @@ Here you can:
 1. Add a **Note** — anything extra you want to remember. `Whole milk, 2 litres`.
 2. Add a **Due date** — the day it needs doing by.
 3. Turn on **Alarm** — your phone rings at that exact time. It only shows up once there's a due date, and it stays off unless you turn it on.
-4. Tap **Save changes** when you're happy.
+4. Choose **Repeat** if it happens again and again — every day, every week, every 2 weeks, every month, or **Choose days**. It only shows once there's a due date. The next few appear on the calendar; your list shows today's, or just the next one.
+5. Tap **Save changes** when you're happy.
 
 The other two buttons:
 
 - **Mark complete** — same as ticking the circle.
-- **Delete task** — throws it away completely. This one cannot be undone, so it is red.
+- **Delete task** — throws it away completely. This one cannot be undone, so it is red. On a repeating task it says **Delete this one** and removes just that day.
+
+On a repeating task, changes you make only change that one. To change all the ones still to come, tap **Edit series**. To end it, tap **Stop repeating** there — today's and anything you finished stays.
 
 Don't want to change anything? Tap the **‹** arrow at the top left. Nothing is saved.
 
@@ -452,6 +455,7 @@ and cannot be undone.
 | Word | What it really means |
 | --- | --- |
 | **Task** | One thing you want to do. |
+| **Repeat** | Make a task come back every day, week, two weeks, month, or on days you choose. |
 | **Alarm** | An optional phone ring at a task's exact due time. Off unless you turn it on. |
 | **Solo mode** | You're using Goodlist on your own, with no group. |
 | **Personal** | Your own private list. Nobody else can see it. |

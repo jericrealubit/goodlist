@@ -8,6 +8,7 @@ import {
   updateLocaleSharingMutationOptions,
 } from '@/hooks/use-profile-mutations';
 import { taskMutationOptionsByKey } from '@/hooks/use-task-mutations';
+import { taskRecurrenceMutationOptionsByKey } from '@/hooks/use-task-recurrences';
 
 function register<TData, TError, TVariables, TContext>(
   queryClient: QueryClient,
@@ -35,6 +36,9 @@ export function registerMutationDefaults(queryClient: QueryClient) {
   register(queryClient, taskMutationOptionsByKey.delete);
   register(queryClient, taskMutationOptionsByKey.deleteAllHistory);
   register(queryClient, taskMutationOptionsByKey.reorder);
+  register(queryClient, taskRecurrenceMutationOptionsByKey.create);
+  register(queryClient, taskRecurrenceMutationOptionsByKey.update);
+  register(queryClient, taskRecurrenceMutationOptionsByKey.stop);
   register(queryClient, updateDisplayNameMutationOptions);
   register(queryClient, syncDeviceLocaleMutationOptions);
   register(queryClient, updateLocaleSharingMutationOptions);

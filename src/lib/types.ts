@@ -41,6 +41,10 @@ export type Task = {
   due_at: string | null;
   /** A phone alarm at due_at. Opt-in, off by default; meaningless without a due date. */
   alarm_enabled: boolean;
+  /** The series this task is an occurrence of, if it repeats. */
+  recurrence_id: string | null;
+  /** Which slot of its series this occurrence fills (local YYYY-MM-DD). Stays put if due_at is moved. */
+  occurrence_date: string | null;
   origin: TaskOrigin;
   status: TaskStatus;
   sort_order: number;
@@ -66,6 +70,41 @@ export type UpdateTaskInput = {
   notes?: string | null;
   due_at?: string | null;
   alarm_enabled?: boolean;
+};
+
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'custom';
+
+/** The series behind a repeating Personal task. Each occurrence is a `Task` pointing at it. */
+export type TaskRecurrence = {
+  id: string;
+  creator_id: string;
+  title: string;
+  notes: string | null;
+  frequency: RecurrenceFrequency;
+  /** 0 = Sunday … 6 = Saturday. Only 'custom' uses it. */
+  days_of_week: number[] | null;
+  /** YYYY-MM-DD local; the first occurrence's day. */
+  start_date: string;
+  /** HH:MM local, 24-hour. */
+  due_time: string;
+  end_date: string | null;
+  alarm_enabled: boolean;
+  skipped_dates: string[];
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** The editable parts of a series — what the repeat picker and series editor produce. */
+export type RecurrenceInput = {
+  title: string;
+  notes: string | null;
+  frequency: RecurrenceFrequency;
+  days_of_week: number[] | null;
+  start_date: string;
+  due_time: string;
+  end_date: string | null;
+  alarm_enabled: boolean;
 };
 
 export type NewRequestInput = {

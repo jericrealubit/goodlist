@@ -35,12 +35,14 @@ import {
   useReorderTaskMutation,
 } from '@/hooks/use-task-mutations';
 import { useOpenTasksQuery } from '@/hooks/use-tasks-query';
+import { useToday } from '@/hooks/use-today';
 import { useTokens } from '@/hooks/use-tokens';
 import { useVoiceInput } from '@/hooks/use-voice-input';
 import { getErrorMessage } from '@/lib/errors';
 import { tapLight } from '@/lib/haptics';
 import { taskKeys } from '@/lib/query-client';
 import { remindersSupported, requestReminderPermission } from '@/lib/reminders';
+import { visibleInTaskList } from '@/lib/tasks/recurrence';
 import { validateTaskTitle } from '@/lib/validation/task';
 import { matchTask } from '@/lib/voice/match-task';
 import { parseVoiceCommand } from '@/lib/voice/parse-command';
@@ -95,6 +97,10 @@ export default function TasksScreen() {
   const { mutate: markAllRead } = useMarkAllReadMutation();
   const queryClient = useQueryClient();
   const { data: openTasks, isLoading, isError, error: queryError, refetch } = useOpenTasksQuery();
+  const today = useToday();
+  // A repeating task shows here once its day arrives, and otherwise only its
+  // next occurrence — the calendar is where the rest of the series lives.
+  const listedTasks = useMemo(() => visibleInTaskList(openTasks ?? [], today), [openTasks, today]);
   const createTaskMutation = useCreateTaskMutation();
   const createRequestMutation = useCreateRequestMutation();
   const completeMutation = useCompleteTaskMutation();
@@ -259,7 +265,9 @@ export default function TasksScreen() {
    * verb can never land on a task a tap couldn't reach.
    */
   function poolFor(verb: SpokenVerb): Task[] {
-    const open = openTasks ?? [];
+    // Only what the list shows: "finish the laundry" means today's laundry,
+    // not next week's occurrence of the same repeating task.
+    const open = listedTasks;
     if (verb === 'completeTask') {
       return open.filter((t) => t.origin !== 'requested' || t.assignee_id === user?.id);
     }
@@ -579,7 +587,7 @@ export default function TasksScreen() {
     );
   }
 
-  const openVisibleTasks = (openTasks ?? []).filter((t) => t.origin === tab);
+  const openVisibleTasks = listedTasks.filter((t) => t.origin === tab);
   const completedVisibleTasks = justCompleted.filter((t) => t.origin === tab);
   const isEmpty = openVisibleTasks.length === 0 && completedVisibleTasks.length === 0;
   const showAssigneePicker = tab === 'requested' && otherMemberOptions.length >= 2;

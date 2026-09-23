@@ -175,6 +175,7 @@ export function TaskRow({
       {task.due_at ? (
         <ThemedText type="small" themeColor="textSecondary">
           Due {formatDueDate(task.due_at, task.alarm_enabled)}
+          {task.recurrence_id ? ' · Repeats' : ''}
         </ThemedText>
       ) : null}
       {isCompleted && task.completed_at ? (

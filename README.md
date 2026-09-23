@@ -36,6 +36,12 @@ team group. No technical knowledge assumed. It's in three places, all rendered f
 
 - **Personal tasks** — a to-do list that's yours alone: add, edit, complete, reopen, delete, add notes
   and due dates, and drag to reorder.
+- **Repeating tasks** — make a Personal task repeat every day, week, two weeks or month, or on the days
+  you choose, with an optional last day. Each repeat is a real task row pointing at a series
+  (`task_recurrences`), so completing, editing, alarms and the calendar all work unchanged; the app keeps
+  up to 12 upcoming ones ready, at most 90 days ahead. The task list shows a repeat once its day
+  arrives, otherwise only the next one — the calendar shows the rest. Delete one and it stays deleted;
+  **Edit series** rebuilds the open ones from today on, **Stop repeating** ends it. Personal tasks only.
 - **Task alarms** — an opt-in phone alert at a task's exact due date and time, alongside it showing
   on the calendar. A one-shot local notification (`expo-notifications`), scheduled and cancelled on
   the device — not sent by a server — and cancelled the moment the task is completed, cancelled or
@@ -126,7 +132,8 @@ src/
     (app)/
       (tabs)/       Tasks, Calendar, Meds, Group, Settings
       group/        Create / join a group
-      task/[id]     Task detail / edit, including its alarm toggle
+      task/[id]     Task detail / edit, including its alarm and repeat
+      task/series/[id]  Edit or stop a repeating task's series
       medication/[id]  Add / edit a medicine, its schedule, and sharing
       history       Completed tasks — a stack screen linked from Settings,
                     since Meds took its old tab-bar slot
@@ -137,7 +144,8 @@ src/
   hooks/          Data-fetching and mutation hooks (React Query)
   lib/            Supabase client, queries, mutations, types, validation;
                   calendar/, voice/, medications/ and tasks/ (reminder-plan.ts,
-                  the task-alarm equivalent of medications/reminder-plan.ts) —
+                  the task-alarm equivalent of medications/reminder-plan.ts, and
+                  recurrence.ts, which dates a repeating task's occurrences) —
                   pure, dependency-free modules (no React, no Expo, no @/
                   aliases) so `npm test` can run them directly; reminders.ts /
                   reminders.web.ts and task-reminders.ts / task-reminders.web.ts
