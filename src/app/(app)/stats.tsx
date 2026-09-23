@@ -3,8 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
-import { LoadingState } from '@/components/loading-state';
 import { ShareBreakdown, type ShareSegment } from '@/components/share-breakdown';
+import { SkeletonBlock, StatTileSkeleton } from '@/components/skeleton';
 import { StatTile } from '@/components/stat-tile';
 import { Surface } from '@/components/surface';
 import { ThemedText } from '@/components/themed-text';
@@ -39,8 +39,35 @@ export default function StatsScreen() {
     setRefreshing(false);
   }
 
+  // Shaped like the screen it's standing in for, not a bare spinner — the
+  // hero tile, tile rows, and membership card all keep their real position
+  // so the layout doesn't jump once data lands.
   if (isLoading) {
-    return <LoadingState />;
+    return (
+      <ThemedView style={styles.container}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.six }]}>
+          <ThemedView style={styles.intro}>
+            <SkeletonBlock width={140} height={24} radius={6} />
+            <SkeletonBlock width="90%" height={14} />
+          </ThemedView>
+          <StatTileSkeleton hero />
+          <View style={styles.tileRow}>
+            <StatTileSkeleton />
+            <StatTileSkeleton />
+          </View>
+          <View style={styles.tileRow}>
+            <StatTileSkeleton />
+            <StatTileSkeleton />
+          </View>
+          <ThemedView style={styles.section}>
+            <SkeletonBlock width={140} height={13} />
+            <Surface style={styles.card}>
+              <SkeletonBlock height={20} radius={10} />
+            </Surface>
+          </ThemedView>
+        </ScrollView>
+      </ThemedView>
+    );
   }
 
   // Only a *failure with nothing to show* takes over the screen — a background
@@ -126,6 +153,7 @@ export default function StatsScreen() {
           value={data.live_users}
           caption={`Active in the last ${formatWindow(data.live_window_seconds)}`}
           dotColor={theme.accent}
+          pulsing
         />
 
         <View style={styles.tileRow}>

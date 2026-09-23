@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import type { IconName } from '@/constants/icons';
+import { SpringPress } from '@/constants/motion';
 import { useSelectedTheme } from '@/contexts/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
+import { tapLight } from '@/lib/haptics';
 
 type RoundActionButtonProps = {
   icon: IconName;
@@ -20,6 +24,8 @@ type RoundActionButtonProps = {
 const DARK_NEON_RING = '#22D3EE';
 const COLORFUL_3D_SHADE = '#2540A8';
 const LAVENDER_GLASS_FALLBACK_FILL = 'rgba(124, 92, 252, 0.75)';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function Glyph({ icon, color, loading }: { icon: IconName; color: string; loading?: boolean }) {
   if (loading) {
@@ -48,8 +54,36 @@ export function RoundActionButton({
   const theme = useTheme();
   const tokens = useTokens();
 
+  // paperCollage's static -4deg tilt has to ride in the same animated style
+  // as the press scale, not a separate static `transform` — a later object
+  // in a style array replaces a `transform` key wholesale rather than
+  // merging it, so a static rotate would otherwise vanish the instant this
+  // animated style is applied.
+  const rotate = themeId === 'paperCollage' ? '-4deg' : undefined;
+  // A plain boolean + effect, not a shared value mutated straight from the
+  // press handlers — mutating `.value` inside an inline JSX callback trips
+  // the React Compiler's immutability check; inside an effect it's the
+  // sanctioned escape hatch (same shape `mic-button.tsx` already uses).
+  const [pressed, setPressed] = useState(false);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withSpring(pressed ? 0.94 : 1, SpringPress);
+  }, [pressed, scale]);
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [...(rotate ? [{ rotate }] : []), { scale: scale.value }],
+  }));
+
+  // `onPress` fires on press-in below, so the spring above is pure visual
+  // feedback after the fact — it never gates or delays the action itself.
   const pressableProps = {
-    onPressIn: onPress,
+    onPressIn: () => {
+      tapLight();
+      onPress();
+      setPressed(true);
+    },
+    onPressOut: () => setPressed(false),
     disabled,
     accessibilityRole: 'button' as const,
     accessibilityLabel,
@@ -65,9 +99,9 @@ export function RoundActionButton({
     return (
       <View style={styles.doubleLayerContainer}>
         <View style={[styles.offsetLayer, { backgroundColor: offsetColor, borderRadius: radius }]} />
-        <Pressable
+        <AnimatedPressable
           {...pressableProps}
-          style={({ pressed }) => [
+          style={[
             styles.button,
             styles.doubleLayerTop,
             {
@@ -75,12 +109,13 @@ export function RoundActionButton({
               borderRadius: radius,
               borderWidth: tokens.borderWidth,
               borderColor: theme.border,
-              opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
+              opacity: disabled ? 0.4 : 1,
             },
             themeId === 'colorful3d' ? tokens.shadow : null,
+            pressStyle,
           ]}>
           <Glyph icon={icon} color="#ffffff" loading={loading} />
-        </Pressable>
+        </AnimatedPressable>
       </View>
     );
   }
@@ -88,9 +123,9 @@ export function RoundActionButton({
   if (themeId === 'lavenderGlass') {
     const radius = tokens.radii.pill;
     return (
-      <Pressable
+      <AnimatedPressable
         {...pressableProps}
-        style={({ pressed }) => [styles.button, { opacity: disabled ? 0.4 : pressed ? 0.85 : 1 }, tokens.shadow]}>
+        style={[styles.button, { opacity: disabled ? 0.4 : 1 }, tokens.shadow, pressStyle]}>
         {isLiquidGlassAvailable() ? (
           <GlassView style={[styles.fill, { borderRadius: radius, borderWidth: tokens.borderWidth, borderColor: theme.border }]}>
             <Glyph icon={icon} color={theme.text} loading={loading} />
@@ -109,7 +144,7 @@ export function RoundActionButton({
             <Glyph icon={icon} color="#ffffff" loading={loading} />
           </View>
         )}
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
@@ -119,7 +154,6 @@ export function RoundActionButton({
   let borderColor = theme.border;
   let borderWidth = tokens.borderWidth;
   let glyphColor = '#ffffff';
-  let rotate: string | undefined;
 
   switch (themeId) {
     case 'darkNeon':
@@ -130,7 +164,7 @@ export function RoundActionButton({
       // radii.pill is already 0 for this theme — square falls out naturally.
       break;
     case 'paperCollage':
-      rotate = '-4deg';
+      // Handled above, alongside the press scale — see the `rotate` comment.
       break;
     case 'darkLuxury':
       fill = theme.backgroundElement;
@@ -145,22 +179,22 @@ export function RoundActionButton({
   }
 
   return (
-    <Pressable
+    <AnimatedPressable
       {...pressableProps}
-      style={({ pressed }) => [
+      style={[
         styles.button,
         radiusStyle,
         {
           backgroundColor: fill,
           borderWidth,
           borderColor,
-          opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
-          transform: rotate ? [{ rotate }] : undefined,
+          opacity: disabled ? 0.4 : 1,
         },
         tokens.shadow,
+        pressStyle,
       ]}>
       <Glyph icon={icon} color={glyphColor} loading={loading} />
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

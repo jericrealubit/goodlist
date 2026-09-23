@@ -43,6 +43,7 @@ export const ActionIcons = {
   premium: 'diamond-outline',
   add: 'add',
   addMedicine: 'add-circle-outline',
+  medicine: 'medical-outline',
   skipDose: 'play-skip-forward-outline',
   archive: 'archive-outline',
   reminders: 'notifications-outline',

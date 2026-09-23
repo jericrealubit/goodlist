@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
@@ -29,6 +28,7 @@ import { bucketByDay } from '@/lib/calendar/bucket';
 import { addMonths, fromDayKey, isOverdue, startOfLocalDay, toDayKey, withDueTime, type DayKey } from '@/lib/calendar/day';
 import { buildMonthGrid, monthLabel } from '@/lib/calendar/month';
 import { getErrorMessage } from '@/lib/errors';
+import { tapLight } from '@/lib/haptics';
 import { indexDoses, slotKey, slotStatus, type SlotStatus } from '@/lib/medications/adherence';
 import { summarizeDay, type DaySummary } from '@/lib/medications/day-summary';
 import { slotsForDayAll } from '@/lib/medications/schedule';
@@ -231,7 +231,7 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
     setArmed(null);
     setSelectedKey(key);
     setActionError(null);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
 
     // Only `id` and `due_at`: in UpdateTaskInput `undefined` means "leave
     // alone" and `null` means "clear", so sending anything else would
@@ -267,7 +267,7 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
     const title = draftTitle;
     setDraftTitle('');
     setActionError(null);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
 
     // Personal and family_id null, so neither the restrictive insert policy nor
     // the read-only trigger can fire on it.

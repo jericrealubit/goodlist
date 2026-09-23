@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { PulseDot } from '@/components/pulse-dot';
 import { Surface } from '@/components/surface';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -35,13 +36,15 @@ type StatTileProps = {
    * never the text color, so the label stays legible in every theme.
    */
   dotColor?: string;
+  /** Only meaningful with `dotColor` set: breathes to say this figure is live. */
+  pulsing?: boolean;
 };
 
-export function StatTile({ label, value, caption, hero, dotColor }: StatTileProps) {
+export function StatTile({ label, value, caption, hero, dotColor, pulsing }: StatTileProps) {
   return (
     <Surface style={styles.tile}>
       <View style={styles.labelRow}>
-        {dotColor ? <View style={[styles.dot, { backgroundColor: dotColor }]} /> : null}
+        {dotColor ? <PulseDot color={dotColor} pulsing={pulsing} /> : null}
         <ThemedText type="smallBold" themeColor="textSecondary">
           {label}
         </ThemedText>
@@ -71,10 +74,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
 });

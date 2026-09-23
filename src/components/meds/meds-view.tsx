@@ -1,18 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
+import { AdherenceBar } from '@/components/adherence-bar';
 import { EmptyState } from '@/components/empty-state';
-import { LoadingState } from '@/components/loading-state';
 import { describeSchedule, formatSlotTime, STATUS_LABEL } from '@/components/meds/dose-format';
 import { ReminderStatusBanner } from '@/components/meds/reminder-status-banner';
 import { PrimaryButton } from '@/components/primary-button';
+import { PulseDot } from '@/components/pulse-dot';
 import { RoundActionButton } from '@/components/round-action-button';
+import { SlotRowSkeleton } from '@/components/skeleton';
 import { Surface } from '@/components/surface';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Toast } from '@/components/toast';
 import { ActionIcons, type IconName } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/contexts/session-context';
@@ -29,6 +31,7 @@ import { addDays, toDayKey } from '@/lib/calendar/day';
 import { adherence, indexDoses, slotKey, slotStatus, type SlotStatus } from '@/lib/medications/adherence';
 import { slotsForDayAll, type Slot } from '@/lib/medications/schedule';
 import { getErrorMessage } from '@/lib/errors';
+import { tapLight, tapWarning } from '@/lib/haptics';
 import type { DoseStatus, Medication, MedicationDose } from '@/lib/types';
 
 /** The window of dose rows kept in cache: enough for a 30-day adherence figure. */
@@ -57,9 +60,27 @@ function StatusMark({ status }: { status: SlotStatus }) {
   const theme = useTheme();
   const tokens = useTokens();
   const ring = Math.max(tokens.cardBorderWidth, 2);
+
+  // Only a dose that's due right now breathes — it's the one status asking
+  // for attention. Every other status stays the plain static mark it always
+  // was, so a long list of taken/missed/upcoming rows never mounts a
+  // shared value it doesn't need.
+  if (status === 'due') {
+    return (
+      <PulseDot
+        color={theme.primary}
+        size={14}
+        variant="ring"
+        borderWidth={ring}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
+    );
+  }
+
   const fill =
     status === 'taken' ? theme.primary : status === 'missed' ? theme.danger : status === 'skipped' ? theme.textSecondary : 'transparent';
-  const border = status === 'due' ? theme.primary : status === 'upcoming' ? theme.border : fill;
+  const border = status === 'upcoming' ? theme.border : fill;
   return (
     <View
       accessibilityElementsHidden
@@ -175,8 +196,17 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
   const clearDose = useClearDoseMutation();
   const [actionError, setActionError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [toast, setToast] = useState<{ slot: Slot; status: DoseStatus; medName: string } | null>(null);
 
   useRealtimeMedications();
+
+  // Confirms the dose without needing that row to still be on screen; clears
+  // itself so it never lingers over the next thing the person does.
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const meds = medsQuery.data;
   const doses = dosesQuery.data;
@@ -200,18 +230,23 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
 
   const todaySlots = useMemo(() => slotsForDayAll(mine, today), [mine, today]);
 
-  function handleLog(slot: Slot, status: DoseStatus) {
+  function handleLog(slot: Slot, status: DoseStatus, medName: string) {
     if (!user) return;
     setActionError(null);
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
     logDose.mutate(
       buildLogDoseInput({ medicationId: slot.medicationId, slotDate: slot.day, slotTime: slot.time, status }, user.id),
-      { onError: (err) => setActionError(getErrorMessage(err, 'Could not save that dose.')) },
+      {
+        onSuccess: () => setToast({ slot, status, medName }),
+        onError: (err) => setActionError(getErrorMessage(err, 'Could not save that dose.')),
+      },
     );
   }
 
   function handleUndo(slot: Slot) {
     setActionError(null);
+    setToast(null);
+    tapWarning();
     clearDose.mutate(
       { medicationId: slot.medicationId, slotDate: slot.day, slotTime: slot.time },
       { onError: (err) => setActionError(getErrorMessage(err, 'Could not undo that dose.')) },
@@ -241,11 +276,23 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
     </ThemedView>
   );
 
+  // Rows shaped like the real list, not a bare spinner — a long list of
+  // medicines is the common case here, and this is what it's about to
+  // become rather than an unrelated loading screen.
   if (medsQuery.isLoading) {
     return (
       <ThemedView style={styles.container}>
         {header}
-        <LoadingState />
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomInset + Spacing.four }]}>
+          <View style={styles.section}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              Today
+            </ThemedText>
+            <SlotRowSkeleton />
+            <SlotRowSkeleton />
+            <SlotRowSkeleton />
+          </View>
+        </ScrollView>
       </ThemedView>
     );
   }
@@ -271,6 +318,7 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
         <EmptyState
           title="No medicines yet"
           message="Add one to get a reminder at the right time and a record of every dose."
+          icon={ActionIcons.medicine}
           actionLabel="Add a medicine"
           actionIcon={ActionIcons.addMedicine}
           actionVariant="primary"
@@ -311,7 +359,7 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
                     slot={slot}
                     med={med}
                     status={status}
-                    onLog={(next) => handleLog(slot, next)}
+                    onLog={(next) => handleLog(slot, next, med.name)}
                     onUndo={() => handleUndo(slot)}
                   />
                 );
@@ -339,11 +387,12 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
                   accessibilityLabel={`${med.name}. ${describeSchedule(med)}. ${figure}. Edit`}>
                   {({ pressed }) => (
                     <Surface style={[styles.medRow, pressed && styles.pressed]}>
-                      <View style={styles.flex}>
+                      <View style={styles.medBody}>
                         <ThemedText type="smallBold">{med.name}</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
                           {describeSchedule(med)}
                         </ThemedText>
+                        {week.percent !== null ? <AdherenceBar percent={week.percent} /> : null}
                         <ThemedText type="small" themeColor="textSecondary">
                           {figure}
                           {med.shared_family_id ? ' · Shared' : ''}
@@ -394,6 +443,15 @@ export function MedsView({ topInset, bottomInset }: { topInset: number; bottomIn
           pharmacist, and don&apos;t rely on reminders alone.
         </ThemedText>
       </ScrollView>
+
+      {toast ? (
+        <Toast
+          message={`${STATUS_LABEL[toast.status]} · ${toast.medName}`}
+          actionLabel="Undo"
+          onAction={() => handleUndo(toast.slot)}
+          bottomOffset={bottomInset + Spacing.three}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -460,5 +518,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
     padding: Spacing.three,
+  },
+  medBody: {
+    flex: 1,
+    gap: Spacing.half,
   },
 });

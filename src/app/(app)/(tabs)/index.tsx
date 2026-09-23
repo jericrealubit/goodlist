@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, StyleSheet, TextInput } from 'react-native';
@@ -39,6 +38,7 @@ import { useOpenTasksQuery } from '@/hooks/use-tasks-query';
 import { useTokens } from '@/hooks/use-tokens';
 import { useVoiceInput } from '@/hooks/use-voice-input';
 import { getErrorMessage } from '@/lib/errors';
+import { tapLight } from '@/lib/haptics';
 import { taskKeys } from '@/lib/query-client';
 import { validateTaskTitle } from '@/lib/validation/task';
 import { matchTask } from '@/lib/voice/match-task';
@@ -340,7 +340,7 @@ export default function TasksScreen() {
   // straight away — a tap does each of those instantly too, and all three are
   // undoable — while destroying anything stops to ask first.
   function handleVoiceTranscript(heard: string) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
     const command = parseVoiceCommand(heard, {
       now: new Date(),
       memberNames: memberOptions.map((o) => o.displayName),
@@ -390,7 +390,7 @@ export default function TasksScreen() {
     setVoiceChoice(null);
     setVoicePending(null);
     setVoiceDismissed(false);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
     voice.start({ contextualStrings });
   }
 
@@ -430,7 +430,7 @@ export default function TasksScreen() {
   }
 
   function handleToggle(task: Task) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
     setActionError(null);
     if (task.status === 'open') {
       setJustCompleted((current) => [
@@ -522,7 +522,7 @@ export default function TasksScreen() {
       return [...reorderedTab, ...otherTabs];
     });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    tapLight();
     reorderMutation.mutate(
       { id: movedItem.id, sortOrder: newSortOrder },
       { onError: () => setActionError('Could not save the new order.') },
