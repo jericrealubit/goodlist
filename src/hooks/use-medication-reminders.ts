@@ -5,19 +5,21 @@ import { AppState } from 'react-native';
 import { useSession } from '@/contexts/session-context';
 import { buildLogDoseInput, useLogDoseMutation } from '@/hooks/use-medication-mutations';
 import { useMedicationsQuery } from '@/hooks/use-medications-query';
+import { snoozeAlarm, stopAlarms } from '@/lib/alarms/answer';
+import { doseAlarmKey } from '@/lib/alarms/ringing';
 import {
   doseDay,
   getReminderPermission,
   listenForDoseResponses,
   requestReminderPermission,
-  snoozeReminder,
   syncReminders,
   type ReminderPermission,
 } from '@/lib/reminders';
 
 /**
  * Keeps this device's scheduled reminders in step with the medications cache,
- * and turns a reminder's Taken / Snooze / tap into the matching action.
+ * and turns a reminder's Taken / Snooze / Stop / tap into the matching action.
+ * Keeping an unanswered reminder ringing is `useAlarms`' job.
  *
  * Mounted once, in the signed-in layout, rather than on the Meds tab: a
  * reminder has to be answered whichever screen the app opens on, and a medicine
@@ -51,11 +53,19 @@ export function useMedicationReminders() {
   useEffect(() => {
     if (!userId) return;
     return listenForDoseResponses((response) => {
+      const alarmKey = doseAlarmKey(response.payload.medicationId, doseDay(response), response.payload.time);
       if (response.action === 'snooze') {
-        snoozeReminder(response).catch(() => {});
+        snoozeAlarm(alarmKey);
+        return;
+      }
+      if (response.action === 'stop') {
+        stopAlarms([alarmKey]);
         return;
       }
       if (response.action === 'taken') {
+        // Logging the dose answers the alarm anyway; stopping it too silences
+        // it now, before the log reaches the cache.
+        stopAlarms([alarmKey]);
         mutate(
           buildLogDoseInput(
             {

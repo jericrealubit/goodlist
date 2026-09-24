@@ -188,7 +188,7 @@ Here you can:
 
 1. Add a **Note** — anything extra you want to remember. `Whole milk, 2 litres`.
 2. Add a **Due date** — the day it needs doing by.
-3. Turn on **Alarm** — your phone rings at that exact time. It only shows up once there's a due date, and it stays off unless you turn it on.
+3. Turn on **Alarm** — your phone rings at that exact time, and keeps ringing until you tap **Stop alarm**, **Snooze 10 min** or **Mark done** (with Goodlist closed, it rings again every few minutes for up to two hours). It only shows up once there's a due date, and it stays off unless you turn it on.
 4. Choose **Repeat** if it happens again and again — every day, every week, every 2 weeks, every month, or **Choose days**. It only shows once there's a due date. The next few appear on the calendar; your list shows today's, or just the next one.
 5. Tap **Save changes** when you're happy.
 
@@ -229,7 +229,8 @@ reminds you at each dose and keeps a record.
 1. Tap the **+** button and fill in the name, the dose, and the times you take it.
 2. The first time you turn a reminder on, your phone asks whether Goodlist may send
    notifications — tap **Allow**, or the reminder cannot arrive.
-3. When a dose is due, tap **Taken** or **Skip** right from the list.
+3. When a dose is due, tap **Taken** or **Skip** right from the list. The reminder keeps
+   ringing until you tap **Taken**, **Snooze 10 min** or **Stop alarm**.
 
 Each medicine shows how many of this week's doses you took, and the calendar marks every past
 day taken, missed, or skipped.

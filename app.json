@@ -8,7 +8,10 @@
     "scheme": "goodlist",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.jericrealubit.goodlist"
+      "bundleIdentifier": "com.jericrealubit.goodlist",
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
+      }
     },
     "android": {
       "package": "com.goodlist.app",
@@ -51,7 +54,17 @@
       [
         "expo-notifications",
         {
-          "color": "#072655"
+          "color": "#072655",
+          "sounds": [
+            "./assets/sounds/alarm.wav"
+          ]
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Goodlist uses the microphone only while you are speaking a task.",
+          "enableBackgroundPlayback": false
         }
       ],
       "@react-native-community/datetimepicker"

@@ -2,6 +2,8 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 
 import { queryClient } from '@/lib/query-client';
+import { cancelAllAlarmFollowUps } from '@/lib/alarms/alarm-notifications';
+import { clearMarks } from '@/lib/alarms/marks';
 import { cancelAllReminders } from '@/lib/reminders';
 import { supabase } from '@/lib/supabase';
 import { cancelAllTaskReminders } from '@/lib/task-reminders';
@@ -48,6 +50,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
         // names — or task alarms — on their lock screen.
         cancelAllReminders().catch(() => {});
         cancelAllTaskReminders().catch(() => {});
+        cancelAllAlarmFollowUps().catch(() => {});
+        clearMarks();
       } else if (nextSession) {
         setSession(nextSession);
       }

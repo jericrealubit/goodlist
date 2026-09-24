@@ -7,9 +7,11 @@ import type { RemindableTask } from '@/lib/tasks/reminder-plan';
  */
 
 export const TASK_CATEGORY = 'task-alarm';
-export const TASK_ACTION_OPEN = 'open';
+export const TASK_ACTION_STOP = 'stop';
+export const TASK_ACTION_SNOOZE = 'snooze';
 
-export type TaskAlarmPayload = { taskId: string };
+export type TaskAlarmPayload = { taskId: string; alarmKey?: string };
+export type TaskAlarmResponse = { taskId: string; alarmKey: string | null; action: 'open' | 'stop' | 'snooze' };
 
 export async function configureTaskReminders(): Promise<void> {}
 
@@ -25,6 +27,6 @@ export async function cancelTaskReminder(_taskId: string): Promise<void> {}
 
 export async function cancelAllTaskReminders(): Promise<void> {}
 
-export function listenForTaskReminderResponses(_handler: (taskId: string) => void): () => void {
+export function listenForTaskReminderResponses(_handler: (response: TaskAlarmResponse) => void): () => void {
   return () => {};
 }

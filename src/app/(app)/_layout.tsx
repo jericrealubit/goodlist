@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { useAlarms } from '@/hooks/use-alarms';
 import { useMedicationReminders } from '@/hooks/use-medication-reminders';
 import { usePresenceHeartbeat } from '@/hooks/use-presence-heartbeat';
 import { usePurchasesIdentity } from '@/hooks/use-purchases-identity';
@@ -22,6 +23,9 @@ export default function AppLayout() {
   // the app opens on, and an edit from another device must reschedule here.
   useMedicationReminders();
   useTaskReminders();
+  // And an unanswered alarm keeps ringing — the alarm screen while the app is
+  // open, follow-up notifications while it's closed — until it's answered.
+  useAlarms();
   // Same reasoning: a repeating task's window has to move forward as days
   // pass, whichever screen the app opens on.
   useTaskRecurrenceSync();
@@ -34,6 +38,12 @@ export default function AppLayout() {
         headerShadowVisible: false,
       }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="alarm"
+        // Full screen, no header, no swipe-to-dismiss: the only way out is to
+        // answer the alarm. (Android's back button is blocked by the screen.)
+        options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
+      />
       <Stack.Screen name="task/[id]" options={{ title: 'Edit task', presentation: 'modal' }} />
       <Stack.Screen name="task/series/[id]" options={{ title: 'Repeating task', presentation: 'modal' }} />
       <Stack.Screen name="group/create" options={{ title: 'Create group', presentation: 'modal' }} />

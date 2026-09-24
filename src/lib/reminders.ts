@@ -1,6 +1,17 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import {
+  ACTION_SNOOZE,
+  ACTION_STOP,
+  alarmChannel,
+  alarmContent,
+  deleteLegacyChannels,
+  DOSE_ACTION_TAKEN,
+  DOSE_CATEGORY,
+  DOSE_CHANNEL_ID,
+} from '@/lib/alarms/alarm-style';
+import { SNOOZE_MINUTES } from '@/lib/alarms/ringing';
 import { toDayKey } from '@/lib/calendar/day';
 import { diffReminders, planReminders, REMINDER_PREFIX, type RemindableMedication } from '@/lib/medications/reminder-plan';
 
@@ -10,11 +21,10 @@ import { diffReminders, planReminders, REMINDER_PREFIX, type RemindableMedicatio
  * in the query cache. The web build swaps this file for `reminders.web.ts`.
  */
 
-export const DOSE_CATEGORY = 'dose';
-export const DOSE_ACTION_TAKEN = 'taken';
-export const DOSE_ACTION_SNOOZE = 'snooze';
-export const SNOOZE_MINUTES = 10;
-const CHANNEL_ID = 'medication-reminders';
+export { DOSE_ACTION_TAKEN, DOSE_CATEGORY, SNOOZE_MINUTES };
+export const DOSE_ACTION_SNOOZE = ACTION_SNOOZE;
+export const DOSE_ACTION_STOP = ACTION_STOP;
+/** Snoozes used to be one-off notifications; now they're alarm follow-ups. Kept so sign-out still clears old ones. */
 const SNOOZE_PREFIX = 'snooze:';
 
 export type ReminderPermission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
@@ -37,27 +47,30 @@ export async function configureReminders(): Promise<void> {
   configured = true;
 
   // Shown even while the app is open: a dose reminder arriving on the Tasks
-  // screen should still be seen.
+  // screen should still be seen. Silent, though — every notification this app
+  // schedules is an alarm, and with the app open the alarm screen is already
+  // ringing it (useAlarms); two sounds at once would just be noise.
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: true,
+      shouldPlaySound: false,
       shouldSetBadge: false,
     }),
   });
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: 'Medicine reminders',
-      description: 'A nudge at each time you set for a medicine.',
-      importance: Notifications.AndroidImportance.HIGH,
-    });
+    await Notifications.setNotificationChannelAsync(
+      DOSE_CHANNEL_ID,
+      alarmChannel('Medicine reminders', 'Rings at each time you set for a medicine, until you answer it.'),
+    );
+    await deleteLegacyChannels();
   }
 
-  // Both actions open the app. An action with opensAppToForeground: false is
+  // Every action opens the app. An action with opensAppToForeground: false is
   // silently dropped when the app has been killed, and a "Taken" that doesn't
-  // get recorded is worse than a screen that opens for a second.
+  // get recorded — or a "Stop" that doesn't stop — is worse than a screen that
+  // opens for a second.
   await Notifications.setNotificationCategoryAsync(DOSE_CATEGORY, [
     { identifier: DOSE_ACTION_TAKEN, buttonTitle: 'Taken', options: { opensAppToForeground: true } },
     {
@@ -65,6 +78,7 @@ export async function configureReminders(): Promise<void> {
       buttonTitle: `Snooze ${SNOOZE_MINUTES} min`,
       options: { opensAppToForeground: true },
     },
+    { identifier: DOSE_ACTION_STOP, buttonTitle: 'Stop alarm', options: { opensAppToForeground: true } },
   ]);
 }
 
@@ -95,7 +109,11 @@ export async function syncReminders(meds: RemindableMedication[], now = new Date
   await configureReminders();
   if ((await getReminderPermission()) !== 'granted') return { overflow: 0 };
 
-  const { requests, overflow } = planReminders(meds, toDayKey(now));
+  const planned = planReminders(meds, toDayKey(now));
+  // The channel is part of the signature so a channel change (the move to
+  // alarm-sound channels) reschedules everything already pending.
+  const requests = planned.requests.map((r) => ({ ...r, signature: `${r.signature}|${DOSE_CHANNEL_ID}` }));
+  const { overflow } = planned;
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const existing = scheduled.map((n) => ({
     identifier: n.identifier,
@@ -112,45 +130,25 @@ export async function syncReminders(meds: RemindableMedication[], now = new Date
     };
     await Notifications.scheduleNotificationAsync({
       identifier: request.identifier,
-      content: { title: request.title, body: request.body, data, categoryIdentifier: DOSE_CATEGORY },
+      content: { ...alarmContent, title: request.title, body: request.body, data, categoryIdentifier: DOSE_CATEGORY },
       trigger:
         request.weekday === null
           ? {
               type: Notifications.SchedulableTriggerInputTypes.DAILY,
               hour: request.hour,
               minute: request.minute,
-              channelId: CHANNEL_ID,
+              channelId: DOSE_CHANNEL_ID,
             }
           : {
               type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
               weekday: request.weekday,
               hour: request.hour,
               minute: request.minute,
-              channelId: CHANNEL_ID,
+              channelId: DOSE_CHANNEL_ID,
             },
     });
   }
   return { overflow };
-}
-
-/** One more nudge for the same slot, `SNOOZE_MINUTES` from now. */
-export async function snoozeReminder(response: DoseResponse): Promise<void> {
-  const { content, payload } = response;
-  const data: DosePayload = { ...payload, day: doseDay(response) };
-  await Notifications.scheduleNotificationAsync({
-    identifier: `${SNOOZE_PREFIX}${Date.now()}`,
-    content: {
-      title: content.title ?? 'Medicine reminder',
-      body: content.body ?? undefined,
-      data,
-      categoryIdentifier: DOSE_CATEGORY,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: SNOOZE_MINUTES * 60,
-      channelId: CHANNEL_ID,
-    },
-  });
 }
 
 /** Signing out must not leave someone else's medicine names on this device's lock screen. */
@@ -164,7 +162,7 @@ export async function cancelAllReminders(): Promise<void> {
 }
 
 export type DoseResponse = {
-  action: 'open' | 'taken' | 'snooze';
+  action: 'open' | 'taken' | 'snooze' | 'stop';
   payload: DosePayload;
   content: Notifications.NotificationContent;
   /** When the reminder was delivered; the slot's day is read from it. */
@@ -185,7 +183,9 @@ function toDoseResponse(response: Notifications.NotificationResponse): DoseRespo
       ? 'taken'
       : response.actionIdentifier === DOSE_ACTION_SNOOZE
         ? 'snooze'
-        : 'open';
+        : response.actionIdentifier === DOSE_ACTION_STOP
+          ? 'stop'
+          : 'open';
   return {
     action,
     payload: { medicationId: data.medicationId, time: data.time, day: typeof data.day === 'string' ? data.day : undefined },

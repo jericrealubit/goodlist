@@ -9,7 +9,7 @@ import type { RemindableMedication } from '@/lib/medications/reminder-plan';
 export type ReminderPermission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 export type DosePayload = { medicationId: string; time: string; day?: string };
 export type DoseResponse = {
-  action: 'open' | 'taken' | 'snooze';
+  action: 'open' | 'taken' | 'snooze' | 'stop';
   payload: DosePayload;
   content: unknown;
   date: Date;
@@ -30,8 +30,6 @@ export async function requestReminderPermission(): Promise<ReminderPermission> {
 export async function syncReminders(_meds: RemindableMedication[], _now?: Date): Promise<{ overflow: number }> {
   return { overflow: 0 };
 }
-
-export async function snoozeReminder(_response: DoseResponse): Promise<void> {}
 
 export async function cancelAllReminders(): Promise<void> {}
 
