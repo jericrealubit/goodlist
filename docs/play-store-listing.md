@@ -126,7 +126,30 @@ in-app Privacy Policy and Terms screens render from, so the reviewed policy and 
 cannot disagree. **Turn Pages on before submitting:** repo Settings → Pages → Source: *Deploy from a
 branch*, branch `main`, folder `/docs`. Load the URLs in a private window once to confirm.
 
-## Release notes — the repeating tasks release
+## Release notes — the ringing alarms release
+
+Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
+set these, so they are typed into the Console by hand, and rewritten for each release — the note
+below replaces the repeating-tasks one, which follows it for reference.
+
+Play caps this field at **500 characters per language**. The note below is 397; check it again if
+you edit it. Drop the "Also:" line if the repeating-tasks release has already gone out.
+
+```
+What's new: alarms that keep ringing.
+
+Task alarms and medicine reminders now ring loudly until you answer them: tap Stop alarm, Snooze 10 min, or Mark done / Taken. With Goodlist open the alarm fills the screen; closed, it rings again every few minutes for up to two hours.
+
+Also: repeat any task with a due date, every day, week, 2 weeks, month, or on the days you choose.
+
+Nothing new to allow.
+```
+
+**"Nothing new to allow"** — the only permission added is `MODIFY_AUDIO_SETTINGS` (from
+`expo-audio`, for the in-app alarm sound), a normal install-time permission with no prompt.
+Notifications were already asked for by Meds.
+
+## Release notes — the repeating tasks release (previous, for reference)
 
 Pasted into **Release notes** on the closed-testing release in Play Console. `eas submit` does not
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
