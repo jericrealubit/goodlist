@@ -336,6 +336,20 @@ export const userGuide: GuideDoc = {
         {
           kind: 'para',
           spans: [
+            'An alarm keeps ringing until you answer it: tap ',
+            { bold: 'Stop alarm' },
+            ', ',
+            { bold: 'Snooze 10 min' },
+            ', or ',
+            { bold: 'Mark done' },
+            '. With Goodlist open it rings on screen; with it closed it rings again every few minutes for up to two hours. Medicine reminders ring the same way, with ',
+            { bold: 'Taken' },
+            ' instead of Mark done.',
+          ],
+        },
+        {
+          kind: 'para',
+          spans: [
             { bold: 'Repeat' },
             ' also appears once a task has a due date. Choose ',
             { bold: 'Every day' },
@@ -454,6 +468,15 @@ export const userGuide: GuideDoc = {
               ', or the reminder cannot arrive.',
             ],
             ['When a dose is due, tap ', { bold: 'Taken' }, ' or ', { bold: 'Skip' }, ' right from the list.'],
+            [
+              'The reminder keeps ringing until you tap ',
+              { bold: 'Taken' },
+              ', ',
+              { bold: 'Snooze 10 min' },
+              ' or ',
+              { bold: 'Stop alarm' },
+              '.',
+            ],
           ],
         },
         { kind: 'image', shot: '20-meds', caption: 'Today’s doses, with Taken and Skip right there.' },

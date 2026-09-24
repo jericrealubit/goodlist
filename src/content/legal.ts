@@ -80,7 +80,7 @@ export const privacyPolicy: LegalDoc = {
           kind: 'para',
           spans: [
             { bold: 'Task alarms.' },
-            ' If you turn on the Alarm switch for a task, its title, note and due date/time are used to schedule a one-time notification on your own device at that time — the same way a task shows on the calendar, just with a phone alert added. We don’t send it; nothing leaves your device to make it happen. Turning the alarm off, changing the due date, or completing or deleting the task cancels it.',
+            ' If you turn on the Alarm switch for a task, its title, note and due date/time are used to schedule a notification on your own device at that time — the same way a task shows on the calendar, just with a phone alert added — which rings again every few minutes until you stop, snooze or complete it. Whether you stopped or snoozed an alarm is remembered on that device only. We don’t send it; nothing leaves your device to make it happen. Turning the alarm off, changing the due date, or completing or deleting the task cancels it.',
           ],
         },
         {

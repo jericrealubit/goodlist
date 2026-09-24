@@ -58,4 +58,8 @@ export const ActionIcons = {
   doseDue: 'ellipse-outline',
   remindersOff: 'notifications-off-outline',
   systemStatus: 'information-circle-outline',
+  // A ringing alarm, and the ways to answer it.
+  alarm: 'alarm-outline',
+  stopAlarm: 'stop-circle-outline',
+  snooze: 'hourglass-outline',
 } as const satisfies Record<string, IconName>;
