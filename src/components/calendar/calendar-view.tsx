@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
 
+import { AlarmStatusBanner } from '@/components/calendar/alarm-status-banner';
 import { MonthGrid, type DayState } from '@/components/calendar/month-grid';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -369,6 +370,8 @@ export function CalendarView({ topInset, bottomInset }: { topInset: number; bott
             styles.content,
             { gap: tokens.spacing.three, paddingBottom: bottomInset + Spacing.four },
           ]}>
+          <AlarmStatusBanner tasks={data ?? []} />
+
           {armed ? (
             <ThemedView
               type="backgroundElement"
