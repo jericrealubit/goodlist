@@ -13,7 +13,7 @@
  * - Open: the alarm screen loops a sound and vibration until answered
  *   (`isRinging` decides what it shows, for up to `RINGING_WINDOW_MS`).
  * - Closed: the app can't run, so the ringing is pre-scheduled as one-shot
- *   follow-up notifications at `FOLLOW_UP_OFFSETS_MIN` after the alarm, and
+ *   follow-up notifications at `FOLLOW_UP_OFFSETS_SEC` after the alarm, and
  *   cancelled once it's answered (`planFollowUps`).
  *
  * Pure, structurally typed, relative `.ts` imports: `node --test` runs it
@@ -56,11 +56,17 @@ export type ScheduledFollowUp = { identifier: string; signature: string | null }
 export const FOLLOW_UP_PREFIX = 'alarm:';
 
 /**
- * Minutes after an alarm (or after a snooze ends) that it rings again while
- * unanswered: every minute at first, when it's most likely to be caught,
- * easing off to every quarter hour, for two hours.
+ * Seconds after an alarm (or after a snooze ends) that it rings again while
+ * unanswered. An app that isn't running can't loop a sound, so "keeps
+ * ringing" is a run of one-shot notifications, each playing the 20-second
+ * alarm sound once: every 25 seconds for the first five minutes — a gap of
+ * five seconds between rings, close to continuous — then every minute for
+ * five more, easing off to every half hour, for two hours.
  */
-export const FOLLOW_UP_OFFSETS_MIN = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 45, 60, 75, 90, 105, 120];
+export const FOLLOW_UP_OFFSETS_SEC = [
+  ...Array.from({ length: 12 }, (_, i) => (i + 1) * 25),
+  ...[6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 90, 120].map((minutes) => minutes * 60),
+];
 
 /**
  * How many follow-ups are pending at once, across all alarms. iOS keeps only
@@ -68,7 +74,7 @@ export const FOLLOW_UP_OFFSETS_MIN = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 45, 60,
  * so the soonest ones survive that cut, and the rest are topped up on the
  * next sync as earlier ones fire.
  */
-export const FOLLOW_UP_LIMIT = 24;
+export const FOLLOW_UP_LIMIT = 30;
 
 /**
  * How long the open app keeps ringing an unanswered alarm. Long enough that
@@ -200,7 +206,7 @@ export function ringingAlarms(alarms: Alarm[], marks: AlarmMarks, now: Date): Al
  * The follow-up notifications that should be pending. A snoozed alarm rings
  * once when the snooze ends (that ring *is* the snooze) and then follows up
  * from there; an unsnoozed one's first ring is its own notification, so its
- * follow-ups start a minute later. Over the cap, the soonest win.
+ * follow-ups start 25 seconds later. Over the cap, the soonest win.
  */
 export function planFollowUps(alarms: Alarm[], marks: AlarmMarks, now: Date): FollowUpRequest[] {
   const requests: FollowUpRequest[] = [];
@@ -208,9 +214,9 @@ export function planFollowUps(alarms: Alarm[], marks: AlarmMarks, now: Date): Fo
     const mark = marks[alarm.key];
     if (mark?.stopped) continue;
     const base = ringsFrom(alarm, mark).getTime();
-    const offsets = mark?.snoozedUntil ? [0, ...FOLLOW_UP_OFFSETS_MIN] : FOLLOW_UP_OFFSETS_MIN;
-    offsets.forEach((minutes, index) => {
-      const date = new Date(base + minutes * 60_000);
+    const offsets = mark?.snoozedUntil ? [0, ...FOLLOW_UP_OFFSETS_SEC] : FOLLOW_UP_OFFSETS_SEC;
+    offsets.forEach((seconds, index) => {
+      const date = new Date(base + seconds * 1000);
       if (date <= now) return;
       requests.push({
         identifier: followUpIdentifier(alarm.key, index),

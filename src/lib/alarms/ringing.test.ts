@@ -7,7 +7,7 @@ import {
   doseAlarmKey,
   doseAlarms,
   FOLLOW_UP_LIMIT,
-  FOLLOW_UP_OFFSETS_MIN,
+  FOLLOW_UP_OFFSETS_SEC,
   followUpIdentifier,
   isRinging,
   planFollowUps,
@@ -141,12 +141,20 @@ test('follow-ups ring on the offsets after the alarm, skipping ones already past
   const a = alarm();
   const now = new Date(a.at.getTime() + 3.5 * MINUTE);
   const requests = planFollowUps([a], {}, now);
-  const expected = FOLLOW_UP_OFFSETS_MIN.filter((m) => m > 3.5);
+  const expected = FOLLOW_UP_OFFSETS_SEC.filter((s) => s > 210);
   assert.deepEqual(
-    requests.map((r) => (r.date.getTime() - a.at.getTime()) / MINUTE),
+    requests.map((r) => (r.date.getTime() - a.at.getTime()) / 1000),
     expected,
   );
-  assert.equal(requests[0].identifier, followUpIdentifier(a.key, FOLLOW_UP_OFFSETS_MIN.indexOf(4)));
+  assert.equal(requests[0].identifier, followUpIdentifier(a.key, FOLLOW_UP_OFFSETS_SEC.indexOf(225)));
+});
+
+test('for the first five minutes the rings are closer together than the sound is long', () => {
+  const SOUND_SECONDS = 20;
+  const early = FOLLOW_UP_OFFSETS_SEC.filter((s) => s <= 300);
+  assert.equal(early.length, 12);
+  for (let i = 1; i < early.length; i++) assert.ok(early[i] - early[i - 1] < SOUND_SECONDS + 10);
+  assert.equal(FOLLOW_UP_OFFSETS_SEC.at(-1), 2 * 60 * 60);
 });
 
 test('a stopped alarm has no follow-ups; a snoozed one restarts from the snooze', () => {
@@ -157,7 +165,7 @@ test('a stopped alarm has no follow-ups; a snoozed one restarts from the snooze'
   const until = new Date(now.getTime() + 10 * MINUTE);
   const snoozed = planFollowUps([a], { [a.key]: { snoozedUntil: until.toISOString(), updatedAt: now.toISOString() } }, now);
   assert.equal(snoozed[0].date.getTime(), until.getTime());
-  assert.equal(snoozed[1].date.getTime(), until.getTime() + MINUTE);
+  assert.equal(snoozed[1].date.getTime(), until.getTime() + FOLLOW_UP_OFFSETS_SEC[0] * 1000);
 });
 
 test('over the cap, the soonest follow-ups across alarms win', () => {

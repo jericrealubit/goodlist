@@ -132,7 +132,7 @@ Pasted into **Release notes** on the closed-testing release in Play Console. `ea
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
 below replaces the alarms one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is 375; check it again if
+Play caps this field at **500 characters per language**. The note below is 409; check it again if
 you edit it.
 
 ```
@@ -144,15 +144,14 @@ Task alarms and medicine reminders now ring until you answer them. Tap Stop, or 
 
 Say "remind me to call the vet at 5pm" and the alarm is already on.
 
-No new permissions.
+New permission: exact alarms, so alarms ring on time.
 ```
 
-**No "New permission" line** — nothing new is asked for (checked against `app.json`: the alarms change adds an alarm sound and `expo-audio`, no new Android permission). `POST_NOTIFICATIONS` is already in the
-manifest from the Meds release, and repeating tasks need no permission at all. The last line still
-says so, for the tester who skipped Meds and meets the notification prompt here for the first
-time — the same "don't let a permission prompt arrive unexplained" reasoning as every past
-release. **The spoken example** carries the "remind me" phrasing verbatim so a tester can copy it
-and see the alarm land on, not just read that it can.
+**The permission line is back.** Exact alarms is a new permission (`USE_EXACT_ALARM` /
+`SCHEDULE_EXACT_ALARM`, no prompt to the user — Android grants it), so it's named for the same
+reason past releases named the microphone. It also needs the Play Console exact-alarm declaration
+before this release goes out. **The spoken example** carries the "remind me" phrasing verbatim so
+a tester can copy it and see the alarm land on, not just read that it can.
 
 Previous release, for reference:
 
@@ -202,11 +201,16 @@ medicine, or Settings → Delete account).
 Reminders are **local notifications** scheduled on the device by `expo-notifications`; no push
 token is registered and nothing is sent by a server. The app requests `POST_NOTIFICATIONS` (asked
 in context — the first time a medicine is saved with reminders on, **or** the first time a task's
-Alarm switch is turned on and saved, whichever a user reaches first) and does **not** request
-`SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, so there is no exact-alarm declaration to make. Task
-alarms are a one-shot local notification at the task's own due date/time (same mechanism, no new
-permission, no new Data Safety category — the title/note/due date it uses is already declared
-under User-generated content); see the note below on task content generally.
+Alarm switch is turned on and saved, whichever a user reaches first) and **also requests
+`USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM`**, so alarms and reminders fire at the exact minute
+rather than whenever Android's battery saver next wakes up — without them expo-notifications falls
+back to inexact alarms that can be minutes late, which defeats an alarm. `USE_EXACT_ALARM` is
+granted automatically, but Play limits it to alarm and calendar apps, so **it needs a declaration in
+Play Console** (App content → the exact-alarm / "alarms & reminders" form): the core function is
+alarms and medicine reminders that ring at a set time. Task alarms are a local notification at the
+task's own due date/time (same mechanism as medicine reminders, no new Data Safety category — the
+title/note/due date it uses is already declared under User-generated content); see the note below on
+task content generally.
 
 Before submitting: confirm the merged manifest carries no push-related permission you don't intend
 (`npx expo prebuild --platform android --no-install`, then inspect `AndroidManifest.xml`), and
