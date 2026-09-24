@@ -132,20 +132,22 @@ Pasted into **Release notes** on the closed-testing release in Play Console. `ea
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
 below replaces the alarms one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is 372; check it again if
+Play caps this field at **500 characters per language**. The note below is 375; check it again if
 you edit it.
 
 ```
-What's new: repeating tasks, and alarms.
+What's new: repeating tasks, and alarms that keep ringing.
 
-Make any task with a due date repeat: every day, week, 2 weeks, month, or on the days you choose. The next few show on the calendar.
+Make any task with a due date repeat: every day, week, 2 weeks, month, or the days you choose. The next few show on the calendar.
 
-Turn on Alarm and your phone rings at the due time. Say "remind me to call the vet at 5pm" and it's already on.
+Task alarms and medicine reminders now ring until you answer them. Tap Stop, or Snooze 10 min.
 
-No new permissions. Alarms use the notification permission from medicine reminders.
+Say "remind me to call the vet at 5pm" and the alarm is already on.
+
+No new permissions.
 ```
 
-**No "New permission" line** — nothing new is asked for. `POST_NOTIFICATIONS` is already in the
+**No "New permission" line** — nothing new is asked for (checked against `app.json`: the alarms change adds an alarm sound and `expo-audio`, no new Android permission). `POST_NOTIFICATIONS` is already in the
 manifest from the Meds release, and repeating tasks need no permission at all. The last line still
 says so, for the tester who skipped Meds and meets the notification prompt here for the first
 time — the same "don't let a permission prompt arrive unexplained" reasoning as every past
