@@ -2,8 +2,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { WEEKDAY_SHORT } from '@/components/meds/dose-format';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
+import { readableOn } from '@/lib/color';
 
 export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
@@ -22,7 +23,11 @@ export function WeekdayChips({
   onChange: (days: number[]) => void;
   single?: boolean;
 }) {
+  const theme = useTheme();
   const tokens = useTokens();
+  // Same selected treatment as OptionPicker: a primary fill, not a one-shade shift.
+  const selectedText = readableOn(theme.primary);
+  const borderWidth = Math.max(tokens.borderWidth, 1);
 
   function toggle(day: number, selected: boolean) {
     if (single) onChange([day]);
@@ -41,11 +46,21 @@ export function WeekdayChips({
             accessibilityState={single ? { selected } : { checked: selected }}
             accessibilityLabel={WEEKDAY_SHORT[day]}
             style={({ pressed }) => [styles.chip, pressed && styles.pressed]}>
-            <ThemedView
-              type={selected ? 'backgroundSelected' : 'backgroundElement'}
-              style={[styles.chipInner, { borderRadius: tokens.radii.md, paddingVertical: tokens.spacing.two }]}>
-              <ThemedText type={selected ? 'smallBold' : 'small'}>{WEEKDAY_SHORT[day]}</ThemedText>
-            </ThemedView>
+            <View
+              style={[
+                styles.chipInner,
+                {
+                  borderRadius: tokens.radii.md,
+                  paddingVertical: tokens.spacing.two,
+                  borderWidth,
+                  backgroundColor: selected ? theme.primary : theme.backgroundElement,
+                  borderColor: selected ? theme.primary : theme.border,
+                },
+              ]}>
+              <ThemedText type={selected ? 'smallBold' : 'small'} style={selected ? { color: selectedText } : undefined}>
+                {WEEKDAY_SHORT[day]}
+              </ThemedText>
+            </View>
           </Pressable>
         );
       })}

@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
+import { readableOn } from '@/lib/color';
 import { ordinal } from '@/lib/tasks/recurrence';
 
 const WEEKS = [
@@ -19,7 +20,11 @@ const WEEKS = [
  * pickers read as the same kind of control.
  */
 export function MonthDayChips({ value, onChange }: { value: number | null; onChange: (day: number) => void }) {
+  const theme = useTheme();
   const tokens = useTokens();
+  // Same selected treatment as OptionPicker: a primary fill, not a one-shade shift.
+  const selectedText = readableOn(theme.primary);
+  const borderWidth = Math.max(tokens.borderWidth, 1);
   return (
     <View style={{ gap: tokens.spacing.one }} accessibilityRole="radiogroup" accessibilityLabel="Day of the month">
       {WEEKS.map((week) => (
@@ -36,11 +41,21 @@ export function MonthDayChips({ value, onChange }: { value: number | null; onCha
                 accessibilityState={{ selected }}
                 accessibilityLabel={`The ${ordinal(day)}`}
                 style={({ pressed }) => [styles.chip, pressed && styles.pressed]}>
-                <ThemedView
-                  type={selected ? 'backgroundSelected' : 'backgroundElement'}
-                  style={[styles.chipInner, { borderRadius: tokens.radii.md, paddingVertical: tokens.spacing.two }]}>
-                  <ThemedText type={selected ? 'smallBold' : 'small'}>{day}</ThemedText>
-                </ThemedView>
+                <View
+                  style={[
+                    styles.chipInner,
+                    {
+                      borderRadius: tokens.radii.md,
+                      paddingVertical: tokens.spacing.two,
+                      borderWidth,
+                      backgroundColor: selected ? theme.primary : theme.backgroundElement,
+                      borderColor: selected ? theme.primary : theme.border,
+                    },
+                  ]}>
+                  <ThemedText type={selected ? 'smallBold' : 'small'} style={selected ? { color: selectedText } : undefined}>
+                    {day}
+                  </ThemedText>
+                </View>
               </Pressable>
             );
           })}
