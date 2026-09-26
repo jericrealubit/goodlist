@@ -50,3 +50,14 @@ export function washToSurface(color: string, surface: string, maxAmount = 0.6): 
   }
   return mixHex(color, surface, best);
 }
+
+/**
+ * Near-white or near-black, whichever reads better on `background`. Selected
+ * controls fill with the theme's `primary`, which runs from pale gold to deep
+ * blue across the 9 themes, so no single label color works on all of them.
+ */
+export function readableOn(background: string): string {
+  const light = '#FFFFFF';
+  const dark = '#111111';
+  return contrastRatio(light, background) >= contrastRatio(dark, background) ? light : dark;
+}
