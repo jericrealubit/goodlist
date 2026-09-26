@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTokens } from '@/hooks/use-tokens';
-import { readableOn } from '@/lib/color';
+import { mixHex, readableOn, strengthenOn } from '@/lib/color';
 import { tapLight } from '@/lib/haptics';
 
 type Option = { id: string; label: string; swatches?: string[] };
@@ -21,12 +21,20 @@ type OptionPickerProps = {
 export function OptionPicker({ options, selectedId, onSelect, layout = 'column' }: OptionPickerProps) {
   const theme = useTheme();
   const tokens = useTokens();
-  // Selection has to be obvious at a glance, not a one-shade background
-  // shift: the chosen option fills with the theme's primary, keeps the same
-  // text size (bolder, never smaller), and gets a checkmark so it doesn't
-  // rely on color alone.
-  const selectedText = readableOn(theme.primary);
+  // Selection has to be obvious at a glance without costing readability.
+  // A solid primary fill put body text on mid-tone greens and terracottas
+  // (~5:1 at best) and hid the first swatch, so the chosen option instead
+  // gets a light primary tint, a thicker primary outline, a filled check
+  // badge, and bold text in the theme's own text color (9.6:1+ on every
+  // theme). The badge means selection never relies on color alone.
+  const selectedSurface = mixHex(theme.primary, theme.backgroundElement, 0.86);
+  const selectedOutline = strengthenOn(theme.primary, selectedSurface, theme.text);
+  const badgeIcon = readableOn(selectedOutline);
+  // A hairline ring keeps pale swatches (off-white, lavender) visible on
+  // white cards.
+  const swatchRing = mixHex(theme.text, theme.backgroundElement, 0.8);
   const borderWidth = Math.max(tokens.borderWidth, 1);
+  const selectedBorderWidth = 2;
   return (
     <ThemedView style={[styles.container, { gap: tokens.spacing.two }, layout === 'row' && styles.containerRow]}>
       {options.map((option) => {
@@ -46,21 +54,24 @@ export function OptionPicker({ options, selectedId, onSelect, layout = 'column' 
               style={[
                 styles.row,
                 {
-                  padding: tokens.spacing.three,
+                  // Shrink padding by the extra border so selecting doesn't
+                  // shift the label.
+                  padding: tokens.spacing.three - (isSelected ? selectedBorderWidth - borderWidth : 0),
                   borderRadius: tokens.radii.lg,
-                  borderWidth,
-                  backgroundColor: isSelected ? theme.primary : theme.backgroundElement,
-                  borderColor: isSelected ? theme.primary : theme.border,
+                  borderWidth: isSelected ? selectedBorderWidth : borderWidth,
+                  backgroundColor: isSelected ? selectedSurface : theme.backgroundElement,
+                  borderColor: isSelected ? selectedOutline : theme.border,
                 },
                 layout === 'row' && styles.rowCentered,
                 option.swatches && styles.rowSpaceBetween,
               ]}>
-              <View style={[styles.labelRow, { gap: tokens.spacing.one }]}>
-                {isSelected ? <Ionicons name="checkmark" size={18} color={selectedText} /> : null}
-                <ThemedText
-                  style={
-                    isSelected ? { color: selectedText, fontWeight: tokens.font.headingWeight } : undefined
-                  }>
+              <View style={[styles.labelRow, { gap: tokens.spacing.two }]}>
+                {isSelected ? (
+                  <View style={[styles.checkBadge, { backgroundColor: selectedOutline }]}>
+                    <Ionicons name="checkmark" size={14} color={badgeIcon} />
+                  </View>
+                ) : null}
+                <ThemedText style={isSelected ? { fontWeight: tokens.font.headingWeight } : undefined}>
                   {option.label}
                 </ThemedText>
               </View>
@@ -74,8 +85,7 @@ export function OptionPicker({ options, selectedId, onSelect, layout = 'column' 
                       key={index}
                       style={[
                         styles.swatchDot,
-                        { backgroundColor: color },
-                        isSelected && { borderWidth: 1.5, borderColor: selectedText },
+                        { backgroundColor: color, borderColor: swatchRing },
                       ]}
                     />
                   ))}
@@ -119,8 +129,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   swatchDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  checkBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

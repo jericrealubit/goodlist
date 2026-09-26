@@ -22,7 +22,8 @@ const WEEKS = [
 export function MonthDayChips({ value, onChange }: { value: number | null; onChange: (day: number) => void }) {
   const theme = useTheme();
   const tokens = useTokens();
-  // Same selected treatment as OptionPicker: a primary fill, not a one-shade shift.
+  // A primary fill, not a one-shade shift: chips hold a single short label,
+  // so the stronger fill stays legible here.
   const selectedText = readableOn(theme.primary);
   const borderWidth = Math.max(tokens.borderWidth, 1);
   return (
