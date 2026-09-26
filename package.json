@@ -68,6 +68,7 @@
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/**/*.test.ts\"",
     "report:distribution": "node ./scripts/user-distribution-report.mjs",
     "guide:screens": "node ./scripts/generate-guide-screens.mjs",
+    "ad:fb": "node ./scripts/generate-fb-ad.mjs",
     "legal:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-legal-site.mjs",
     "guide:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-guide-site.mjs",
     "index:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build-site-index.mjs",
