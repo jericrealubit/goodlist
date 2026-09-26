@@ -3,8 +3,10 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Trimmed because a stray newline from a pasted CI secret ends up in the
+// Authorization header, which Android's HTTP client rejects outright.
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(

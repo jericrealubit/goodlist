@@ -5,7 +5,7 @@ import type { PremiumPlan, PurchaseOutcome } from '@/lib/types';
 // Web counterpart: purchases.web.ts (RevenueCat Web Billing / Stripe). Both
 // files export the same functions so screens never branch on platform.
 
-const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
+const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY?.trim();
 
 const packagesById = new Map<string, PurchasesPackage>();
 

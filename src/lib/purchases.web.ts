@@ -2,7 +2,7 @@ import { ErrorCode, Purchases, PurchasesError, type Package } from '@revenuecat/
 
 import type { PremiumPlan, PurchaseOutcome } from '@/lib/types';
 
-const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_WEB_KEY;
+const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_WEB_KEY?.trim();
 
 const packagesById = new Map<string, Package>();
 
