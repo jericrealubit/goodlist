@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { usesDaysOfWeek } from '@/lib/tasks/recurrence';
 import type { RecurrenceInput } from '@/lib/types';
 
 /**
@@ -13,7 +14,9 @@ function toArgs(input: RecurrenceInput) {
     p_title: input.title.trim(),
     p_notes: input.notes?.trim() || null,
     p_frequency: input.frequency,
-    p_days_of_week: input.frequency === 'custom' ? input.days_of_week : null,
+    p_days_of_week: usesDaysOfWeek(input.frequency) ? input.days_of_week : null,
+    p_month_day: input.frequency === 'monthly' ? input.month_day : null,
+    p_month_week: input.frequency === 'monthly_weekday' ? input.month_week : null,
     p_start_date: input.start_date,
     p_due_time: input.due_time,
     p_end_date: input.end_date,

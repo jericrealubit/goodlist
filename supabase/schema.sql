@@ -152,8 +152,10 @@ create table if not exists public.task_recurrences (
   creator_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
   notes text,
-  frequency text not null check (frequency in ('daily', 'weekly', 'fortnightly', 'monthly', 'custom')),
-  -- 0 = Sunday … 6 = Saturday, as JavaScript's Date.getDay(). Only 'custom' uses it.
+  frequency text not null
+    check (frequency in ('daily', 'weekly', 'fortnightly', 'monthly', 'monthly_weekday', 'custom')),
+  -- 0 = Sunday … 6 = Saturday, as JavaScript's Date.getDay(). 'custom' uses
+  -- them all; 'monthly_weekday' uses the first (null: the start date's weekday).
   days_of_week smallint[]
     check (days_of_week is null
            or (cardinality(days_of_week) between 1 and 7
@@ -175,6 +177,17 @@ create table if not exists public.task_recurrences (
   constraint task_recurrences_custom_days check (frequency <> 'custom' or days_of_week is not null),
   constraint task_recurrences_dates_ordered check (end_date is null or end_date >= start_date)
 );
+
+-- Monthly on a chosen day. 'monthly' lands on month_day (1–31, clamped to
+-- short months); 'monthly_weekday' on the month_week-th days_of_week[1] of
+-- each month, 5 meaning the last. Null in either keeps the start date's.
+alter table public.task_recurrences add column if not exists month_day smallint
+  check (month_day between 1 and 31);
+alter table public.task_recurrences add column if not exists month_week smallint
+  check (month_week between 1 and 5);
+alter table public.task_recurrences drop constraint if exists task_recurrences_frequency_check;
+alter table public.task_recurrences add constraint task_recurrences_frequency_check
+  check (frequency in ('daily', 'weekly', 'fortnightly', 'monthly', 'monthly_weekday', 'custom'));
 
 create index if not exists task_recurrences_creator_id_idx on public.task_recurrences (creator_id);
 
@@ -297,7 +310,9 @@ create trigger tasks_remember_skipped_occurrence
 -- next sync would fill with a duplicate of the task it was made from.
 -- Security invoker: the caller's own RLS already covers both writes. The id
 -- is client-generated so an offline retry is a no-op rather than a second
--- series.
+-- series. The month parameters default to null so an app build from before
+-- they existed still reaches this function.
+drop function if exists public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean);
 create or replace function public.create_task_recurrence(
   p_id uuid,
   p_task_id uuid,
@@ -308,7 +323,9 @@ create or replace function public.create_task_recurrence(
   p_start_date date,
   p_due_time text,
   p_end_date date,
-  p_alarm_enabled boolean
+  p_alarm_enabled boolean,
+  p_month_day smallint default null,
+  p_month_week smallint default null
 )
 returns void
 language plpgsql
@@ -317,10 +334,11 @@ set search_path = public
 as $$
 begin
   insert into public.task_recurrences
-    (id, creator_id, title, notes, frequency, days_of_week, start_date, due_time, end_date, alarm_enabled)
+    (id, creator_id, title, notes, frequency, days_of_week, month_day, month_week, start_date, due_time,
+     end_date, alarm_enabled)
   values
-    (p_id, auth.uid(), p_title, p_notes, p_frequency, p_days_of_week, p_start_date, p_due_time, p_end_date,
-     p_alarm_enabled)
+    (p_id, auth.uid(), p_title, p_notes, p_frequency, p_days_of_week, p_month_day, p_month_week, p_start_date,
+     p_due_time, p_end_date, p_alarm_enabled)
   on conflict (id) do nothing;
 
   update public.tasks
@@ -338,6 +356,7 @@ $$;
 -- doesn't look back). The app's next sync regenerates the window under the
 -- new pattern. Completed occurrences, and anything before p_from, are never
 -- touched.
+drop function if exists public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date);
 create or replace function public.update_task_recurrence(
   p_id uuid,
   p_title text,
@@ -348,7 +367,9 @@ create or replace function public.update_task_recurrence(
   p_due_time text,
   p_end_date date,
   p_alarm_enabled boolean,
-  p_from date
+  p_from date,
+  p_month_day smallint default null,
+  p_month_week smallint default null
 )
 returns void
 language plpgsql
@@ -361,6 +382,8 @@ begin
         notes = p_notes,
         frequency = p_frequency,
         days_of_week = p_days_of_week,
+        month_day = p_month_day,
+        month_week = p_month_week,
         start_date = p_start_date,
         due_time = p_due_time,
         end_date = p_end_date,
@@ -399,10 +422,10 @@ begin
 end;
 $$;
 
-revoke all on function public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean) from public;
-grant execute on function public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean) to authenticated;
-revoke all on function public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date) from public;
-grant execute on function public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date) to authenticated;
+revoke all on function public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean, smallint, smallint) from public;
+grant execute on function public.create_task_recurrence(uuid, uuid, text, text, text, smallint[], date, text, date, boolean, smallint, smallint) to authenticated;
+revoke all on function public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date, smallint, smallint) from public;
+grant execute on function public.update_task_recurrence(uuid, text, text, text, smallint[], date, text, date, boolean, date, smallint, smallint) to authenticated;
 revoke all on function public.stop_task_recurrence(uuid, date) from public;
 grant execute on function public.stop_task_recurrence(uuid, date) to authenticated;
 

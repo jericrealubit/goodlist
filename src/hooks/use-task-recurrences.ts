@@ -20,7 +20,7 @@ import {
 } from '@/lib/mutations/task-recurrences';
 import { listTaskRecurrences } from '@/lib/queries/task-recurrences';
 import { queryClient, taskKeys } from '@/lib/query-client';
-import { occurrenceDates } from '@/lib/tasks/recurrence';
+import { occurrenceDates, usesDaysOfWeek } from '@/lib/tasks/recurrence';
 import type { Task, TaskRecurrence } from '@/lib/types';
 
 /** Every series mutation sits under this key, so the sync can tell one is still in flight. */
@@ -68,7 +68,9 @@ const createRecurrenceMutationOptions: UseMutationOptions<void, Error, CreateRec
       id,
       creator_id: '',
       ...input,
-      days_of_week: input.frequency === 'custom' ? input.days_of_week : null,
+      days_of_week: usesDaysOfWeek(input.frequency) ? input.days_of_week : null,
+      month_day: input.frequency === 'monthly' ? input.month_day : null,
+      month_week: input.frequency === 'monthly_weekday' ? input.month_week : null,
       skipped_dates: [],
       active: true,
       created_at: now,
@@ -97,7 +99,9 @@ const updateRecurrenceMutationOptions: UseMutationOptions<void, Error, UpdateRec
           ? {
               ...r,
               ...input,
-              days_of_week: input.frequency === 'custom' ? input.days_of_week : null,
+              days_of_week: usesDaysOfWeek(input.frequency) ? input.days_of_week : null,
+      month_day: input.frequency === 'monthly' ? input.month_day : null,
+      month_week: input.frequency === 'monthly_weekday' ? input.month_week : null,
               skipped_dates: [],
             }
           : r,
