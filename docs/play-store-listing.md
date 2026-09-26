@@ -17,12 +17,14 @@ Goodlist
 
 **Short description** (max 80 characters)
 ```
-Personal tasks, alarms, medicine reminders, and a calendar for your household.
+Personal tasks, alarms that ring until answered, and medicine reminders.
 ```
-(78 characters)
+(72 characters)
 
-This leads on the newest feature (task alarms) alongside medicine reminders and the calendar,
-because they are what a search result has to earn a tap with. Older lines that still fit, if voice
+This leads on alarms that keep ringing — the thing that sets Goodlist apart from a plain list —
+alongside medicine reminders, because they are what a search result has to earn a tap with. The
+previous line, `Personal tasks, alarms, medicine reminders, and a calendar for your household.`
+(78 characters), said "household" where the app says "group". Older lines that still fit, if voice
 or the solo-to-household framing should lead instead: `Personal tasks you can speak, see on a
 calendar, and share with your household.` (79 characters) or `Personal tasks that stay simple
 solo, and work together with your household.` (78 characters).
@@ -31,7 +33,7 @@ solo, and work together with your household.` (78 characters).
 ```
 Goodlist is a personal task list that starts simple and grows with you.
 
-Sign up and start adding tasks in seconds — no household, no setup, no
+Sign up and start adding tasks in seconds — no group, no setup, no
 friction. Every task you create is private to you by default.
 
 Type a task, or tap the microphone and just say it: "Buy milk tomorrow"
@@ -42,14 +44,16 @@ and Goodlist only ever receives the text.
 Give a task a day and it turns up on the calendar, so you can see what's
 coming instead of scrolling a list. Tap a day to see what is on it, and move
 a task to another day with two taps. Turn on a task's alarm and your phone
-rings at the exact time. Make a task repeat daily, weekly, monthly or on chosen days. Say "remind me to call the vet at 5pm" and it's
-already on.
+rings at the exact time — and keeps ringing until you tap Stop, Snooze or
+Done. Make a task repeat daily, weekly, monthly or on chosen days. Say
+"remind me to call the vet at 5pm" and the alarm is already on.
 
-Add a medicine and Goodlist reminds you at every dose, right on your phone.
-Mark each one taken or skipped with one tap, and see the week's adherence
+Add a medicine and Goodlist reminds you at every dose, right on your phone,
+until you answer it. Mark each one taken or skipped with one tap, and see the week's adherence
 at a glance. It's a reminder and a record, not medical advice.
 
-When you're ready, create or join a household with a partner. You can then
+When you're ready, create or join a group — Family or Team — with an invite
+code. You can then
 send each other Requested tasks — clear, visible asks with a name attached,
 so it's always obvious who asked for what and who's doing it. Your personal
 tasks stay exactly as they were; nothing about going from solo to shared
@@ -60,15 +64,17 @@ FEATURES
 • A calendar view — a dot on every day with something due, red if it's overdue
 • Move a task to another day with two taps
 • An optional alarm on any task, right at its due time
+• Alarms and reminders ring until you answer them — Stop, Snooze or Done
+• The calendar warns you if a phone setting would stop an alarm ringing
 • Repeating tasks — every day, week, two weeks, month, or the days you choose
 • Track medicines and get a reminder at each dose, with Taken and Snooze
 • Log every dose taken or skipped, and see your week's adherence
 • Add tasks by speaking, including dates like "buy milk tomorrow"
 • Tick off, undo or delete a task by voice — deleting always asks first
 • A history of everything you've completed
-• Optional household collaboration — create or join with an invite code
-• Request tasks from another household member; they see your name on it
-• Share a medicine with your household so they can see its schedule too
+• Optional groups, Family or Team — create or join with an invite code
+• Request tasks from another group member; they see your name on it
+• Share a medicine with your group so they can see its schedule too
 • Live updates — no need to refresh to see what's changed
 • Delete your account and all of your data at any time, right from Settings
 • Also on the web at goodlist.expo.app, with the same account (medicine
@@ -132,7 +138,7 @@ Pasted into **Release notes** on the closed-testing release in Play Console. `ea
 set these, so they are typed into the Console by hand, and rewritten for each release — the note
 below replaces the alarms one, which is in git history if it is ever wanted.
 
-Play caps this field at **500 characters per language**. The note below is 409; check it again if
+Play caps this field at **500 characters per language**. The note below is 473; check it again if
 you edit it.
 
 ```
@@ -142,6 +148,8 @@ Make any task with a due date repeat: every day, week, 2 weeks, month, or the da
 
 Task alarms and medicine reminders now ring until you answer them. Tap Stop, or Snooze 10 min.
 
+The calendar warns you if a phone setting would stop an alarm.
+
 Say "remind me to call the vet at 5pm" and the alarm is already on.
 
 New permission: exact alarms, so alarms ring on time.
@@ -150,7 +158,11 @@ New permission: exact alarms, so alarms ring on time.
 **The permission line is back.** Exact alarms is a new permission (`USE_EXACT_ALARM` /
 `SCHEDULE_EXACT_ALARM`, no prompt to the user — Android grants it), so it's named for the same
 reason past releases named the microphone. It also needs the Play Console exact-alarm declaration
-before this release goes out. **The spoken example** carries the "remind me" phrasing verbatim so
+before this release goes out (see
+[`play-store-deployment.md` → Exact-alarm declaration](./play-store-deployment.md#exact-alarm-declaration),
+including what to do if Play decides a to-do app doesn't qualify). **The calendar line** covers a fix that landed after the first draft of this note: the Calendar shows an *Allow alarms* / *Open settings* banner when
+notifications are off. (Rings no longer piling up in the tray is the other late fix; it's left out
+to stay under the cap — testers would only notice its absence.) **The spoken example** carries the "remind me" phrasing verbatim so
 a tester can copy it and see the alarm land on, not just read that it can.
 
 Previous release, for reference:
@@ -170,7 +182,7 @@ New permission: notifications, to remind you at dose time.
 ## Content rating questionnaire (IARC)
 
 Goodlist has no user-generated media beyond plain text task titles/notes, no
-chat between strangers (only between household members you've explicitly
+chat between strangers (only between group members you've explicitly
 invited), no violence, gambling, or sexual content. Answer **No** to every
 content category the questionnaire asks about. Expected result: rated for
 all ages (e.g. "Everyone" / PEGI 3 equivalent).
@@ -324,7 +336,7 @@ instruction set:
 | Name | Full app access |
 | Username | *(a real Supabase account created for this purpose)* |
 | Password | *(its password)* |
-| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. Open any task and set a due date to see the optional Alarm switch — turning it on and saving is one of two places the app asks for notification access (the other is below). The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. The Meds tab tracks medicines — this account already has one with reminders on, so the phone will ask for notification access the first time that screen loads if it hasn't already been granted; tap a dose's Taken/Skip buttons to see logging, and open the medicine to see the Premium-gated group-sharing picker. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. History moved under Settings → History. |
+| Any other instructions | Sign in with the credentials above. The Tasks tab is the main screen; add a task with the compose bar at the bottom. The microphone beside the send button dictates a task — the phone asks for microphone access the first time, and the words appear on screen for confirmation before anything is saved. Open any task and set a due date to see the optional Alarm switch — turning it on and saving is one of two places the app asks for notification access (the other is below). An alarm rings until answered — with the app open as a full-screen alarm with Stop / Snooze 10 min / Mark done, with it closed as one repeating notification. The Calendar tab shows tasks that have a due date; it reads only the app's own data, not the device calendar. If notifications are off while a task has an alarm, a banner at the top of the Calendar offers Allow alarms / Open settings. The Meds tab tracks medicines — this account already has one with reminders on, so the phone will ask for notification access the first time that screen loads if it hasn't already been granted; tap a dose's Taken/Skip buttons to see logging, and open the medicine to see the Premium-gated group-sharing picker. Group features are under the Group tab — this account is already in a Family group, so the Requested-tasks flow can be reviewed there. History moved under Settings → History. |
 
 Create that account on the production Supabase project, seed it with a handful of tasks, a group,
 and at least one requested task, and **do not delete it** — Play re-uses it for every future update
@@ -337,6 +349,8 @@ review.
 | Contains ads? | No |
 | Target audience / "designed for children"? | No — general audience. Goodlist has no child-account or child-profile feature yet (see project plan, Phase 6 — deliberately deferred) |
 | Government app? | No |
+| Health apps declaration | **Medication and treatment management** — the Meds tab. No Health Connect data. See [`play-store-deployment.md`](./play-store-deployment.md#health-apps-declaration) |
+| Exact alarms (`USE_EXACT_ALARM`) | Declared — core function is alarms for tasks and medicine doses that ring until answered. See [`play-store-deployment.md`](./play-store-deployment.md#exact-alarm-declaration) |
 | COVID-19 contact tracing / status app? | No |
 | News app? | No |
 | Financial features (loans, crypto, trading, etc.)? | No |

@@ -506,6 +506,15 @@ The recommended monetization sequence is:
 
 ## 18. Roadmap
 
+> **Status, September 2026.** Phases 1–4 and 7 have shipped, and Phase 5 in part. The app has
+> email/password auth, the Solo list, history, groups in Family or Team mode (the "household"
+> below), invite codes, Requested tasks, Realtime sync, offline replay, and Premium via RevenueCat
+> with a 90-day trial. It has also gone past this plan: a calendar, voice input, task alarms that
+> ring until answered, repeating Personal tasks (a §9.2 deferral, now built), and medicine tracking.
+> Still open are push notifications, notification preferences, analytics and child profiles
+> (Phase 6). What comes next is ranked, with evidence, in [docs/roadmap.md](docs/roadmap.md). The
+> phases below are kept as the original plan.
+
 ### Phase 1: Product foundation
 
 Finalize the name, terminology, Solo mode behavior, household visibility rules, and partner invitation flow. Define whether the first authentication method is email/password or magic link.

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # `expo start` writes this file locally and it's gitignored; it pulls in
+      # Expo's ambient types (CSS imports, assets), which `tsc` needs.
+      - name: Generate expo-env.d.ts
+        run: echo '/// <reference types="expo/types" />' > expo-env.d.ts
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      # The in-app legal/guide screens and the published site (and so the
+      # policy Google Play fetches) render from the same src/content/ modules.
+      # Fail if someone edited the copy without regenerating docs/.
+      - name: Published site is up to date
+        run: |
+          npm run site
+          git diff --exit-code -- docs/ || {
+            echo "::error::docs/ is out of date — run 'npm run site' and commit the result."
+            exit 1
+          }

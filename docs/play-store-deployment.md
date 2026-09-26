@@ -5,7 +5,8 @@ listing, and [`play-store-testing.md`](./play-store-testing.md), which holds the
 closed-testing runbook in detail. This file holds the *process*: what gates exist, what this repo
 still needs, and the exact order to do things in to reach production the fastest.
 
-Researched 2026-09-08. Policy dates below are Google's; re-check them if you read this months later.
+Researched 2026-09-08; exact-alarm and Health apps declarations added 2026-09-26. Policy dates below
+are Google's; re-check them if you read this months later.
 
 ---
 
@@ -227,6 +228,30 @@ applies operations in a fixed pipeline order rather than call order.
 
 ---
 
+### Exact-alarm declaration
+
+Since the alarms release, `app.json` requests `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM` so task
+alarms and medicine reminders ring on the minute (without them expo-notifications falls back to
+inexact alarms that Android can delay or bunch). Both need attention before that build is submitted:
+
+- **Play restricts `USE_EXACT_ALARM`** to apps whose *core* function is an alarm clock or a calendar.
+  Fill the exact-alarm section of **App content** and describe the core function as *alarms that ring
+  at a set time for tasks and medicine doses, until the user answers them*. There is a real risk a
+  reviewer decides a to-do app doesn't qualify.
+- **If it's rejected**, remove `android.permission.USE_EXACT_ALARM` from `app.json` and keep only
+  `SCHEDULE_EXACT_ALARM`. That one is allowed for any app, but Android 14+ leaves it *off* until the
+  user turns on *Alarms & reminders* for Goodlist — which the Calendar's alarm-status banner already
+  tells people to do. Alarms still ring without it, just not always on the exact minute.
+
+### Health apps declaration
+
+The Meds tab (medicine names, doses, schedules and a taken/skipped log, with a reminder at each dose)
+puts Goodlist in Google's **Medication management** health category. Every app with health features
+must complete the **Health apps** declaration under App content — answering "Health: No" there is
+wrong now. Select *Medication and treatment management*, say no Health Connect data is accessed, and
+keep it consistent with the Data Safety **Health info** answer in
+[`play-store-listing.md`](./play-store-listing.md#note-on-medicines-and-the-health-info-declaration).
+
 ## 4. The fastest path, in order
 
 **Day 0 — in parallel, do both of these**
@@ -288,7 +313,8 @@ applies operations in a fixed pipeline order rather than call order.
 9. Complete **App content** end to end — it all must be green before production:
    privacy policy URL · App access (B5 demo credentials) · Ads: No · Content rating questionnaire ·
    Target audience: 13+, not designed for children · Data safety (matching the policy, including the
-   deletion URL) · News: No · Financial features: No · Government: No · Health: No.
+   deletion URL) · News: No · Financial features: No · Government: No · **Health apps: Medication
+   management** · **Exact alarms: declared** (both under [§3](#exact-alarm-declaration)).
 10. Keep testers engaged. Push an update or two to the closed track — genuine usage is now checked.
 
 **Day 15+**
@@ -306,7 +332,9 @@ applies operations in a fixed pipeline order rather than call order.
   `versionCode`. Never set `versionCode` by hand while `appVersionSource` is `remote`.
 - There is no `expo-updates` channel configured, so **every** JS change needs a new build and a new
   Play release. If you expect to iterate quickly post-launch, adding EAS Update is worth doing before
-  you have real users.
+  you have real users — see [`roadmap.md`](./roadmap.md).
+- CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests and a check that `docs/` matches
+  `src/content/` on every push to `main` and every pull request. Keep it green before building.
 - The keystore EAS generates on your first Android build is the only thing that can sign updates to
   this listing. Back it up: `eas credentials -p android` → download keystore, and store it somewhere
   you will still have in five years. Losing it means you can never update the app again.
@@ -326,3 +354,7 @@ applies operations in a fixed pipeline order rather than call order.
 - [Create and manage environment variables in EAS](https://docs.expo.dev/eas/environment-variables/manage/)
 - [Using automatically managed credentials](https://docs.expo.dev/app-signing/managed-credentials/)
 - [Expo SDK 57 changelog](https://expo.dev/changelog/sdk-57)
+- [Provide information for the Health apps declaration form](https://support.google.com/googleplay/android-developer/answer/14738291)
+- [Health app categories](https://support.google.com/googleplay/android-developer/answer/13996367)
+- [Schedule exact alarms are denied by default (Android 14)](https://developer.android.com/about/versions/14/changes/schedule-exact-alarms)
+- [Schedule alarms — choosing USE_EXACT_ALARM vs SCHEDULE_EXACT_ALARM](https://developer.android.com/develop/background-work/services/alarms)
