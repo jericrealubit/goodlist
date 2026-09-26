@@ -1,0 +1,69 @@
+name: Android APK
+
+# Builds an installable test APK on GitHub's runners (which ship the Android
+# SDK) and attaches it to the run as a downloadable artifact. Run it from the
+# Actions tab, or push to a claude/** branch.
+#
+# The APK is a release build signed with the debug keystore that
+# `expo prebuild` generates, so it installs directly for testing but is not
+# Play Store-ready (use the EAS `production` profile for that).
+#
+# Set these repository secrets so the build talks to the real backend:
+# EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY,
+# EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      - name: Warn about missing secrets
+        run: |
+          for name in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_REVENUECAT_ANDROID_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::warning::Secret $name is not set; the APK will build without it."
+            fi
+          done
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goodlist-${{ github.sha }}-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
