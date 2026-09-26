@@ -55,6 +55,7 @@
         }
       ],
       "./plugins/with-optional-microphone",
+      "./plugins/with-single-alarm-notification",
       [
         "expo-notifications",
         {
