@@ -152,21 +152,72 @@ function youngFace(mood, hairColor) {
     ${mouth}`;
 }
 
-/** The son: about thirty, short dark hair, light stubble, navy polo. */
-export function son(mood) {
-  const hair = '#2F2622';
+/**
+ * A man about thirty — short dark hair and a polo by default (the son).
+ * Options recolour him or add a beard, so the same build plays other roles.
+ */
+export function youngMan(mood, { hair = '#2F2622', shirt = '#1F3F7A', collar = '#2E5597', placket = '#16305E', beard = false } = {}) {
   return `
   <g>
-    <path d="M-50 122 L-50 74 Q-50 42 -20 36 L20 36 Q50 42 50 74 L50 122 Z" fill="#1F3F7A"/>
-    <path d="M-16 36 L0 50 L16 36 L10 33 L0 42 L-10 33 Z" fill="#2E5597"/>
-    <path d="M0 50 V70" stroke="#16305E" stroke-width="2"/>
+    <path d="M-50 122 L-50 74 Q-50 42 -20 36 L20 36 Q50 42 50 74 L50 122 Z" fill="${shirt}"/>
+    <path d="M-16 36 L0 50 L16 36 L10 33 L0 42 L-10 33 Z" fill="${collar}"/>
+    <path d="M0 50 V70" stroke="${placket}" stroke-width="2"/>
     <circle cx="0" cy="58" r="1.8" fill="#D6E0F0"/><circle cx="0" cy="66" r="1.8" fill="#D6E0F0"/>
     <rect x="-9" y="22" width="18" height="16" rx="4" fill="${C.skin2Shade}"/>
     <circle cx="-26" cy="3" r="6.5" fill="${C.skin2Shade}"/><circle cx="26" cy="3" r="6.5" fill="${C.skin2Shade}"/>
     <ellipse cx="0" cy="0" rx="25" ry="29" fill="${C.skin2}"/>
-    <path d="M-20 12 Q-18 28 0 29 Q18 28 20 12 Q14 22 0 22 Q-14 22 -20 12 Z" fill="${hair}" opacity=".16"/>
+    <path d="M-20 12 Q-18 28 0 29 Q18 28 20 12 Q14 22 0 22 Q-14 22 -20 12 Z" fill="${hair}" opacity="${beard ? '.75' : '.16'}"/>
     <path d="M-27 4 Q-31 -32 0 -32 Q31 -32 27 4 Q25 -14 16 -19 Q2 -12 -14 -20 Q-24 -14 -27 4 Z" fill="${hair}"/>
     <path d="M-16 -29 Q-4 -40 14 -31 Q4 -33 -4 -26 Z" fill="${hair}"/>
+    ${youngFace(mood, hair)}
+  </g>`;
+}
+
+/** The son: about thirty, short dark hair, light stubble, navy polo. */
+export const son = (mood) => youngMan(mood);
+
+/** Mom: shoulder-length brown hair, coral top. */
+export function mom(mood) {
+  const hair = '#6B3E26';
+  const skin = '#E8B08A';
+  const shade = '#CF946E';
+  return `
+  <g>
+    <path d="M-30 -6 Q-40 30 -30 50 L30 50 Q40 30 30 -6 Z" fill="${hair}"/>
+    <path d="M-47 122 L-47 76 Q-47 42 -18 37 L18 37 Q47 42 47 76 L47 122 Z" fill="#E07A5F"/>
+    <path d="M-14 37 Q0 52 14 37" fill="${skin}"/>
+    <rect x="-8" y="22" width="16" height="17" rx="4" fill="${shade}"/>
+    <ellipse cx="0" cy="0" rx="24" ry="28" fill="${skin}"/>
+    <path d="M-28 20 Q-34 -32 0 -31 Q34 -32 28 20 Q26 -2 20 -12 Q4 -18 -12 -10 Q-22 -6 -24 6 Q-26 14 -28 20 Z" fill="${hair}"/>
+    <circle cx="-14" cy="11" r="4.5" fill="#E86F7C" opacity=".3"/><circle cx="14" cy="11" r="4.5" fill="#E86F7C" opacity=".3"/>
+    ${youngFace(mood, hair)}
+  </g>`;
+}
+
+/**
+ * A teenager (Goodlist is for 13+, so the kids are teens with their own
+ * phones). look.style: 'long' | 'spiky' | 'cap'.
+ */
+export function teen(mood, { style = 'spiky', hair = '#3A2A22', shirt = '#4A90C2', skin = '#E3A984', shade = '#C98E6A' } = {}) {
+  const back = style === 'long' ? `<path d="M-27 -4 Q-36 34 -26 52 L26 52 Q36 34 27 -4 Z" fill="${hair}"/>` : '';
+  const top =
+    style === 'long'
+      ? `<path d="M-26 16 Q-32 -32 0 -30 Q32 -32 26 16 Q24 -8 12 -16 Q0 -8 -14 -14 Q-24 -4 -26 16 Z" fill="${hair}"/>`
+      : style === 'cap'
+        ? `<path d="M-26 -2 Q-28 -34 0 -33 Q28 -34 26 -2 Z" fill="${shirt}"/>
+           <path d="M-4 -8 Q24 -12 40 -4 Q24 -2 -4 -2 Z" fill="${shirt}"/>
+           <path d="M-26 -2 H26" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+           <path d="M-26 4 Q-27 -2 -24 -4 M26 4 Q27 -2 24 -4" stroke="${hair}" stroke-width="4" stroke-linecap="round"/>`
+        : `<path d="M-26 4 Q-30 -26 -18 -30 L-12 -40 L-4 -32 L4 -42 L10 -32 L18 -38 L20 -28 Q30 -22 26 4 Q24 -14 12 -18 Q0 -12 -14 -18 Q-24 -12 -26 4 Z" fill="${hair}"/>`;
+  return `
+  <g>
+    ${back}
+    <path d="M-42 122 L-42 74 Q-42 42 -16 37 L16 37 Q42 42 42 74 L42 122 Z" fill="${shirt}"/>
+    <path d="M-12 37 Q0 47 12 37" fill="${shade}"/>
+    <rect x="-7" y="22" width="14" height="17" rx="4" fill="${shade}"/>
+    <circle cx="-24" cy="3" r="6" fill="${shade}"/><circle cx="24" cy="3" r="6" fill="${shade}"/>
+    <ellipse cx="0" cy="0" rx="23" ry="27" fill="${skin}"/>
+    ${top}
     ${youngFace(mood, hair)}
   </g>`;
 }

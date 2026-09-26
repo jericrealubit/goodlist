@@ -9,9 +9,10 @@
  */
 import { renderAd } from './lib/ad-kit.mjs';
 import * as caregiverSon from './ads/caregiver-son.mjs';
+import * as groceryFamily from './ads/grocery-family.mjs';
 import * as medicineReminder from './ads/medicine-reminder.mjs';
 
-const ADS = [medicineReminder, caregiverSon];
+const ADS = [medicineReminder, caregiverSon, groceryFamily];
 const filter = process.argv[2];
 const selected = filter ? ADS.filter((ad) => ad.name.includes(filter)) : ADS;
 if (selected.length === 0) {
