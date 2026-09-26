@@ -166,12 +166,12 @@ export default function SettingsScreen() {
           <ThemedText type="smallBold" themeColor="textSecondary">
             Help
           </ThemedText>
-          <Pressable onPress={() => router.push('/history')}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/history')}>
             <ThemedText type="link" themeColor="textSecondary">
               Completed tasks
             </ThemedText>
           </Pressable>
-          <Pressable onPress={() => router.push('/guide')}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/guide')}>
             <ThemedText type="link" themeColor="textSecondary">
               How to use Goodlist
             </ThemedText>
@@ -228,7 +228,7 @@ export default function SettingsScreen() {
           <ThemedText type="smallBold" themeColor="textSecondary">
             Community
           </ThemedText>
-          <Pressable onPress={() => router.push('/stats')}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/stats')}>
             <ThemedText type="link" themeColor="textSecondary">
               User statistics
             </ThemedText>
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
           {/* Admin-only, so it sits alongside the public stats rather than in a
               second heading of its own. The RPC is the real gate. */}
           {isAdmin ? (
-            <Pressable onPress={() => router.push('/distribution')}>
+            <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/distribution')}>
               <ThemedText type="link" themeColor="textSecondary">
                 User distribution
               </ThemedText>
@@ -248,17 +248,17 @@ export default function SettingsScreen() {
           <ThemedText type="smallBold" themeColor="textSecondary">
             Legal
           </ThemedText>
-          <Pressable onPress={() => router.push('/about')}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/about')}>
             <ThemedText type="link" themeColor="textSecondary">
               About
             </ThemedText>
           </Pressable>
-          <Pressable onPress={() => router.push('/privacy')}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/privacy')}>
             <ThemedText type="link" themeColor="textSecondary">
               Privacy Policy
             </ThemedText>
           </Pressable>
-          <Pressable onPress={() => router.push('/terms')}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/terms')}>
             <ThemedText type="link" themeColor="textSecondary">
               Terms of Service
             </ThemedText>

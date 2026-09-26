@@ -16,6 +16,7 @@ const FEATURES = [
   'Keep a personal to-do list that syncs across your devices, even offline.',
   'Add a task by speaking — dates like "tomorrow" or "at 5" are understood, and nothing you say is ever recorded or stored.',
   'See everything with a due date on a calendar, with an alarm on your phone at the exact time for the tasks you choose.',
+  'Alarms and medicine reminders keep ringing until you tap Stop, Snooze or Done — and the calendar tells you if something on your phone would stop them.',
   'Make a task repeat — every day, week, two weeks or month, or on the days you choose.',
   'Track your medicines: name, dose, schedule, and a reminder with Taken and Snooze right on the notification. Each dose is logged, and the calendar marks the day.',
   'Create or join up to two groups — Family or Team mode, each with its own member roles. A second group of your own is a Premium feature, free for the first 90 days.',
@@ -40,6 +41,8 @@ const TECH_STACK = [
   'PostgreSQL',
   'TanStack Query',
   'Reanimated',
+  'Expo Notifications',
+  'RevenueCat',
 ];
 
 export default function AboutScreen() {

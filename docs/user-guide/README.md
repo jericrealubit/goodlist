@@ -188,7 +188,7 @@ Here you can:
 
 1. Add a **Note** — anything extra you want to remember. `Whole milk, 2 litres`.
 2. Add a **Due date** — the day it needs doing by.
-3. Turn on **Alarm** — your phone rings at that exact time, and keeps ringing until you tap **Stop alarm**, **Snooze 10 min** or **Mark done** (with Goodlist closed, it rings again every few minutes for up to two hours). It only shows up once there's a due date, and it stays off unless you turn it on.
+3. Turn on **Alarm** — your phone rings at that exact time, and keeps ringing until you tap **Stop alarm**, **Snooze 10 min** or **Mark done** (with Goodlist closed, it rings again about every 25 seconds, then less often, for up to two hours — as one notification, not a pile of them). It only shows up once there's a due date, and it stays off unless you turn it on.
 4. Choose **Repeat** if it happens again and again — every day, every week, every 2 weeks, every month, or **Choose days**. It only shows once there's a due date. The next few appear on the calendar; your list shows today's, or just the next one.
 5. Tap **Save changes** when you're happy.
 
@@ -432,9 +432,11 @@ Not every phone and not every web browser can listen. When yours can't, Goodlist
 button rather than offering one that wouldn't work. Everything else carries on exactly as
 normal — just type instead.
 
-**A medicine reminder never showed up.**
-Check that your phone allows Goodlist to send notifications (your phone's own Settings app,
-not Goodlist's). A reminder can also be delayed if the phone was off or in a deep sleep at
+**An alarm or medicine reminder never showed up.**
+Open the **Calendar**: if something is stopping alarms, a box at the top says so, with a
+button to fix it (**Allow alarms**, or **Open settings**). Goodlist needs to be allowed to send
+notifications — and on Android, to set *Alarms & reminders* — in your phone's own Settings
+app, not Goodlist's. A reminder can also be delayed if the phone was off or in a deep sleep at
 the time.
 
 **I can't delete my account.**

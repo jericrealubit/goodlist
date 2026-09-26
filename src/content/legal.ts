@@ -13,7 +13,7 @@
 // built-in type stripping.
 
 export const CONTACT_EMAIL = 'jericrealubit@gmail.com';
-export const EFFECTIVE_DATE = 'September 24, 2026';
+export const EFFECTIVE_DATE = 'September 26, 2026';
 
 /** An inline run of text: plain, bold, or the contact email as a mailto link. */
 export type Span = string | { bold: string } | { email: true };
@@ -80,7 +80,7 @@ export const privacyPolicy: LegalDoc = {
           kind: 'para',
           spans: [
             { bold: 'Task alarms.' },
-            ' If you turn on the Alarm switch for a task, its title, note and due date/time are used to schedule a notification on your own device at that time — the same way a task shows on the calendar, just with a phone alert added — which rings again every few minutes until you stop, snooze or complete it. Whether you stopped or snoozed an alarm is remembered on that device only. We don’t send it; nothing leaves your device to make it happen. Turning the alarm off, changing the due date, or completing or deleting the task cancels it.',
+            ' If you turn on the Alarm switch for a task, its title, note and due date/time are used to schedule a notification on your own device at that time — the same way a task shows on the calendar, just with a phone alert added. It keeps ringing until you stop, snooze or complete it: with Goodlist open, an alarm screen plays a sound and vibrates; with it closed, the alert repeats about every 25 seconds at first and then less often, for up to two hours, as a single notification. Whether you stopped or snoozed an alarm is remembered on that device only. We don’t send it; nothing leaves your device to make it happen. Turning the alarm off, changing the due date, or completing or deleting the task cancels it.',
           ],
         },
         {
@@ -96,7 +96,7 @@ export const privacyPolicy: LegalDoc = {
             { bold: 'Medicines.' },
             ' If you use the Meds tab: the name, dose and instructions you enter for each medicine, the times and days you take it, your time zone (so the times read correctly), and each dose you mark as taken or skipped. This is health information, so it is ',
             { bold: 'private to you by default' },
-            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with. The first time you turn on a reminder or a task alarm, your device asks permission to show notifications — Goodlist uses that permission only for medicine reminders and task alarms.',
+            '. It is visible to a group only if you choose to share a specific medicine with it, and you can stop sharing, or delete a medicine and its whole dose record, at any time. Medicine reminders are scheduled on your own device; we don’t send them, and we never use this information for anything other than showing it back to you and anyone you shared it with. The first time you turn on a reminder or a task alarm, your device asks permission to show notifications — Goodlist uses that permission only for medicine reminders and task alarms. On Android, Goodlist also uses the system’s exact-alarm permission (“Alarms & reminders”), which Android grants without asking, so that alarms and reminders ring at the exact minute rather than whenever the phone next wakes up. It gives Goodlist no access to any of your data.',
           ],
         },
         {
@@ -347,7 +347,7 @@ export const termsOfService: LegalDoc = {
         {
           kind: 'para',
           spans: [
-            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, a calendar view of what is due when, tracking medicines with reminders and a taken/skipped record, adding and managing tasks by voice, in-app notifications, a searchable completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group and lets you share a medicine with a group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
+            'Goodlist is a task-management app for personal to-dos and group task sharing, available on Android and on the web. Features include creating or joining up to two groups (Family or Team mode, each with its own member roles), requesting tasks from group members, a calendar view of what is due when, tracking medicines with reminders and a taken/skipped record, repeating tasks, optional task alarms and medicine reminders that ring on your phone until you answer them, adding and managing tasks by voice, in-app notifications, a completion history with undo, offline support with automatic sync, and appearance customization. Goodlist is free to use; an optional Premium subscription lets you own a second group and lets you share a medicine with a group (see “Premium, free trial & billing” below). We may add, change, or remove features over time as the app evolves.',
           ],
         },
       ],
@@ -495,7 +495,7 @@ export const termsOfService: LegalDoc = {
           kind: 'para',
           spans: [
             { bold: 'Task alarms aren’t guaranteed either.' },
-            ' The same notification limits apply: an alarm can fail to arrive if notifications are turned off, the phone is off or in a restricted power mode, or the operating system delays it. Don’t rely on a task alarm alone for anything time-critical.',
+            ' The same notification limits apply: an alarm can fail to arrive if notifications or Android’s “Alarms & reminders” permission are turned off, the phone is off or in a restricted power mode, or the operating system delays it. The Calendar tells you when Goodlist can’t ring, but it can’t fix a setting for you. Don’t rely on a task alarm alone for anything time-critical.',
           ],
         },
       ],

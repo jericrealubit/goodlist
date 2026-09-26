@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<PropsWithChildren, ErrorBoundarySta
           <Text style={styles.message}>
             Goodlist ran into an unexpected error. Try again, and if it keeps happening, restart the app.
           </Text>
-          <Pressable onPress={this.handleRetry} style={styles.button}>
+          <Pressable accessibilityRole="button" onPress={this.handleRetry} style={styles.button}>
             <Text style={styles.buttonText}>Try again</Text>
           </Pressable>
         </View>

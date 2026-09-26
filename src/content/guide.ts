@@ -342,7 +342,7 @@ export const userGuide: GuideDoc = {
             { bold: 'Snooze 10 min' },
             ', or ',
             { bold: 'Mark done' },
-            '. With Goodlist open it rings on screen; with it closed it rings again every few minutes for up to two hours. Medicine reminders ring the same way, with ',
+            '. With Goodlist open it rings on screen; with it closed it rings again about every 25 seconds, then less often, for up to two hours — as one notification, not a pile of them. Medicine reminders ring the same way, with ',
             { bold: 'Taken' },
             ' instead of Mark done.',
           ],
@@ -828,8 +828,8 @@ export const userGuide: GuideDoc = {
         {
           kind: 'para',
           spans: [
-            { bold: 'A medicine reminder never showed up.' },
-            ' Check that your phone allows Goodlist to send notifications (your phone’s own Settings app, not Goodlist’s). A reminder can also be delayed if the phone was off or in a deep sleep at the time.',
+            { bold: 'An alarm or medicine reminder never showed up.' },
+            ' Open the Calendar: if something is stopping alarms, a box at the top says so, with a button to fix it (Allow alarms, or Open settings). Goodlist needs to be allowed to send notifications — and on Android, to set “Alarms & reminders” — in your phone’s own Settings app, not Goodlist’s. A reminder can also be delayed if the phone was off or in a deep sleep at the time.',
           ],
         },
         {
