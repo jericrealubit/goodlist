@@ -5,6 +5,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
+import { SocialSignIn } from '@/components/social-sign-in';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -114,6 +115,8 @@ export default function SignUpScreen() {
                 onPress={handleSignUp}
                 loading={loading}
               />
+
+              <SocialSignIn disabled={loading} onError={setError} />
             </ThemedView>
 
             <Link href="/sign-in" replace style={styles.link}>

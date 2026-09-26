@@ -1,17 +1,19 @@
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
+import { SocialSignIn } from '@/components/social-sign-in';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ActionIcons } from '@/constants/icons';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useSession } from '@/contexts/session-context';
+import { createSessionFromUrl, useSession } from '@/contexts/session-context';
 import { getErrorMessage } from '@/lib/errors';
 
 export default function SignInScreen() {
@@ -20,6 +22,26 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const url = Linking.useLinkingURL();
+  const handledUrl = useRef<string | null>(null);
+
+  // Web only: Google/Facebook sign-in is a full-page redirect that comes back
+  // here with the tokens (or an error) on the URL. Native gets them straight
+  // from the browser sheet in signInWithProvider instead.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !url || handledUrl.current === url) return;
+    handledUrl.current = url;
+
+    createSessionFromUrl(url)
+      .then((signedIn) => {
+        // Don't leave tokens sitting in the address bar or history.
+        if (signedIn) window.history.replaceState(null, '', window.location.pathname);
+      })
+      .catch((err) => {
+        window.history.replaceState(null, '', window.location.pathname);
+        setError(getErrorMessage(err, 'Could not sign in.'));
+      });
+  }, [url]);
 
   async function handleSignIn() {
     setError(null);
@@ -79,6 +101,8 @@ export default function SignInScreen() {
                   Forgot password?
                 </ThemedText>
               </Link>
+
+              <SocialSignIn disabled={loading} onError={setError} />
             </ThemedView>
 
             <Link href="/sign-up" style={styles.link}>
