@@ -61,3 +61,19 @@ export function readableOn(background: string): string {
   const dark = '#111111';
   return contrastRatio(light, background) >= contrastRatio(dark, background) ? light : dark;
 }
+
+// WCAG 1.4.11: a control's boundary needs 3:1 against what it sits on.
+const UI_CONTRAST_FLOOR = 3;
+
+/**
+ * `color`, nudged toward `toward` just far enough to clear 3:1 against
+ * `surface`. Keeps the theme's hue for selection outlines while fixing the few
+ * mid-tone primaries (sage, terracotta) that sit a hair under the floor.
+ */
+export function strengthenOn(color: string, surface: string, toward: string): string {
+  for (let amount = 0; amount <= 1 + Number.EPSILON; amount += STEP) {
+    const candidate = mixHex(color, toward, amount);
+    if (contrastRatio(candidate, surface) >= UI_CONTRAST_FLOOR) return candidate;
+  }
+  return toward;
+}
