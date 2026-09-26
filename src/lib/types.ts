@@ -72,7 +72,7 @@ export type UpdateTaskInput = {
   alarm_enabled?: boolean;
 };
 
-export type RecurrenceFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'custom';
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'monthly_weekday' | 'custom';
 
 /** The series behind a repeating Personal task. Each occurrence is a `Task` pointing at it. */
 export type TaskRecurrence = {
@@ -81,8 +81,12 @@ export type TaskRecurrence = {
   title: string;
   notes: string | null;
   frequency: RecurrenceFrequency;
-  /** 0 = Sunday … 6 = Saturday. Only 'custom' uses it. */
+  /** 0 = Sunday … 6 = Saturday. 'custom' uses them all; 'monthly_weekday' its first. */
   days_of_week: number[] | null;
+  /** 'monthly' only: 1–31. Null means the start date's day. */
+  month_day: number | null;
+  /** 'monthly_weekday' only: 1–4, or 5 for the last. Null means the start date's week. */
+  month_week: number | null;
   /** YYYY-MM-DD local; the first occurrence's day. */
   start_date: string;
   /** HH:MM local, 24-hour. */
@@ -101,6 +105,8 @@ export type RecurrenceInput = {
   notes: string | null;
   frequency: RecurrenceFrequency;
   days_of_week: number[] | null;
+  month_day: number | null;
+  month_week: number | null;
   start_date: string;
   due_time: string;
   end_date: string | null;

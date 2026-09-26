@@ -10,10 +10,25 @@ export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 /**
  * A row of seven toggles, Sun–Sat, for picking which days something happens
  * on. Shared by a medicine's "Some days" and a repeating task's "Choose days",
- * so the two read as the same control.
+ * so the two read as the same control. `single` makes it a pick-one row, for
+ * "the second Sunday of every month".
  */
-export function WeekdayChips({ value, onChange }: { value: number[]; onChange: (days: number[]) => void }) {
+export function WeekdayChips({
+  value,
+  onChange,
+  single = false,
+}: {
+  value: number[];
+  onChange: (days: number[]) => void;
+  single?: boolean;
+}) {
   const tokens = useTokens();
+
+  function toggle(day: number, selected: boolean) {
+    if (single) onChange([day]);
+    else onChange(selected ? value.filter((d) => d !== day) : [...value, day].sort());
+  }
+
   return (
     <View style={[styles.chips, { gap: tokens.spacing.one }]}>
       {ALL_DAYS.map((day) => {
@@ -21,9 +36,9 @@ export function WeekdayChips({ value, onChange }: { value: number[]; onChange: (
         return (
           <Pressable
             key={day}
-            onPress={() => onChange(selected ? value.filter((d) => d !== day) : [...value, day].sort())}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: selected }}
+            onPress={() => toggle(day, selected)}
+            accessibilityRole={single ? 'radio' : 'checkbox'}
+            accessibilityState={single ? { selected } : { checked: selected }}
             accessibilityLabel={WEEKDAY_SHORT[day]}
             style={({ pressed }) => [styles.chip, pressed && styles.pressed]}>
             <ThemedView

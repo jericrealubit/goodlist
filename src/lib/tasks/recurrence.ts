@@ -16,15 +16,36 @@
  */
 import { addDays, fromDayKey, toDayKey, type DayKey } from '../calendar/day.ts';
 
-export type RecurrenceFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'custom';
+/**
+ * 'monthly' lands on a day of the month ("the 11th"); 'monthly_weekday' on a
+ * weekday within the month ("the second Sunday", "the last Friday").
+ */
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'monthly_weekday' | 'custom';
 
-export const RECURRENCE_FREQUENCIES: RecurrenceFrequency[] = ['daily', 'weekly', 'fortnightly', 'monthly', 'custom'];
+export const RECURRENCE_FREQUENCIES: RecurrenceFrequency[] = [
+  'daily',
+  'weekly',
+  'fortnightly',
+  'monthly',
+  'monthly_weekday',
+  'custom',
+];
+
+/** `month_week` for "the last one in the month" — lands every month, even those without a fifth. */
+export const LAST_WEEK = 5;
 
 /** The parts of a series the expansion needs. `TaskRecurrence` satisfies it. */
 export type RecurrencePattern = {
   frequency: RecurrenceFrequency;
-  /** 0 = Sunday … 6 = Saturday. Only 'custom' reads it. */
+  /**
+   * 0 = Sunday … 6 = Saturday. 'custom' reads all of them; 'monthly_weekday'
+   * reads the first as its weekday, or takes the start date's when null.
+   */
   days_of_week: number[] | null;
+  /** 'monthly' only: 1–31, clamped to short months. Null keeps the start date's day. */
+  month_day?: number | null;
+  /** 'monthly_weekday' only: 1–4, or LAST_WEEK. Null keeps the start date's week. */
+  month_week?: number | null;
   /** The first occurrence's day; weekly, fortnightly and monthly count from it. */
   start_date: DayKey;
   end_date: DayKey | null;
@@ -52,11 +73,38 @@ function daysInMonth(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }
 
+/** Which of its month's same weekdays `date` is: 1–4, or LAST_WEEK for a fifth. */
+export function weekOfMonth(date: Date): number {
+  return Math.ceil(date.getDate() / 7);
+}
+
+/** Whether a series only reads `days_of_week` when it's this frequency. */
+export function usesDaysOfWeek(frequency: RecurrenceFrequency): boolean {
+  return frequency === 'custom' || frequency === 'monthly_weekday';
+}
+
+/** The day of the month a 'monthly' series lands on. */
+export function monthDayOf(pattern: Pick<RecurrencePattern, 'month_day' | 'start_date'>): number | null {
+  if (pattern.month_day) return pattern.month_day;
+  return fromDayKey(pattern.start_date)?.getDate() ?? null;
+}
+
+/** The week and weekday a 'monthly_weekday' series lands on. */
+export function monthWeekdayOf(
+  pattern: Pick<RecurrencePattern, 'month_week' | 'days_of_week' | 'start_date'>,
+): { week: number; weekday: number } | null {
+  const start = fromDayKey(pattern.start_date);
+  const week = pattern.month_week ?? (start ? weekOfMonth(start) : null);
+  const weekday = pattern.days_of_week?.[0] ?? start?.getDay() ?? null;
+  return week === null || weekday === null ? null : { week, weekday };
+}
+
 /**
  * Whether `day` is one the pattern lands on, ignoring the window, skips and
- * `active`. Monthly keeps to the start date's day of the month, clamped to
- * the month's last day — a series started on the 31st lands on the 30th in
- * April and the 28th or 29th in February, never skips a month.
+ * `active`. Monthly keeps to its day of the month, clamped to the month's
+ * last day — a series on the 31st lands on the 30th in April and the 28th or
+ * 29th in February, never skips a month. "The last Sunday" is the same
+ * promise for weekdays: the fifth where there is one, else the fourth.
  */
 export function landsOn(pattern: RecurrencePattern, day: DayKey): boolean {
   const date = fromDayKey(day);
@@ -72,11 +120,24 @@ export function landsOn(pattern: RecurrencePattern, day: DayKey): boolean {
       return daysBetween(start, date) % 7 === 0;
     case 'fortnightly':
       return daysBetween(start, date) % 14 === 0;
-    case 'monthly':
-      return date.getDate() === Math.min(start.getDate(), daysInMonth(date));
+    case 'monthly': {
+      const monthDay = monthDayOf(pattern) ?? start.getDate();
+      return date.getDate() === Math.min(monthDay, daysInMonth(date));
+    }
+    case 'monthly_weekday': {
+      const target = monthWeekdayOf(pattern);
+      if (!target || date.getDay() !== target.weekday) return false;
+      if (target.week >= LAST_WEEK) return date.getDate() + 7 > daysInMonth(date);
+      return weekOfMonth(date) === target.week;
+    }
     case 'custom':
       return !!pattern.days_of_week?.includes(date.getDay());
   }
+}
+
+/** The first day on or after `from` the series lands on, within about a year — or null. */
+export function nextOccurrence(pattern: RecurrencePattern, from: DayKey): DayKey | null {
+  return occurrenceDates({ ...pattern, skipped_dates: [], active: true }, from, { days: 400, max: 1 })[0] ?? null;
 }
 
 /**
@@ -142,14 +203,26 @@ export function visibleInTaskList<T extends ListableTask>(tasks: T[], today: Day
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function ordinal(n: number): string {
+const WEEK_WORDS = ['', 'first', 'second', 'third', 'fourth', 'last'];
+
+/** "first" … "fourth", "last". */
+export function weekWord(week: number): string {
+  return WEEK_WORDS[Math.min(Math.max(week, 1), LAST_WEEK)];
+}
+
+export function ordinal(n: number): string {
   const tens = n % 100;
   if (tens >= 11 && tens <= 13) return `${n}th`;
   return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 }
 
-/** "Every week on Monday", "Every Mon, Wed and Fri", "Every month on the 15th". */
-export function describeRecurrence(pattern: Pick<RecurrencePattern, 'frequency' | 'days_of_week' | 'start_date'>): string {
+/**
+ * "Every week on Monday", "Every Mon, Wed and Fri", "Every month on the 15th",
+ * "Every month on the second Sunday".
+ */
+export function describeRecurrence(
+  pattern: Pick<RecurrencePattern, 'frequency' | 'days_of_week' | 'start_date' | 'month_day' | 'month_week'>,
+): string {
   const start = fromDayKey(pattern.start_date);
   const weekday = start ? WEEKDAY_NAMES[start.getDay()] : '';
   switch (pattern.frequency) {
@@ -159,8 +232,14 @@ export function describeRecurrence(pattern: Pick<RecurrencePattern, 'frequency' 
       return `Every week on ${weekday}`;
     case 'fortnightly':
       return `Every 2 weeks on ${weekday}`;
-    case 'monthly':
-      return start ? `Every month on the ${ordinal(start.getDate())}` : 'Every month';
+    case 'monthly': {
+      const monthDay = monthDayOf(pattern);
+      return monthDay ? `Every month on the ${ordinal(monthDay)}` : 'Every month';
+    }
+    case 'monthly_weekday': {
+      const target = monthWeekdayOf(pattern);
+      return target ? `Every month on the ${weekWord(target.week)} ${WEEKDAY_NAMES[target.weekday]}` : 'Every month';
+    }
     case 'custom': {
       const days = [...new Set(pattern.days_of_week ?? [])].sort((a, b) => a - b);
       if (days.length === 7) return 'Every day';
